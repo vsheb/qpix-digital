@@ -106,9 +106,9 @@ begin
       end generate;
    end generate;
 
-   ------------------
-   -- Our DAQ Node --
-   ------------------
+   ---------------------------------------------------
+   -- Our DAQ Nodes (One on left, one on the right) --
+   ---------------------------------------------------
    U_DaqClkRst : entity work.ClkRst
       generic map (
          RST_HOLD_TIME_G   => 1 us -- : time    := 6 us;  -- Hold reset for this long
@@ -159,27 +159,12 @@ begin
       variable my_line      : line;     -- type 'line' comes from textio
       variable temp         : real;
    begin
-      -- Initialize the clock phases and frequencies
-      for i in N_ROWS_C-1 downto 0 loop
-         for j in N_COLS_C-1 downto 0 loop
-            uniform(seed1, seed2, rand); -- generate random number
-            clkDelays(i)(j)  <= rand*CLK_PERIOD_NOMINAL_C;
-            uniform(seed1, seed2, rand); -- generate random number
-            temp := (1.0 - CLK_PERIOD_SPREAD_FRACTIONAL_C/2.0) * real(CLK_PERIOD_NOMINAL_C/1 ns) + (CLK_PERIOD_SPREAD_FRACTIONAL_C * real(CLK_PERIOD_NOMINAL_C/1 ns) * (rand));
-            write(my_line, temp);
-            writeline(output, my_line);
-            clkPeriods(i)(j) <= temp * 1 ns;--(1.0 - CLK_PERIOD_SPREAD_FRACTIONAL_C) * CLK_PERIOD_NOMINAL_C; -- + (CLK_PERIOD_SPREAD_FRACTIONAL_C * CLK_PERIOD_NOMINAL_C * (rand));
-         end loop;
-      end loop;
-      -- Initialize the clock periods (frequencies) 
-      for i in N_ROWS_C-1 downto 0 loop
-         for j in N_COLS_C-1 downto 0 loop
-         end loop;
-      end loop;
-
-
-      wait for 0.5 us;
-      write(my_line, string'("Beginning simulation with the following delays and periods:"));
+      -------------------------------------------------
+      -- Initialize the clock phases and frequencies --
+      -------------------------------------------------
+      write(my_line, string'("# Clock Phases and Periods by ASIC Position #"));
+      writeline(output, my_line);
+      write(my_line, string'("# All time values given in ns # "));
       writeline(output, my_line);
       for i in N_ROWS_C-1 downto 0 loop
          for j in N_COLS_C-1 downto 0 loop
@@ -188,15 +173,31 @@ begin
             write(my_line, string'(" "));
             write(my_line, j, right, 2);
             write(my_line, string'(" : "));
-            write(my_line, real(clkDelays(i)(j) / 1 ns), right, 6, 4);
+            ------------------
+            -- Clock Phases --
+            ------------------
+            uniform(seed1, seed2, rand); -- generate random number
+            temp := rand * real(CLK_PERIOD_NOMINAL_C / 1000.0 ps);
+            clkDelays(i)(j)  <= temp * 1000.0 ps;
+            -- The following line results in Modelsim being rounded to 1 ns.
+            -- write(my_line, real(clkDelays(i)(j) / 1000.0 ps), right, 6, 4);
+            write(my_line, temp, right, 6, 2);            
             write(my_line, string'(" "));
-            write(my_line, real(clkPeriods(i)(j) / 1 ns), right, 6, 4);
+            ------------------
+            -- Clock Periods --
+            ------------------
+            uniform(seed1, seed2, rand); -- generate random number
+            temp := (1.0 - CLK_PERIOD_SPREAD_FRACTIONAL_C/2.0) * real(CLK_PERIOD_NOMINAL_C/1.0 ns) + (CLK_PERIOD_SPREAD_FRACTIONAL_C * real(CLK_PERIOD_NOMINAL_C/1.0 ns) * (rand));
+            write(my_line, temp, right, 6, 2);
             writeline(output, my_line);
+            clkPeriods(i)(j) <= temp * 1000.0 ps;--(1.0 - CLK_PERIOD_SPREAD_FRACTIONAL_C) * CLK_PERIOD_NOMINAL_C; -- + (CLK_PERIOD_SPREAD_FRACTIONAL_C * CLK_PERIOD_NOMINAL_C * (rand));
          end loop;
       end loop;
 
-      -- Start stimulus here
-      wait for 1.5 us;
+      --------------------------
+      -- Stimulus begins here --
+      --------------------------
+      wait for 2.0 us;
       daqLeftTxByte      <= x"0123456789ABCDEF";
       daqLeftTxByteValid <= '1';
       wait for CLK_PERIOD_NOMINAL_C;
