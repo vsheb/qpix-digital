@@ -190,7 +190,7 @@ begin
             temp := (1.0 - CLK_PERIOD_SPREAD_FRACTIONAL_C/2.0) * real(CLK_PERIOD_NOMINAL_C/1.0 ns) + (CLK_PERIOD_SPREAD_FRACTIONAL_C * real(CLK_PERIOD_NOMINAL_C/1.0 ns) * (rand));
             write(my_line, temp, right, 6, 2);
             writeline(output, my_line);
-            clkPeriods(i)(j) <= temp * 1000.0 ps;--(1.0 - CLK_PERIOD_SPREAD_FRACTIONAL_C) * CLK_PERIOD_NOMINAL_C; -- + (CLK_PERIOD_SPREAD_FRACTIONAL_C * CLK_PERIOD_NOMINAL_C * (rand));
+            clkPeriods(i)(j) <= temp * 1000.0 ps;
          end loop;
       end loop;
 
