@@ -15,15 +15,16 @@ end AsicArrayTb;
 
 architecture Behavioral of AsicArrayTb is
 
+   ----------------------------------------------------
+   -- Important fundamental constants for simulation --
+   -- (can we provide these as inputs at runtime)    --
+   -----------------------------------------------------
    constant N_ROWS_C : integer := 2;
    constant N_COLS_C : integer := 2;
+   constant CLK_PERIOD_NOMINAL_C           : time := 20000.0 ps;
+   constant CLK_PERIOD_SPREAD_FRACTIONAL_C : real := 0.05;
 
-   -- Create a new type, with indexing scheme:
-   --    bitArray2d(row)(col)(dir)
-   --    dir decoding: 0 - right
-   --                  1 - down
-   --                  2 - left
-   --                  3 - up
+   -- Array types for the connections between ASIC nodes
    type slv4Array   is array (N_ROWS_C-1 downto 0) of slv(3 downto 0);
    type slv4Array2d is array (N_COLS_C-1 downto 0) of slv4Array;
    -- Default condition is high so that UART can detect high-to-low transitions
@@ -31,8 +32,6 @@ architecture Behavioral of AsicArrayTb is
    signal rxLines : slv4Array2d := (others => (others => (others => '1')));
 
    -- Likewise, need some arrays to give variable clock phases and periods
-   constant CLK_PERIOD_NOMINAL_C           : time := 20000.0 ps;
-   constant CLK_PERIOD_SPREAD_FRACTIONAL_C : real := 0.05;
    type timeArray   is array (N_ROWS_C-1 downto 0) of time;
    type timeArray2d is array (N_COLS_C-1 downto 0) of timeArray;
    signal  clkDelays  : timeArray2d := (others => (others => 0 ns));
