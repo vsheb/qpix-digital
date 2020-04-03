@@ -19,10 +19,10 @@ architecture Behavioral of AsicArrayTb is
    -- Important fundamental constants for simulation --
    -- (can we provide these as inputs at runtime)    --
    -----------------------------------------------------
-   constant N_ROWS_C : integer := 2;
-   constant N_COLS_C : integer := 2;
+   constant N_ROWS_C : integer := 16;
+   constant N_COLS_C : integer := 16;
    constant CLK_PERIOD_NOMINAL_C           : time := 20000.0 ps;
-   constant CLK_PERIOD_SPREAD_FRACTIONAL_C : real := 0.05;
+   constant CLK_PERIOD_SPREAD_FRACTIONAL_C : real := 0.005;
 
    -- Array types for the connections between ASIC nodes
    type slv4Array   is array (N_ROWS_C-1 downto 0) of slv(3 downto 0);
