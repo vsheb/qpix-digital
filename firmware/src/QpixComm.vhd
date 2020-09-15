@@ -114,7 +114,7 @@ begin
       FIFO_U : entity work.fifo_cc
       generic map(
          DATA_WIDTH => NUM_BITS_G,
-         DEPTH      => 4
+         DEPTH      => G_FIFO_MUX_DEPTH 
       )
       port map(
          clk   => clk,

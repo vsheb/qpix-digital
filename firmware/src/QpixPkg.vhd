@@ -19,11 +19,14 @@ package QpixPkg is
    constant LT : integer := 2;
    constant UP : integer := 3;
 
-   constant G_DATA_BITS      : natural := 64;
-   constant G_POS_BITS       : natural := 4;
-   constant G_REG_ADDR_BITS  : natural := 16;
-   constant G_REG_DATA_BITS  : natural := 16;
-   constant G_TIMESTAMP_BITS : natural := 32; 
+   constant G_DATA_BITS        : natural := 64;
+   constant G_POS_BITS         : natural := 4;
+   constant G_REG_ADDR_BITS    : natural := 16;
+   constant G_REG_DATA_BITS    : natural := 16;
+   constant G_TIMESTAMP_BITS   : natural := 32; 
+
+   constant G_FIFO_LOC_DEPTH : natural := 8;
+   constant G_FIFO_EXT_DEPTH : natural := 8;
 
    constant DirUp    : std_logic_vector(3 downto 0) := b"1000";
    constant DirRight : std_logic_vector(3 downto 0) := b"0100";
@@ -119,7 +122,7 @@ package QpixPkg is
 
    constant QpixConfigDef_C : QpixConfigType := (
       something => '0',
-      Timeout   => std_logic_vector(to_unsigned(200,G_REG_DATA_BITS))
+      Timeout   => std_logic_vector(to_unsigned(5000,G_REG_DATA_BITS))
 
    );
 
@@ -145,6 +148,8 @@ package QpixPkg is
    function fQpixRegToByte(d : QpixRegDataType) return std_logic_vector;
 
    function fQpixGetDirectionMask(x : natural := 0; y : natural := 0) return std_logic_vector;
+
+   function int2slv(x, s : natural) return std_logic_vector;
    ------------------------------------------------------------------
    
 end QpixPkg;
@@ -245,6 +250,10 @@ package body QpixPkg is
    end function;
    ------------------------------------------------------------------
 
+   function int2slv(x, s : natural) return std_logic_vector is
+   begin
+      return std_logic_vector(to_unsigned(x,s));
+   end function;
 
 end package body QpixPkg;
 

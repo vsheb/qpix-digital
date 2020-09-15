@@ -1,16 +1,30 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
 
 library work;
 use work.QpixPkg.all;
 
 entity QpixDaqCtrl is
    generic (
-      
+      MEM_DEPTH : natural := 8 
    );
    port (
       clk      : in std_logic;
       rst      : in std_logic;
+      
+      -- readout ASIC ports
+      daqTx    : out QpixTxRxPortType;
+      daqRx    : in  QpixTxRxPortType;
+
+      -- event memory ports
+      memAddrRst : in std_logic;
+      memRdAddr  : in  std_logic_vector(7 downto 0);
+      memDataOut : out std_logic_vector(G_DATA_BITS-1 downto 0);
+      memRdAck   : out std_logic;
+      memEvtSize : out std_logic_vector(7 downto 0);
+      memFullErr : out std_logic
       
    );
 end entity QpixDaqCtrl;
@@ -18,53 +32,67 @@ end entity QpixDaqCtrl;
 
 architecture behav of QpixDaqCtrl is
 
+   signal wrAddr      : std_logic_vector(MEM_DEPTH-1 downto 0) := (others => '0');
+   signal rdAddr      : std_logic_vector(MEM_DEPTH-1 downto 0) := (others => '0');
+
    
 
 begin
 
-   QpixAxiIfc_U  : entity work.QpixAxiIfc
-   port map(
-      clk => clk,
-      rst => rst,
-      
-      axi_read => axi_read
-      axi_write => axi_write, 
+   QpixDummyTxRx_U : entity work.UartTop
+   generic map (
+      NUM_BITS_G => G_DATA_BITS
+   )
+   port map (
+      clk         => clk,
+      sRst        => rst,
 
-      daqByte   => daqByte,
-      daqByteValid => daqByteValid
+      txByte      => daqTxByte, 
+      txByteValid => daqTxByteValid, 
+      txByteReady => daqTxByteReady,
 
-           );
+      rxByte      => daqRxByte,
+      rxByteValid => daqRxByteValid,
 
-   QpixDaqNode_U : entity work.QpixDaqNode
-   port map(
+      uartTx      => Tx,
+      uartRx      => Rx
 
-      clk      => clk ,
-      rst      => rst, 
-
-      txByte      => daqByte,
-      txByteValid => daqByteValid,
-
-      Tx       => XTxArr(0)(0),
-      Rx       => XRxArr(0)(0)
    );
 
-   QpixDaqStorage_U : entity work.QpixDaqStorage_U
-   port map(
-      clk => clk,
+   mem_U : entity work.bram_sdp_cc
+   generic map (
+      DATA => daqRxByte'length,
+      ADDR => MEM_DEPTH
+   )
+   port map (
+      clk   => clk,
+      wea   => daqRxByteValid,
+      addra => wrAddr,
+      dina  => daqRxByte,
+      addrb => memRdAddr,
+      doutb => memDataOut
    );
+   
+   process (clk)
+   begin
+      if rising_edge (clk) then
+         if rst or memAddrRst then
+            wrAddr     <= (others => '0');
+            memEvtSize <= (others => '0');
+         else
+            if daqRxByteValid then
+               wrAddr <= wrAddr + 1;
+            end if;
+         end if;
+      end if;
+   end process;
 
-   QpixHitsGen_U : entity work.QpixHitsGen
-      generic map (
-         X_NUM_G => X_NUM_G,
-         Y_NUM_G => Y_NUM_G
-      )
-      port map (
-         clk      => clk,
-         rst      => rst,
+   memEvtSize <= wrAddr;
 
-         hitMask  => hitMask,
-         inPortsArr => inPortsArr
-      );
+   --QpixDaqStorage_U : entity work.QpixDaqStorage_U
+   --port map(
+      --clk => clk,
+   --);
 
 
 end behav;

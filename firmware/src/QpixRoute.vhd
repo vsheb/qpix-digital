@@ -87,7 +87,7 @@ begin
    FIFO_LOC_U : entity work.fifo_cc
    generic map(
       DATA_WIDTH => G_TIMESTAMP_BITS,
-      DEPTH      => 8
+      DEPTH      => G_FIFO_LOC_DEPTH,
    )
    port map(
       clk   => clk,
@@ -107,7 +107,7 @@ begin
    FIFO_EXT_U : entity work.fifo_cc
    generic map(
       DATA_WIDTH => G_DATA_BITS,
-      DEPTH      => 8
+      DEPTH      => G_FIFO_EXT_DEPTH 
    )
    port map(
       clk   => clk,
@@ -130,6 +130,7 @@ begin
       case (curReg.state) is 
          when IDLE_S       =>
             nxtReg.cnt <= (others => '0');
+            nxtReg.txData <= QpixDataZero_C;
             if qpixReq.Interrogation = '1' then
                nxtReg.state  <= REP_LOCAL_S;
             end if;
@@ -167,7 +168,7 @@ begin
                   nxtReg.extFifoRen <= '1';
                   nxtReg.txData <= fQpixByteToRecord(extFifoDout);
                   nxtReg.txData.DataValid <= '1';
-                  nxtReg.txData.DirMask   <= fQpixGetDirectionMask(X_POS_G, Y_POS_G);
+                  nxtReg.txData.DirMask   <= fQpixGetDirectionMask(X_POS_G, Y_POS_G); -- TODO : should be a reg
                   nxtReg.txData.WordType  <= G_WORD_TYPE_DATA;
                   --nxtReg.txData.Timestamp <= extFifoDout(31 downto 0);
                   --nxtReg.txData.XPos      <= std_logic_vector(to_unsigned(X_POS_G,G_POS_BITS));
@@ -183,6 +184,16 @@ begin
                nxtReg.state  <= IDLE_S;
             end if;
             --nxtReg.state <= IDLE_S;
+         
+         -- all hits are sent, report it
+         --when REP_FINISH_S => 
+            --nxtReg.txData ;
+            --nxtReg.txData.DataValid <= '1';
+            --nxtReg.txData.DirMask   <= fQpixGetDirectionMask(X_POS_G, Y_POS_G);
+            --nxtReg.txData.WordType  <= G_WORD_TYPE_DATA;
+
+            --nxtReg.state <= IDLE_S;
+
          when others =>
             nxtReg.state <= IDLE_S;
       end case;

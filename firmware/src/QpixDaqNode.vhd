@@ -16,9 +16,11 @@ entity QpixDaqNode is
       clk      : in std_logic;
       rst      : in std_logic;
 
-      --txData   : in QpixDataFormatType;   
       txByte      : in std_logic_vector(G_DATA_BITS-1 downto 0);
       txByteValid : in std_logic; 
+      
+      rxByte      : out std_logic_vector(G_DATA_BITS-1 downto 0);
+      rxByteValid : out std_logic;
       
       Tx          : out QpixTxRxPortType;
       Rx          : in  QpixTxRxPortType
@@ -83,9 +85,10 @@ begin
 
    TxByteArr(0)      <= txByte;
    txByteValidArr(0) <= txByteValid;
-   --TxByteArr(0)      <= fQpixRecordToByte(txData); 
-   --txByteValidArr(0) <= txData.DataValid;
    
+   rxByte            <= RxByteArr(0);
+   rxByteValid       <= RxByteValidArr(0);
+
 
 end behav;
 

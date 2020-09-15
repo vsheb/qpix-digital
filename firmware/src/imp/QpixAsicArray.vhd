@@ -17,7 +17,12 @@ entity QpixAsicArray is
       clk   : in std_logic;
       rst   : in std_logic;
 
-      led       : out std_logic_vector(3 downto 0)
+      led         : out std_logic_vector(3 downto 0); -- temporary
+
+      daqTx       : out QpixTxRxPortType;
+      daqRx       : in  QpixTxRxPortType;
+      
+      inPortsArr  : QpixInPortsArrType(0 to X_NUM_G-1, 0 to Y_NUM_G-1) 
 
       --stat     : out std_logic
    );
@@ -57,6 +62,9 @@ architecture behav of QpixAsicArray is
 
 begin
 
+   daqTx <= YTxArr(0)(0);
+   YRxArr(0)(0) <= daqRx;
+
 
 
    GEN_X : for i in 0 to X_NUM_G-1 generate
@@ -69,7 +77,7 @@ begin
             port map(
                clk      => clk,
                rst      => rst,
-               inPorts  => inPorts,
+               inPorts  => inPortsArr(i,j),
 
                -- TX 
                TxPortsArr(0) => YRxArr(i)(j),   -- up
