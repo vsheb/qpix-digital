@@ -87,7 +87,7 @@ begin
    FIFO_LOC_U : entity work.fifo_cc
    generic map(
       DATA_WIDTH => G_TIMESTAMP_BITS,
-      DEPTH      => G_FIFO_LOC_DEPTH,
+      DEPTH      => G_FIFO_LOC_DEPTH
    )
    port map(
       clk   => clk,
