@@ -27,6 +27,7 @@ package QpixPkg is
 
    constant G_FIFO_LOC_DEPTH : natural := 8;
    constant G_FIFO_EXT_DEPTH : natural := 8;
+   constant G_FIFO_MUX_DEPTH : natural := 4;
 
    constant DirUp    : std_logic_vector(3 downto 0) := b"1000";
    constant DirRight : std_logic_vector(3 downto 0) := b"0100";
