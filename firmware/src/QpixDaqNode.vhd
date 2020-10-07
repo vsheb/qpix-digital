@@ -42,28 +42,27 @@ architecture behav of QpixDaqNode is
 
 begin
 
-   --PORT_GEN : for i in 0 to NumPorts_G-1 generate
-      --QpixDummyTxRx_U : entity work.UartTop
-      --generic map (
-         --NUM_BITS_G => G_DATA_BITS
-      --)
-      --port map (
-         --clk         => clk,
-         --sRst        => rst,
+   --QpixDummyTxRx_U : entity work.QpixDummyTxRx
+   --generic map (
+      --NUM_BITS_G => G_DATA_BITS
+   --)
+   --port map (
+      --clk         => clk,
+      --rst         => rst,
 
-         --txByte      => TxByteArr(i), 
-         --txByteValid => TxByteValidArr(i), 
-         --txByteReady => TxByteReadyArr(i),
+      --txPort      => Tx.Data,
+      --txValid     => Tx.Valid,
+      --txByte      => TxByteArr(0), 
+      --txByteValid => TxByteValidArr(0), 
+      --txByteReady => TxByteReadyArr(0),
 
-         --rxByte      => RxByteArr(i),
-         --rxByteValid => RxByteValidArr(i),
+      --rxPort      => Rx.Data,
+      --rxValid     => Rx.Valid,
+      --rxByte      => RxByteArr(0),
+      --rxByteValid => RxByteValidArr(0)
+   --);
 
-         --uartTx      => TxPortsArr(i),
-         --uartRx      => RxPortsArr(i)
-
-      --);
-   --end generate;
-   QpixDummyTxRx_U : entity work.UartTop
+   QpixUartTxRx_U : entity work.UartTop
    generic map (
       NUM_BITS_G => G_DATA_BITS
    )

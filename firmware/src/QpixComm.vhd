@@ -12,7 +12,9 @@ use work.QpixPkg.all;
 entity QpixComm is
    generic (
       NUM_BITS_G   : natural := 64;
-      GATE_DELAY_G : time    := 1 ns
+      GATE_DELAY_G : time    := 1 ns;
+      X_POS_G         : natural := 0;
+      Y_POS_G         : natural := 0
    );
    port (
       clk            : in std_logic;
@@ -20,13 +22,18 @@ entity QpixComm is
 
       outData_i      : in  QpixDataFormatType;
       inData         : out QpixDataFormatType;
-      regData        : out QpixRegDataType;
+
+      regData             : out QpixRegDataType;
+      regResp             : in QpixRegDataType;
 
       TxReady        : out std_logic;
       -- external ASIC ports
       TxPortsArr     : out QpixTxRxPortsArrType;
 
-      RxPortsArr     : in  QpixTxRxPortsArrType
+      RxPortsArr     : in  QpixTxRxPortsArrType;
+
+      qpixConf       : out QpixConfigType;
+      qpixReq        : out QpixRequestType
       
    );
 end entity QpixComm;
@@ -52,6 +59,8 @@ architecture behav of QpixComm is
    signal RxFifoREnArr     : std_logic_vector(3 downto 0);
    signal RxFifoEmptyArr   : std_logic_vector(3 downto 0);
    signal RxFifoFullArr    : std_logic_vector(3 downto 0);
+
+   signal TxReadyOr        : std_logic;
 
    --signal InData           : QpixDataFormatType := QpixDataZero_C;
 
@@ -105,7 +114,8 @@ begin
    end generate GEN_TXRX;
    ------------------------------------------------------------
 
-   TxReady <= and TxByteReadyArr;
+   TxReadyOr <= and TxByteReadyArr;
+   TxReady   <= TxReadyOr;
 
    ------------------------------------------------------------
    -- FIFOs for input lines
@@ -114,7 +124,8 @@ begin
       FIFO_U : entity work.fifo_cc
       generic map(
          DATA_WIDTH => NUM_BITS_G,
-         DEPTH      => G_FIFO_MUX_DEPTH 
+         DEPTH      => G_FIFO_MUX_DEPTH,
+         RAM_TYPE   => "block"
       )
       port map(
          clk   => clk,
@@ -133,6 +144,10 @@ begin
    -- Parser
    ------------------------------------------------------------
    QpixParser_U : entity work.QpixParser
+   generic map(
+      X_POS_G       => X_POS_G,
+      Y_POS_G       => Y_POS_G
+   )                
    port map(
       clk          => clk,
       rst          => rst,
@@ -145,8 +160,14 @@ begin
       outData           => outData_i,
       outBytesArr       => TxByteArr,
       outBytesValidArr  => TxByteValidArr,
+      txReady           => TxReady,
 
-      regData           =>  regData
+      qpixConf          => qpixConf,
+      qpixReq           => qpixReq,
+
+      regData           => regData,
+      regResp           => regResp
+
    );
    ------------------------------------------------------------
 

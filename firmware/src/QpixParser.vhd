@@ -11,7 +11,9 @@ use work.QpixPkg.all;
 entity QpixParser is
    generic (
       NUM_BITS_G   : natural := 64;
-      GATE_DELAY_G : time    := 1 ns
+      GATE_DELAY_G : time    := 1 ns;
+      X_POS_G         : natural := 0;
+      Y_POS_G         : natural := 0
    );
    port (
       clk           : in std_logic;
@@ -27,8 +29,13 @@ entity QpixParser is
       outData             : in  QpixDataFormatType;
       outBytesArr         : out QpixByteArrType;
       outBytesValidArr    : out std_logic_vector(3 downto 0);
+      txReady             : in  std_logic;
 
-      regData             : out QpixRegDataType
+      qpixConf            : out QpixConfigType;
+      qpixReq             : out QpixRequestType;
+
+      regData             : out QpixRegDataType;
+      regResp             : in QpixRegDataType
       
    );
 end entity QpixParser;
@@ -40,29 +47,58 @@ architecture behav of QpixParser is
    signal inDataR          : QpixDataFormatType := QpixDataZero_C;
 
    signal inBytesMux       : std_logic_vector(G_DATA_BITS-1 downto 0) := (others => '0');
+   signal inBytesMuxValid  : std_logic                    := '0';
    signal inBytesValid     : std_logic_vector(3 downto 0) := (others => '0');
 
-   signal regReady         : std_logic_vector(3 downto 0) := (others => '0');
    signal regDir           : std_logic_vector(3 downto 0) := (others => '0');
+   signal regDirResp       : std_logic_vector(3 downto 0) := (others => '0');
    signal fifoRen          : std_logic_vector(3 downto 0) := (others => '0');
+
+   signal txReadyR         : std_logic := '1';
+   signal fifoRenOrR       : std_logic := '0';
+   signal fifoRenOrRR       : std_logic := '0';
+
+   type MuxStatesType is (IDLE_S, READ_S, WAIT_S);
+   signal muxState : MuxStatesType := IDLE_S;
+
+   function fGetFirstZeroPos(x : std_logic_vector) return natural is
+      variable pos : natural := 0;
+   begin
+      for i in x'range loop
+         if x(i) = '0' then
+            pos := i;
+            return pos;
+         end if;
+      end loop;
+      return pos;
+   end function;
    
 
 begin
+
+
    
    ------------------------------------------------------------
    -- mux for input channels
    ------------------------------------------------------------
    process (clk)
+      variable imux : natural := 0;
    begin
       if rising_edge (clk) then
-         inBytesValid <= (others => '0');
+
+         inBytesValid    <= (others => '0');
+         inBytesMuxValid <= '0';
+         fifoRen  <= (others => '0');
+         txReadyR <= txReady;
+         fifoRenOrR <= or fifoRen;
+         fifoRenOrRR <= fifoRenOrR;
          for i in 0 to 3 loop
-            fifoRen(i)   <= '0';
-            if inFifoEmptyArr(i) = '0' and fifoRen(i) = '0' then
+            --fifoRen(i)   <= '0';
+            if inFifoEmptyArr(i) = '0' and fifoRen = b"0000" and txReady = '1' then
                inBytesMux          <= inBytesArr(i);
-               inBytesValid(i)      <= '1';
-               --inDataR           <= fQpixByteToRecord(inBytesArr(i));
-               --inDataR.DataValid <= '1';
+               inBytesMuxValid     <= '1';
+               inBytesValid(i)     <= '1';
+               fifoRen <= (others => '0');
                fifoRen(i)   <= '1';
             end if;
          end loop;
@@ -77,6 +113,19 @@ begin
    ------------------------------------------------------------
    -- RX parsing
    ------------------------------------------------------------
+   --process (clk)
+   --begin
+      --if rising_edge (clk) then
+         --case rxState is 
+            --when IDLE_S => 
+            --when RD_S   =>
+            --when 
+         --end case;
+      --end if;
+   --end process;
+
+   regDirResp <= fQpixGetDirectionMask(X_POS_G, Y_POS_G);
+
    process (clk)
    begin
       if rising_edge (clk) then
@@ -85,16 +134,24 @@ begin
             regDataR <= QpixRegDataZero_C;
          else
             inDataR.DataValid <= '0';
-            if regDataR.Valid = '1' and regReady = b"1111" then
-               regDataR.Valid <= '0';
-            end if;
-            if inBytesValid /= b"0000" then
+            regDataR.Valid <= '0';
+            regDataR.OpWrite <= '0';
+            regDataR.OpRead  <= '0';
+            --end if;
+            if inBytesMuxValid = '1'  then
                if fQpixGetWordType(inBytesMux) = REGREQ_W then
-                  regDataR.Valid <= '1';
-                  regDataR.Addr  <= inBytesMux(31 downto 16);
-                  regDataR.Data  <= inBytesMux(15 downto  0);
-                  regDir <= not inBytesValid;
+                  regDataR.Valid   <= '1';
+                  regDataR.Addr    <= inBytesMux(31 downto 16);
+                  regDataR.Data    <= inBytesMux(15 downto  0);
+                  regDataR.XDest   <= inBytesMux(39 downto 36);
+                  regDataR.YDest   <= inBytesMux(35 downto 32);
+                  regDataR.OpWrite <= inBytesMux(55);
+                  regDataR.OpRead  <= inBytesMux(54);
+                  regDataR.Dest    <= inBytesMux(53);
+                  regDir <= DirDown or DirRight;
+                  inDataR.DataValid <= '0';
                else
+                  regDataR.Valid <= '0';
                   inDataR           <= fQpixByteToRecord(inBytesMux);
                   inDataR.Data      <= inBytesMux;
                   inDataR.DataValid <= '1';
@@ -116,18 +173,22 @@ begin
       begin
          if rising_edge (clk) then
             outBytesValidArr(i)  <= '0';
-            regReady(i)          <= '0';
             if outData.DataValid = '1' then
                if outData.DirMask(i) = '1' then
-                  outBytesArr(i) <= fQpixRecordToByte(outData);
+                  -- temporary send either d.Data of convert record FIXME
+                  if outData.WordType = G_WORD_TYPE_REGRSP then
+                     outBytesArr(i) <= outData.Data;
+                  else
+                     outBytesArr(i) <= fQpixRecordToByte(outData);
+                  end if;
                   outBytesValidArr(i)  <= '1';
                end if;
-            elsif regDataR.Valid = '1' then
-               regReady(i) <= '1';
-               if regReady(i) = '1' then
-                  outBytesValidArr(i) <= regDir(i);
-                  outBytesArr(i)      <= fQpixRegToByte(regDataR);
-               end if;
+            elsif regDataR.Valid = '1'  then
+               outBytesArr(i)      <= fQpixRegToByte(regDataR);
+               outBytesValidArr(i) <= regDir(i);
+            elsif regResp.Valid = '1' then
+               outBytesArr(i)      <= fQpixRegToByte(regResp);
+               outBytesValidArr(i) <= regDirResp(i);
             end if;
          end if;
       end process;

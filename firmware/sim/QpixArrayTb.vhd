@@ -173,7 +173,9 @@ begin
    begin
       if rising_edge (clk) then
          if daqRxByteValid = '1' then
-            report "RX" & to_string(daqRxByte);
+            report "Rceived! " & "X: " & to_string(daqRxByte(39 downto 36)) & 
+            " Y: " & to_string(daqRxByte(35 downto 32)) & 
+            " WTYPE : " & to_string(daqRxByte(59 downto 56));
          end if;
          
       end if;
@@ -294,7 +296,6 @@ begin
       -- Stimulus begins here --
       --------------------------
 
-      reg.Addr <= x"0001";
       wait for 100 ns;
       rst <= '1';
       wait for 500 ns;
@@ -305,11 +306,28 @@ begin
       report "reset done!";
       wait until clk = '1';
 
+      --report "test reg";
+      --reg.Addr <= x"0002";
+      --reg.Data <= x"0000";
+      --reg.OpWrite <= '0';
+      --reg.OpRead  <= '1';
+      --wait until clk = '1';
+      --daqTxByte <= fQpixRegToByte(reg);
+      --daqTxByteValid <= '1';
+      --wait until clk = '1';
+      --daqTxByteValid <= '0';
+      --wait for 500 us;
+
+      report "inject hits";
+      reg.Addr <= x"0001";
+      reg.Data <= x"0001";
+      reg.OpWrite <= '1';
+
       wait until clk = '1';
       hitMask(2,2) <= '1';
       wait until clk = '1';
-      wait until clk = '1';
-      wait until clk = '1';
+      --wait until clk = '1';
+      --wait until clk = '1';
       hitMask(2,2) <= '0';
 
       wait for 500 ns;

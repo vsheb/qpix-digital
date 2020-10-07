@@ -1,11 +1,14 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
 
 library work;
 use work.QpixPkg.all;
+use work.QpixProtoPkg.all;
 
-library UNISIM;               
-use UNISIM.VComponents.all;   
+--library UNISIM;               
+--use UNISIM.VComponents.all;   
 
 entity QpixProtoTop is
    generic (
@@ -88,14 +91,35 @@ architecture behav of QpixProtoTop is
    signal hitMask     : Sl2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1) := (others => (others => '0')) ;
 
    signal trg         : std_logic := '0';
-   signal hitXY       : std_logic_vector (31 downto 0) := (others => '0');
+   signal asicAddr    : std_logic_vector(31 downto 0) := (others => '0');
+   signal asicOpWrite : std_logic := '0';
+   signal asicData    : std_logic_vector(15 downto 0);
+   signal asicReq     : std_logic := '0';
+   --signal hitXY       : std_logic_vector (31 downto 0) := (others => '0');
+   signal timestamp    : std_logic_vector (G_TIMESTAMP_BITS-1 downto 0) := (others => '0');
+   signal trgTime      : std_logic_vector (31 downto 0) := (others => '0');
+
+   signal evtSize     : std_logic_vector (31 downto 0) := (others => '0');
+
+   signal memAddrRst  : std_logic := '0';
+   signal memRdAddr   : std_logic_vector (G_QPIX_PROTO_MEM_DEPTH-1+2 downto 0) := (others => '0');
+   signal memDataOut  : std_logic_vector (31 downto 0) := (others => '0');
+   signal memRdAck    : std_logic := '0';
+   signal memRdReq    : std_logic := '0';
+   signal memEvtSize  : std_logic_vector (G_QPIX_PROTO_MEM_DEPTH-1 downto 0) := (others => '0');
+
+   signal qpixDebugArr : QpixDebug2DArrayType(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
+
+   signal extFifoMaxArr : Slv4b2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
+
 
 begin
    ---------------------------------------------------
    -- 125 MHz clock
    ---------------------------------------------------
-   bufg_u : BUFG 
-      port map ( I => sysClk, O => clk);
+   --bufg_u : BUFG 
+      --port map ( I => sysClk, O => clk);
+   clk <= fclk;
    ---------------------------------------------------
 
    ---------------------------------------------------
@@ -192,21 +216,71 @@ begin
    ---------------------------------------------------
    ---------------------------------------------------
    QpixProtoRegMap_U : entity work.QpixProtoRegMap
+   generic map (
+      X_NUM_G => X_NUM_G,
+      Y_NUM_G => Y_NUM_G
+   )
    port map(
-      clk   => fclk,
-      rst   => rst,
+      clk          => fclk,
+      rst          => rst,
+                   
+      addr         => reg_addr,
+      rdata        => reg_rdata,
+      wdata        => reg_wdata,
+      req          => reg_req,
+      wen          => reg_wen,
+      ack          => reg_ack,
 
-      addr  => reg_addr,
-      rdata => reg_rdata,
-      wdata => reg_wdata,
-      req   => reg_req,
-      wen   => reg_wen,
-      ack   => reg_ack,
+      evtSize      => evtSize,
+      extFifoMax   => extFifoMaxArr,
 
-      trg   => trg,
-      hitXY => hitXY
+      trgTime      => trgTime,
+      timestamp    => timestamp,
+      hitMask      => hitMask,
+                  
+      trg          => trg,
+      asicAddr     => asicAddr,
+      asicOpWrite  => asicOpWrite,
+      asicData     => asicData,
+      asicReq      => asicReq,
+
+      memRdReq     => memRdReq,
+      memRdAck     => memRdAck,
+      memData      => memDataOut,
+      memAddr      => memRdAddr
    );
    ---------------------------------------------------
+
+   QpixDaqCtrl_U : entity work.QpixDaqCtrl
+   generic map(
+      MEM_DEPTH  => G_QPIX_PROTO_MEM_DEPTH
+   )
+   port map(
+      clk         => clk,
+      rst         => rst,
+                  
+      daqTx       => daqTx,
+      daqRx       => daqRx,
+
+      trg         => trg,
+      asicReq     => asicReq,
+      asicOpWrite => asicOpWrite,
+      asicData    => asicData,
+      asicAddr    => asicAddr,
+
+      trgTime     => trgTime,
+
+      -- event memory ports
+      memAddrRst  => memAddrRst,
+      memRdAddr   => memRdAddr,
+      memDataOut  => memDataOut, 
+      memRdReq    => memRdReq,
+      memRdAck    => memRdAck,
+      memEvtSize  => evtSize,
+      memFullErr  => open
+
+   );
+   memAddrRst <= trg or asicReq;
 
    ---------------------------------------------------
    ---------------------------------------------------
@@ -219,6 +293,7 @@ begin
          clk      => clk,
          rst      => rst,
 
+         timestamp  => timestamp,
          hitMask    => hitMask, -- in
          inPortsArr => inPortsArr
       );
@@ -236,13 +311,34 @@ begin
          clk        => clk,
          rst        => rst,
 
+         led        => led,
+
          daqTx      => daqTx,
          daqRx      => daqRx,
          
          inPortsArr => inPortsArr,
+         debug      => qpixDebugArr
          
-         led => led
       );
+   ---------------------------------------------------
+
+   ---------------------------------------------------
+   --GEN_DBG_X : for i in 0 to X_NUM_G-1 generate
+      --GEN_DBG_Y : for j in 0 to Y_NUM_G-1 generate
+         --process (clk)
+         --begin
+            --if rising_edge (clk) then
+               --if trg = '1' then
+                  --extFifoMaxArr(i,j) <= (others => '0');
+               --else
+                  --if qpixDebugArr(i,j).extFifoCnt > extFifoMaxArr(i,j) then
+                     --extFifoMaxArr(i,j) <= qpixDebugArr(i,j).extFifoCnt;
+                  --end if;
+               --end if;
+            --end if;
+         --end process;
+      --end generate GEN_DBG_Y;
+   --end generate GEN_DBG_X;
    ---------------------------------------------------
 
 

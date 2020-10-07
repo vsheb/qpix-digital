@@ -8,7 +8,8 @@ use ieee.std_logic_unsigned.all;
 entity bram_sdp_cc is
 generic (
     DATA     : integer := 16;
-    ADDR     : integer := 10
+    ADDR     : integer := 10;
+    RAM_TYPE : string := "block"
 );
 port (
     -- Port A
@@ -26,6 +27,9 @@ architecture read_first of bram_sdp_cc is
     -- Shared memory
     type mem_type is array ( (2**ADDR)-1 downto 0 ) of std_logic_vector(DATA-1 downto 0);
     signal mem : mem_type := (others => (others => '0'));
+
+    attribute ram_style : string;
+    attribute ram_style of mem : signal is RAM_TYPE;
 begin
  
 process(clk)
@@ -51,7 +55,8 @@ use ieee.std_logic_unsigned.all;
 entity bram_sdp is
 generic (
     DATA     : integer := 16;
-    ADDR     : integer := 10
+    ADDR     : integer := 10;
+    RAM_TYPE : string := "block"
 );
 port (
     -- Port A
@@ -70,6 +75,10 @@ architecture rtl of bram_sdp is
     -- Shared memory
     type mem_type is array ( (2**ADDR)-1 downto 0 ) of std_logic_vector(DATA-1 downto 0);
     signal mem : mem_type := (others => (others => '0'));
+
+    attribute ram_style : string;
+    attribute ram_style of mem : signal is RAM_TYPE;
+
 begin
  
 process(clka)
@@ -103,7 +112,8 @@ use ieee.std_logic_unsigned.all;
 entity fifo_cc is
 generic(
    DATA_WIDTH : natural := 16;
-   DEPTH : natural := 5 
+   DEPTH : natural := 5;
+   RAM_TYPE : string := "distributed"
 );
 
 port(
@@ -138,7 +148,8 @@ begin
    bram_i : entity work.bram_sdp_cc 
    generic map(
       DATA => DATA_WIDTH,
-      ADDR => DEPTH
+      ADDR => DEPTH,
+      RAM_TYPE => RAM_TYPE 
    )
    port map (
       clk   => clk,

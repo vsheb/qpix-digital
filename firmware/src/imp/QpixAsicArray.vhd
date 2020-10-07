@@ -4,8 +4,8 @@ use ieee.std_logic_1164.all;
 library work;
 use work.QpixPkg.all;
 
-library UNISIM;               
-use UNISIM.VComponents.all;   
+--library UNISIM;               
+--use UNISIM.VComponents.all;   
 
 entity QpixAsicArray is
    generic (
@@ -14,17 +14,16 @@ entity QpixAsicArray is
       
    );
    port (
-      clk   : in std_logic;
-      rst   : in std_logic;
+      clk         : in std_logic;
+      rst         : in std_logic;
 
       led         : out std_logic_vector(3 downto 0); -- temporary
 
-      daqTx       : out QpixTxRxPortType;
-      daqRx       : in  QpixTxRxPortType;
+      daqTx       : in  QpixTxRxPortType;
+      daqRx       : out QpixTxRxPortType;
       
-      inPortsArr  : QpixInPortsArrType(0 to X_NUM_G-1, 0 to Y_NUM_G-1) 
-
-      --stat     : out std_logic
+      inPortsArr  : in  QpixInPortsArrType(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
+      debug       : out QpixDebug2DArrayType(0 to X_NUM_G-1, 0 to Y_NUM_G-1)
    );
 end entity QpixAsicArray;
 
@@ -34,10 +33,10 @@ architecture behav of QpixAsicArray is
    ---------------------------------------------------
    -- type defenitions
    ---------------------------------------------------
-   type AsicWireArrayType is array(0 to X_NUM_G) of QpixTxRxPortType;
-   type AsicWire2DArrayType is array(0 to Y_NUM_G) of AsicWireArrayType;
-   type RouteStatesArrType is array(0 to X_NUM_G) of integer;
-   type RouteStates2DArrType is array(0 to Y_NUM_G) of RouteStatesArrType;
+   type AsicWireArrayType is array(0 to Y_NUM_G) of QpixTxRxPortType;
+   type AsicWire2DArrayType is array(0 to X_NUM_G) of AsicWireArrayType;
+   type RouteStatesArrType is array(0 to Y_NUM_G) of integer;
+   type RouteStates2DArrType is array(0 to X_NUM_G) of RouteStatesArrType;
    ---------------------------------------------------
 
    signal XRxArr  : AsicWire2DArrayType := (others => (others => QpixTxRxPortZero_C));
@@ -62,8 +61,8 @@ architecture behav of QpixAsicArray is
 
 begin
 
-   daqTx <= YTxArr(0)(0);
-   YRxArr(0)(0) <= daqRx;
+   YTxArr(0)(0) <= daqTx;
+   daqRx <= YRxArr(0)(0);
 
 
 
@@ -91,7 +90,8 @@ begin
                RxPortsArr(2) => YRxArr(i)(j+1), -- down
                RxPortsArr(3) => XTxArr(i)(j),   -- left
 
-               State         => StatesArr(i)(j)
+               State         => StatesArr(i)(j),
+               debug         => debug(i,j)
             );
       end generate GEN_Y;
    end generate GEN_X;

@@ -1,5 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
 
 
 library work;
@@ -17,8 +19,9 @@ entity QpixAsicTop is
       -- timestamp data from QpixAnalog
       inPorts        : in   QpixInPortsType;
 
-      --Status         : out QpixStatusType;
       State          : out integer;
+      debug          : out QpixDebugType;
+
 
       -- TX ports to neighbour ASICs
       TxPortsArr     : out  QpixTxRxPortsArrType;
@@ -34,16 +37,18 @@ architecture behav of QpixAsicTop is
    ---------------------------------------------------
    -- Signals
    ---------------------------------------------------
-      signal inData   : QpixDataFormatType := QpixDataZero_C;
-      signal txData   : QpixDataFormatType := QpixDataZero_C;
-      signal rxData   : QpixDataFormatType := QpixDataZero_C;
+   signal inData   : QpixDataFormatType := QpixDataZero_C;
+   signal txData   : QpixDataFormatType := QpixDataZero_C;
+   signal rxData   : QpixDataFormatType := QpixDataZero_C;
 
-      signal regData  : QpixRegDataType    := QpixRegDataZero_C;
+   signal regData  : QpixRegDataType    := QpixRegDataZero_C;
+   signal regResp          : QpixRegDataType  := QpixRegDataZero_C;
 
-      signal qpixConf : QpixConfigType     := QpixConfigDef_C;
-      signal qpixReq  : QpixRequestType    := QpixRequestZero_C;
+   signal qpixConf : QpixConfigType     := QpixConfigDef_C;
+   signal qpixReq  : QpixRequestType    := QpixRequestZero_C;
 
-      signal TxReady  : std_logic          := '0';
+   signal TxReady  : std_logic          := '0';
+
    ---------------------------------------------------
 
 begin
@@ -73,18 +78,29 @@ begin
    -- data parsing / physical layer
    ---------------------------------------------------
    QpixComm_U : entity work.QpixComm
+   generic map(
+      X_POS_G       => X_POS_G,
+      Y_POS_G       => Y_POS_G
+   )                
    port map(
       clk => clk,
       rst => rst,
 
       outData_i      => txData,
       inData         => rxData,
-      regData        => regData,
+      --regData        => regData,
 
       TxReady        => TxReady,
       TxPortsArr     => TxPortsArr,
                                      
-      RxPortsArr     => RxPortsArr
+      RxPortsArr     => RxPortsArr,
+
+      QpixConf       => QpixConf,
+      QpixReq        => QpixReq,
+
+      regData        => regData,
+      regResp        => regResp
+      
 
    );
    ---------------------------------------------------
@@ -93,11 +109,16 @@ begin
    -- Registers file
    ---------------------------------------------------
    QpixRegFile_U : entity work.QpixRegFile 
+   generic map(
+      X_POS_G       => X_POS_G,
+      Y_POS_G       => Y_POS_G
+   )                
    port map(
       clk      => clk,
       rst      => rst,
 
       regData  => regData,
+      regResp  => regResp,
 
       QpixConf => QpixConf,
       QpixReq  => QpixReq
@@ -125,6 +146,8 @@ begin
       txReady       => TxReady,
       txData        => txData,
       rxData        => rxData,
+
+      debug         => debug,
 
       routeStateInt => State
    );

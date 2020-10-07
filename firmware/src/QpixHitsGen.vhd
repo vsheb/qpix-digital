@@ -17,6 +17,7 @@ entity QpixHitsGen is
       rst      : in std_logic;
       
       hitMask  : in Sl2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
+      timestamp : in std_logic_vector(G_TIMESTAMP_BITS-1 downto 0) := (others => '0');
       --inPortsArr   : out Slv2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1)(iHIT_WIDTH-1 downto 0)
       inPortsArr   : out QpixInPortsArrType(0 to X_NUM_G-1, 0 to Y_NUM_G-1)
       
@@ -36,8 +37,11 @@ begin
             if rising_edge (clk) then
                if hitMask(i,j) = '1' then
                   inPortsArr(i,j).Valid <= '1';
+                  inPortsArr(i,j).TimeStamp <= timestamp;
                else
                   inPortsArr(i,j).Valid <= '0';
+                  inPortsArr(i,j).TimeStamp <= (others => '0');
+
                end if;
             end if;
          end process;
