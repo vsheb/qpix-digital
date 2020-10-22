@@ -1,0 +1,1707 @@
+05:15:51 INFO  : Launching XSCT server: xsct -n -interactive /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/temp_xsdb_launch_script.tcl
+05:15:51 INFO  : Registering command handlers for SDK TCF services
+05:15:53 INFO  : XSCT server has started successfully.
+05:15:53 INFO  : Successfully done setting XSCT server connection channel  
+05:15:53 INFO  : Successfully done setting SDK workspace  
+05:15:53 INFO  : Processing command line option -hwspec /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf.
+05:29:41 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+05:29:41 INFO  : 'fpga -state' command is executed.
+05:29:41 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+05:29:41 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+05:29:41 INFO  : 'jtag frequency' command is executed.
+05:29:41 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+05:29:41 INFO  : Context for 'APU' is selected.
+05:29:41 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+05:29:41 INFO  : 'configparams force-mem-access 1' command is executed.
+05:29:41 INFO  : Context for 'APU' is selected.
+05:29:41 INFO  : 'stop' command is executed.
+05:29:41 ERROR : Memory write error at 0xF8000B64. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+05:29:41 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+05:30:03 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+05:30:03 INFO  : 'fpga -state' command is executed.
+05:30:03 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+05:30:03 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+05:30:03 INFO  : 'jtag frequency' command is executed.
+05:30:03 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+05:30:03 INFO  : Context for 'APU' is selected.
+05:30:03 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+05:30:03 INFO  : 'configparams force-mem-access 1' command is executed.
+05:30:03 INFO  : Context for 'APU' is selected.
+05:30:03 INFO  : 'stop' command is executed.
+05:30:04 ERROR : Memory read error at 0xF8000B70. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+05:30:04 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+05:30:25 ERROR : (XSDB Server)invalid command name "connectr"
+
+05:33:26 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+05:33:26 INFO  : 'fpga -state' command is executed.
+05:33:26 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+05:33:26 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+05:33:26 INFO  : 'jtag frequency' command is executed.
+05:33:26 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+05:33:26 INFO  : Context for 'APU' is selected.
+05:33:26 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+05:33:26 INFO  : 'configparams force-mem-access 1' command is executed.
+05:33:26 INFO  : Context for 'APU' is selected.
+05:33:26 INFO  : 'stop' command is executed.
+05:33:29 INFO  : 'ps7_init' command is executed.
+05:33:29 INFO  : 'ps7_post_config' command is executed.
+05:33:29 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+05:33:29 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+05:33:29 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+05:33:31 ERROR : Memory write error at 0x100000. AP transaction timeout
+05:33:31 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+----------------End of Script----------------
+
+05:34:09 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+05:34:09 INFO  : 'fpga -state' command is executed.
+05:34:09 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+05:34:09 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+05:34:09 INFO  : 'jtag frequency' command is executed.
+05:34:09 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+05:34:09 INFO  : Context for 'APU' is selected.
+05:34:09 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+05:34:09 INFO  : 'configparams force-mem-access 1' command is executed.
+05:34:09 INFO  : Context for 'APU' is selected.
+05:34:10 INFO  : 'stop' command is executed.
+05:34:11 INFO  : 'ps7_init' command is executed.
+05:34:11 INFO  : 'ps7_post_config' command is executed.
+05:34:11 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+05:34:12 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+05:34:12 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+05:34:14 ERROR : Memory write error at 0x100000. AP transaction timeout
+05:34:14 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+----------------End of Script----------------
+
+05:41:58 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+05:41:58 INFO  : 'fpga -state' command is executed.
+05:41:58 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+05:41:58 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+05:41:58 INFO  : 'jtag frequency' command is executed.
+05:41:58 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+05:41:58 INFO  : Context for 'APU' is selected.
+05:41:58 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+05:41:58 INFO  : 'configparams force-mem-access 1' command is executed.
+05:41:58 INFO  : Context for 'APU' is selected.
+05:41:58 INFO  : 'stop' command is executed.
+05:41:58 ERROR : AP transaction error, DAP status f0000021
+05:41:58 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+05:46:16 INFO  : SDK has detected change in the last modified timestamps for source hardware specification file Source:1602197173000,  Project:1602195321000
+05:46:16 INFO  : Project QpixProtoTop_hw_platform_0's source hardware specification located at /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf is now different from the local copy.
+		 The local copy will be replaced with the source specification and your workspace will be updated.
+05:46:19 INFO  : Copied contents of /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf into /QpixProtoTop_hw_platform_0/system.hdf.
+05:46:22 INFO  : Synchronizing projects in the workspace with the hardware platform specification changes.
+05:46:23 INFO  : 
+05:46:23 INFO  : Updating hardware inferred compiler options for qpix_ctrl.
+05:46:23 INFO  : Clearing existing target manager status.
+05:46:23 INFO  : Workspace synchronized with the new hardware specification file. Cleaning dependent projects...
+05:46:24 WARN  : Linker script will not be updated automatically. Users need to update it manually.
+05:46:51 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+05:46:51 INFO  : 'fpga -state' command is executed.
+05:46:51 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+05:46:51 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+05:46:51 INFO  : 'jtag frequency' command is executed.
+05:46:51 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+05:46:51 INFO  : Context for 'APU' is selected.
+05:46:51 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+05:46:51 INFO  : 'configparams force-mem-access 1' command is executed.
+05:46:51 INFO  : Context for 'APU' is selected.
+05:46:51 INFO  : 'stop' command is executed.
+05:46:51 ERROR : AP transaction error, DAP status f0000021
+05:46:51 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+05:47:06 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+05:47:06 INFO  : 'fpga -state' command is executed.
+05:47:06 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+05:47:06 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+05:47:06 INFO  : 'jtag frequency' command is executed.
+05:47:06 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+05:47:06 INFO  : Context for 'APU' is selected.
+05:47:06 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+05:47:06 INFO  : 'configparams force-mem-access 1' command is executed.
+05:47:06 INFO  : Context for 'APU' is selected.
+05:47:06 INFO  : 'stop' command is executed.
+05:47:06 INFO  : 'ps7_init' command is executed.
+05:47:06 INFO  : 'ps7_post_config' command is executed.
+05:47:06 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+05:47:06 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+05:47:06 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+05:47:07 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+05:47:07 INFO  : 'configparams force-mem-access 0' command is executed.
+05:47:07 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+05:47:07 INFO  : Memory regions updated for context APU
+05:47:07 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+05:47:07 INFO  : 'con' command is executed.
+05:47:07 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+05:47:07 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+05:49:22 INFO  : Refreshed build settings on project qpix_ctrl
+05:49:40 INFO  : Disconnected from the channel tcfchan#1.
+05:49:42 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+05:49:42 INFO  : 'fpga -state' command is executed.
+05:49:42 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+05:49:42 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+05:49:42 INFO  : 'jtag frequency' command is executed.
+05:49:42 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+05:49:42 INFO  : Context for 'APU' is selected.
+05:49:43 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+05:49:43 INFO  : 'configparams force-mem-access 1' command is executed.
+05:49:43 INFO  : Context for 'APU' is selected.
+05:49:43 INFO  : 'stop' command is executed.
+05:49:44 INFO  : 'ps7_init' command is executed.
+05:49:44 INFO  : 'ps7_post_config' command is executed.
+05:49:44 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+05:49:44 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+05:49:44 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+05:49:44 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+05:49:44 INFO  : 'configparams force-mem-access 0' command is executed.
+05:49:44 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+05:49:44 INFO  : Memory regions updated for context APU
+05:49:44 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+05:49:44 INFO  : 'con' command is executed.
+05:49:44 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+05:49:44 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+06:10:31 INFO  : Disconnected from the channel tcfchan#2.
+06:10:32 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:10:32 INFO  : 'fpga -state' command is executed.
+06:10:32 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:10:32 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:10:32 INFO  : 'jtag frequency' command is executed.
+06:10:32 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:10:32 INFO  : Context for 'APU' is selected.
+06:10:32 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:10:32 INFO  : 'configparams force-mem-access 1' command is executed.
+06:10:32 INFO  : Context for 'APU' is selected.
+06:10:32 INFO  : 'stop' command is executed.
+06:10:32 INFO  : 'ps7_init' command is executed.
+06:10:32 INFO  : 'ps7_post_config' command is executed.
+06:10:32 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:10:32 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+06:10:32 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:10:32 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+06:10:32 INFO  : 'configparams force-mem-access 0' command is executed.
+06:10:32 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+06:10:32 INFO  : Memory regions updated for context APU
+06:10:33 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:10:33 INFO  : 'con' command is executed.
+06:10:33 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+06:10:33 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+06:16:29 INFO  : Disconnected from the channel tcfchan#3.
+06:16:30 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:16:30 INFO  : 'fpga -state' command is executed.
+06:16:30 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:16:30 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:16:30 INFO  : 'jtag frequency' command is executed.
+06:16:30 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:16:30 INFO  : Context for 'APU' is selected.
+06:16:30 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:16:30 INFO  : 'configparams force-mem-access 1' command is executed.
+06:16:30 INFO  : Context for 'APU' is selected.
+06:16:30 INFO  : 'stop' command is executed.
+06:16:30 INFO  : 'ps7_init' command is executed.
+06:16:30 INFO  : 'ps7_post_config' command is executed.
+06:16:30 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:16:30 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+06:16:30 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:16:31 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+06:16:31 INFO  : 'configparams force-mem-access 0' command is executed.
+06:16:31 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+06:16:31 INFO  : Memory regions updated for context APU
+06:16:31 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:16:31 INFO  : 'con' command is executed.
+06:16:31 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+06:16:31 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+06:18:56 INFO  : Disconnected from the channel tcfchan#4.
+06:18:57 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:18:57 INFO  : 'fpga -state' command is executed.
+06:18:57 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:18:57 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:18:57 INFO  : 'jtag frequency' command is executed.
+06:18:57 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:18:57 INFO  : Context for 'APU' is selected.
+06:18:58 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:18:58 INFO  : 'configparams force-mem-access 1' command is executed.
+06:18:58 INFO  : Context for 'APU' is selected.
+06:18:58 INFO  : 'stop' command is executed.
+06:18:58 INFO  : 'ps7_init' command is executed.
+06:18:58 INFO  : 'ps7_post_config' command is executed.
+06:18:58 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:18:58 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+06:18:58 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:18:58 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+06:18:58 INFO  : 'configparams force-mem-access 0' command is executed.
+06:18:58 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+06:18:58 INFO  : Memory regions updated for context APU
+06:18:58 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:18:58 INFO  : 'con' command is executed.
+06:18:58 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+06:18:58 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+06:25:15 INFO  : SDK has detected change in the last modified timestamps for source hardware specification file Source:1602199511000,  Project:1602197173000
+06:25:15 INFO  : Project QpixProtoTop_hw_platform_0's source hardware specification located at /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf is now different from the local copy.
+		 The local copy will be replaced with the source specification and your workspace will be updated.
+06:25:16 INFO  : Copied contents of /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf into /QpixProtoTop_hw_platform_0/system.hdf.
+06:25:19 INFO  : Synchronizing projects in the workspace with the hardware platform specification changes.
+06:25:20 INFO  : 
+06:25:21 INFO  : Updating hardware inferred compiler options for qpix_ctrl.
+06:25:21 INFO  : Clearing existing target manager status.
+06:25:21 INFO  : Closing and re-opening the MSS file of ther project qpix_ctrl_bsp
+06:25:21 INFO  : Workspace synchronized with the new hardware specification file. Cleaning dependent projects...
+06:25:21 WARN  : Linker script will not be updated automatically. Users need to update it manually.
+06:43:33 INFO  : Disconnected from the channel tcfchan#5.
+06:43:35 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:43:35 INFO  : 'fpga -state' command is executed.
+06:43:35 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:43:35 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:43:35 INFO  : 'jtag frequency' command is executed.
+06:43:35 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:43:35 INFO  : Context for 'APU' is selected.
+06:43:35 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:43:35 INFO  : 'configparams force-mem-access 1' command is executed.
+06:43:35 INFO  : Context for 'APU' is selected.
+06:43:35 INFO  : 'stop' command is executed.
+06:43:35 INFO  : 'ps7_init' command is executed.
+06:43:35 INFO  : 'ps7_post_config' command is executed.
+06:43:35 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:43:35 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+06:43:35 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:43:35 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+06:43:35 INFO  : 'configparams force-mem-access 0' command is executed.
+06:43:35 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+06:43:35 INFO  : Memory regions updated for context APU
+06:43:35 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:43:35 INFO  : 'con' command is executed.
+06:43:35 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+06:43:35 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+06:45:14 INFO  : Disconnected from the channel tcfchan#6.
+06:45:15 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:45:15 INFO  : 'fpga -state' command is executed.
+06:45:15 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:45:15 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:45:15 INFO  : 'jtag frequency' command is executed.
+06:45:15 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:45:15 INFO  : Context for 'APU' is selected.
+06:45:15 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:45:15 INFO  : 'configparams force-mem-access 1' command is executed.
+06:45:15 INFO  : Context for 'APU' is selected.
+06:45:15 INFO  : 'stop' command is executed.
+06:45:17 INFO  : 'ps7_init' command is executed.
+06:45:17 INFO  : 'ps7_post_config' command is executed.
+06:45:17 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:45:17 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+06:45:17 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:45:19 ERROR : Memory write error at 0x100000. AP transaction timeout
+06:45:19 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+----------------End of Script----------------
+
+06:46:00 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:46:00 INFO  : 'fpga -state' command is executed.
+06:46:00 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:46:00 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:46:00 INFO  : 'jtag frequency' command is executed.
+06:46:00 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:46:00 INFO  : Context for 'APU' is selected.
+06:46:00 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:46:00 INFO  : 'configparams force-mem-access 1' command is executed.
+06:46:00 INFO  : Context for 'APU' is selected.
+06:46:01 INFO  : 'stop' command is executed.
+06:46:02 INFO  : 'ps7_init' command is executed.
+06:46:02 INFO  : 'ps7_post_config' command is executed.
+06:46:02 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:46:02 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+06:46:02 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:46:04 ERROR : Memory write error at 0x100000. AP transaction timeout
+06:46:04 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+----------------End of Script----------------
+
+06:46:16 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:46:16 INFO  : 'fpga -state' command is executed.
+06:46:16 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:46:17 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:46:17 INFO  : 'jtag frequency' command is executed.
+06:46:17 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:46:17 INFO  : Context for 'APU' is selected.
+06:46:17 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:46:17 INFO  : 'configparams force-mem-access 1' command is executed.
+06:46:17 INFO  : Context for 'APU' is selected.
+06:46:17 INFO  : 'stop' command is executed.
+06:46:17 ERROR : AP transaction error, DAP status f0000021
+06:46:17 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+06:46:46 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:46:46 INFO  : 'fpga -state' command is executed.
+06:46:46 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:46:46 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:46:46 INFO  : 'jtag frequency' command is executed.
+06:46:46 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:46:46 INFO  : Context for 'APU' is selected.
+06:46:46 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:46:46 INFO  : 'configparams force-mem-access 1' command is executed.
+06:46:46 INFO  : Context for 'APU' is selected.
+06:46:46 INFO  : 'stop' command is executed.
+06:46:47 ERROR : Memory read error at 0xF8000B54. Cannot flush JTAG server queue. ftdi_read_data failed: usb bulk read failed
+06:46:47 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+06:47:07 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:47:07 INFO  : 'fpga -state' command is executed.
+06:47:07 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:47:07 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:47:07 INFO  : 'jtag frequency' command is executed.
+06:47:07 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:47:08 INFO  : Context for 'APU' is selected.
+06:47:08 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:47:08 INFO  : 'configparams force-mem-access 1' command is executed.
+06:47:08 INFO  : Context for 'APU' is selected.
+06:47:08 INFO  : 'stop' command is executed.
+06:47:08 ERROR : Memory write error at 0xF8000B64. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: all fine
+06:47:08 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+06:47:48 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:47:48 INFO  : 'fpga -state' command is executed.
+06:47:48 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:47:48 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:47:48 INFO  : 'jtag frequency' command is executed.
+06:47:48 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:47:48 INFO  : Context for 'APU' is selected.
+06:47:48 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:47:48 INFO  : 'configparams force-mem-access 1' command is executed.
+06:47:48 INFO  : Context for 'APU' is selected.
+06:47:49 INFO  : 'stop' command is executed.
+06:47:50 INFO  : 'ps7_init' command is executed.
+06:47:50 INFO  : 'ps7_post_config' command is executed.
+06:47:50 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:47:50 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+06:47:50 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:47:53 ERROR : Memory write error at 0x100000. AP transaction timeout
+06:47:53 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+----------------End of Script----------------
+
+06:47:56 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:47:56 INFO  : 'fpga -state' command is executed.
+06:47:56 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:47:56 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:47:56 INFO  : 'jtag frequency' command is executed.
+06:47:56 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:47:56 INFO  : Context for 'APU' is selected.
+06:47:56 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:47:56 INFO  : 'configparams force-mem-access 1' command is executed.
+06:47:56 INFO  : Context for 'APU' is selected.
+06:47:56 INFO  : 'stop' command is executed.
+06:47:56 ERROR : AP transaction error, DAP status f0000021
+06:47:56 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+06:50:21 INFO  : SDK has detected change in the last modified timestamps for source hardware specification file Source:1602201020000,  Project:1602199511000
+06:50:21 INFO  : Project QpixProtoTop_hw_platform_0's source hardware specification located at /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf is now different from the local copy.
+		 The local copy will be replaced with the source specification and your workspace will be updated.
+06:50:22 INFO  : Copied contents of /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf into /QpixProtoTop_hw_platform_0/system.hdf.
+06:50:25 INFO  : Synchronizing projects in the workspace with the hardware platform specification changes.
+06:50:26 INFO  : 
+06:50:27 INFO  : Updating hardware inferred compiler options for qpix_ctrl.
+06:50:27 INFO  : Clearing existing target manager status.
+06:50:27 INFO  : Closing and re-opening the MSS file of ther project qpix_ctrl_bsp
+06:50:27 INFO  : Workspace synchronized with the new hardware specification file. Cleaning dependent projects...
+06:50:28 WARN  : Linker script will not be updated automatically. Users need to update it manually.
+06:51:33 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:51:33 INFO  : 'fpga -state' command is executed.
+06:51:33 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:51:33 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:51:33 INFO  : 'jtag frequency' command is executed.
+06:51:33 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:51:33 INFO  : Context for 'APU' is selected.
+06:51:33 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:51:33 INFO  : 'configparams force-mem-access 1' command is executed.
+06:51:33 INFO  : Context for 'APU' is selected.
+06:51:33 INFO  : 'stop' command is executed.
+06:51:33 ERROR : AP transaction error, DAP status f0000021
+06:51:33 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+06:51:55 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:51:55 INFO  : 'fpga -state' command is executed.
+06:51:55 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:51:55 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:51:55 INFO  : 'jtag frequency' command is executed.
+06:51:55 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:51:55 INFO  : Context for 'APU' is selected.
+06:51:55 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:51:55 INFO  : 'configparams force-mem-access 1' command is executed.
+06:51:55 INFO  : Context for 'APU' is selected.
+06:51:55 INFO  : 'stop' command is executed.
+06:51:56 ERROR : Memory write error at 0xF800071C. Cannot flush JTAG server queue. ftdi_write_data_submit failed: usb bulk read failed
+06:51:56 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+06:52:30 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+06:52:30 INFO  : 'fpga -state' command is executed.
+06:52:31 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+06:52:31 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+06:52:31 INFO  : 'jtag frequency' command is executed.
+06:52:31 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+06:52:31 INFO  : Context for 'APU' is selected.
+06:52:31 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+06:52:31 INFO  : 'configparams force-mem-access 1' command is executed.
+06:52:31 INFO  : Context for 'APU' is selected.
+06:52:31 INFO  : 'stop' command is executed.
+06:52:31 INFO  : 'ps7_init' command is executed.
+06:52:31 INFO  : 'ps7_post_config' command is executed.
+06:52:31 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:52:31 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+06:52:31 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:52:32 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+06:52:32 INFO  : 'configparams force-mem-access 0' command is executed.
+06:52:32 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+06:52:32 INFO  : Memory regions updated for context APU
+06:52:32 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+06:52:32 INFO  : 'con' command is executed.
+06:52:32 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+06:52:32 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+07:00:52 INFO  : Disconnected from the channel tcfchan#7.
+07:00:53 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:00:53 INFO  : 'fpga -state' command is executed.
+07:00:53 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:00:53 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:00:53 INFO  : 'jtag frequency' command is executed.
+07:00:53 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:00:53 INFO  : Context for 'APU' is selected.
+07:00:53 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+07:00:53 INFO  : 'configparams force-mem-access 1' command is executed.
+07:00:53 INFO  : Context for 'APU' is selected.
+07:00:53 INFO  : 'stop' command is executed.
+07:00:55 INFO  : 'ps7_init' command is executed.
+07:00:55 INFO  : 'ps7_post_config' command is executed.
+07:00:55 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+07:00:55 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+07:00:55 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+07:00:57 ERROR : Memory write error at 0x100000. AP transaction timeout
+07:00:57 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+----------------End of Script----------------
+
+07:01:26 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:01:26 INFO  : 'fpga -state' command is executed.
+07:01:27 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:01:27 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:01:27 INFO  : 'jtag frequency' command is executed.
+07:01:27 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:01:30 ERROR : no targets found with "name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"". available targets:
+  1  DAP (JTAG port open error. AP transaction error, DAP status 30000021)
+  4* xc7z010
+07:01:30 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+----------------End of Script----------------
+
+07:02:15 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:02:15 INFO  : 'fpga -state' command is executed.
+07:02:15 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:02:15 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:02:15 INFO  : 'jtag frequency' command is executed.
+07:02:15 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:02:18 ERROR : no targets found with "name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"". available targets:
+  1  DAP (JTAG port open error. AP transaction error, DAP status 30000021)
+  4* xc7z010
+07:02:18 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+----------------End of Script----------------
+
+07:02:34 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:02:34 INFO  : 'fpga -state' command is executed.
+07:02:34 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:02:34 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:02:34 INFO  : 'jtag frequency' command is executed.
+07:02:34 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:02:34 INFO  : Context for 'APU' is selected.
+07:02:34 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+07:02:34 INFO  : 'configparams force-mem-access 1' command is executed.
+07:02:34 INFO  : Context for 'APU' is selected.
+07:02:34 INFO  : 'stop' command is executed.
+07:02:35 ERROR : Memory read error at 0xF8000B60. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+07:02:35 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+07:02:55 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:02:55 INFO  : 'fpga -state' command is executed.
+07:02:55 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:02:56 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:02:56 INFO  : 'jtag frequency' command is executed.
+07:02:56 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:02:56 INFO  : Context for 'APU' is selected.
+07:02:56 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+07:02:56 INFO  : 'configparams force-mem-access 1' command is executed.
+07:02:56 INFO  : Context for 'APU' is selected.
+07:02:56 INFO  : 'stop' command is executed.
+07:02:57 INFO  : 'ps7_init' command is executed.
+07:02:57 INFO  : 'ps7_post_config' command is executed.
+07:02:57 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+07:02:57 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+07:02:57 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+07:03:00 ERROR : Memory write error at 0x100000. AP transaction timeout
+07:03:00 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+----------------End of Script----------------
+
+07:03:17 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:03:17 INFO  : 'fpga -state' command is executed.
+07:03:18 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:03:18 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:03:18 INFO  : 'jtag frequency' command is executed.
+07:03:18 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:03:21 ERROR : no targets found with "name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"". available targets:
+  1  DAP (JTAG port open error. AP transaction error, DAP status 30000021)
+  4* xc7z010
+07:03:21 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+----------------End of Script----------------
+
+07:06:15 INFO  : SDK has detected change in the last modified timestamps for source hardware specification file Source:1602201971000,  Project:1602201020000
+07:06:15 INFO  : Project QpixProtoTop_hw_platform_0's source hardware specification located at /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf is now different from the local copy.
+		 The local copy will be replaced with the source specification and your workspace will be updated.
+07:06:18 INFO  : Copied contents of /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf into /QpixProtoTop_hw_platform_0/system.hdf.
+07:06:21 INFO  : Synchronizing projects in the workspace with the hardware platform specification changes.
+07:06:22 INFO  : 
+07:06:22 INFO  : Updating hardware inferred compiler options for qpix_ctrl.
+07:06:22 INFO  : Clearing existing target manager status.
+07:06:22 INFO  : Closing and re-opening the MSS file of ther project qpix_ctrl_bsp
+07:06:23 INFO  : Workspace synchronized with the new hardware specification file. Cleaning dependent projects...
+07:06:23 WARN  : Linker script will not be updated automatically. Users need to update it manually.
+07:06:47 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:06:47 INFO  : 'fpga -state' command is executed.
+07:06:48 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:06:49 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:06:49 INFO  : 'jtag frequency' command is executed.
+07:06:49 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:06:52 ERROR : no targets found with "name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"". available targets:
+  1  DAP (JTAG port open error. AP transaction error, DAP status 30000021)
+  4* xc7z010
+07:06:52 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+----------------End of Script----------------
+
+07:07:34 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:07:34 INFO  : 'fpga -state' command is executed.
+07:07:34 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:07:34 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:07:34 INFO  : 'jtag frequency' command is executed.
+07:07:34 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:07:34 INFO  : Context for 'APU' is selected.
+07:07:34 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+07:07:34 INFO  : 'configparams force-mem-access 1' command is executed.
+07:07:34 INFO  : Context for 'APU' is selected.
+07:07:34 INFO  : 'stop' command is executed.
+07:07:34 ERROR : Memory read error at 0xF800071C. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+07:07:34 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+07:07:51 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:07:51 INFO  : 'fpga -state' command is executed.
+07:07:51 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:07:51 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:07:51 INFO  : 'jtag frequency' command is executed.
+07:07:51 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:07:51 INFO  : Context for 'APU' is selected.
+07:07:51 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+07:07:51 INFO  : 'configparams force-mem-access 1' command is executed.
+07:07:51 INFO  : Context for 'APU' is selected.
+07:07:51 INFO  : 'stop' command is executed.
+07:07:51 ERROR : Memory write error at 0xF8000100. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+07:07:51 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+07:08:30 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:08:31 INFO  : 'fpga -state' command is executed.
+07:08:31 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:08:31 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:08:31 INFO  : 'jtag frequency' command is executed.
+07:08:31 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:08:31 INFO  : Context for 'APU' is selected.
+07:08:31 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+07:08:31 INFO  : 'configparams force-mem-access 1' command is executed.
+07:08:31 INFO  : Context for 'APU' is selected.
+07:08:31 INFO  : 'stop' command is executed.
+07:08:31 ERROR : Memory read error at 0xF8000B5C. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+07:08:31 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+07:08:47 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:08:47 INFO  : 'fpga -state' command is executed.
+07:08:47 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:08:47 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:08:47 INFO  : 'jtag frequency' command is executed.
+07:08:47 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:08:47 INFO  : Context for 'APU' is selected.
+07:08:47 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+07:08:47 INFO  : 'configparams force-mem-access 1' command is executed.
+07:08:47 INFO  : Context for 'APU' is selected.
+07:08:47 INFO  : 'stop' command is executed.
+07:08:48 INFO  : 'ps7_init' command is executed.
+07:08:48 INFO  : 'ps7_post_config' command is executed.
+07:08:48 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+07:08:48 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+07:08:48 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+07:08:48 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+07:08:48 INFO  : 'configparams force-mem-access 0' command is executed.
+07:08:48 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+07:08:48 INFO  : Memory regions updated for context APU
+07:08:48 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+07:08:48 INFO  : 'con' command is executed.
+07:08:48 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+07:08:48 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+07:16:50 INFO  : Disconnected from the channel tcfchan#8.
+07:16:51 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+07:16:51 INFO  : 'fpga -state' command is executed.
+07:16:51 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+07:16:51 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+07:16:51 INFO  : 'jtag frequency' command is executed.
+07:16:51 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+07:16:51 INFO  : Context for 'APU' is selected.
+07:16:51 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+07:16:51 INFO  : 'configparams force-mem-access 1' command is executed.
+07:16:51 INFO  : Context for 'APU' is selected.
+07:16:51 INFO  : 'stop' command is executed.
+07:16:52 INFO  : 'ps7_init' command is executed.
+07:16:52 INFO  : 'ps7_post_config' command is executed.
+07:16:52 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+07:16:52 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+07:16:52 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+07:16:52 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+07:16:52 INFO  : 'configparams force-mem-access 0' command is executed.
+07:16:52 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+07:16:52 INFO  : Memory regions updated for context APU
+07:16:52 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+07:16:52 INFO  : 'con' command is executed.
+07:16:52 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+07:16:52 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+12:55:48 INFO  : Disconnected from the channel tcfchan#9.
+12:55:49 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+12:55:49 INFO  : 'fpga -state' command is executed.
+12:55:49 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+12:55:49 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+12:55:49 INFO  : 'jtag frequency' command is executed.
+12:55:49 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+12:55:50 INFO  : Context for 'APU' is selected.
+12:55:50 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+12:55:50 INFO  : 'configparams force-mem-access 1' command is executed.
+12:55:50 INFO  : Context for 'APU' is selected.
+12:55:50 INFO  : 'stop' command is executed.
+12:55:52 INFO  : 'ps7_init' command is executed.
+12:55:52 INFO  : 'ps7_post_config' command is executed.
+12:55:52 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+12:55:52 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+12:55:52 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+12:55:55 ERROR : Memory write error at 0x100000. AP transaction timeout
+12:55:55 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+----------------End of Script----------------
+
+12:56:11 ERROR : (XSDB Server)AP transaction error, DAP status f0000021
+
+13:00:35 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:00:35 INFO  : 'fpga -state' command is executed.
+13:00:35 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:00:35 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:00:35 INFO  : 'jtag frequency' command is executed.
+13:00:35 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:00:35 INFO  : Context for 'APU' is selected.
+13:00:35 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:00:35 INFO  : 'configparams force-mem-access 1' command is executed.
+13:00:35 INFO  : Context for 'APU' is selected.
+13:00:36 INFO  : 'stop' command is executed.
+13:00:37 INFO  : 'ps7_init' command is executed.
+13:00:38 INFO  : 'ps7_post_config' command is executed.
+13:00:38 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+13:00:38 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+13:00:38 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+13:00:40 ERROR : Memory write error at 0x100000. AP transaction timeout
+13:00:40 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+----------------End of Script----------------
+
+13:01:05 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:01:05 INFO  : 'fpga -state' command is executed.
+13:01:05 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:01:05 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:01:05 INFO  : 'jtag frequency' command is executed.
+13:01:05 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:01:05 INFO  : Context for 'APU' is selected.
+13:01:05 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:01:05 INFO  : 'configparams force-mem-access 1' command is executed.
+13:01:05 INFO  : Context for 'APU' is selected.
+13:01:05 INFO  : 'stop' command is executed.
+13:01:06 ERROR : Memory read error at 0xF8000B68. Cannot flush JTAG server queue. ftdi_read_data failed: usb bulk read failed
+13:01:06 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:01:20 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:01:20 INFO  : 'fpga -state' command is executed.
+13:01:20 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:01:20 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:01:20 INFO  : 'jtag frequency' command is executed.
+13:01:20 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:01:20 INFO  : Context for 'APU' is selected.
+13:01:20 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:01:20 INFO  : 'configparams force-mem-access 1' command is executed.
+13:01:20 INFO  : Context for 'APU' is selected.
+13:01:20 INFO  : 'stop' command is executed.
+13:01:21 ERROR : Memory read error at 0xF8000B70. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: all fine
+13:01:21 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:02:02 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:02:02 INFO  : 'fpga -state' command is executed.
+13:02:02 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:02:03 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:02:03 INFO  : 'jtag frequency' command is executed.
+13:02:03 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:02:03 INFO  : Context for 'APU' is selected.
+13:02:03 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:02:03 INFO  : 'configparams force-mem-access 1' command is executed.
+13:02:03 INFO  : Context for 'APU' is selected.
+13:02:03 INFO  : 'stop' command is executed.
+13:02:03 ERROR : Memory read error at 0xF8000B5C. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+13:02:03 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:02:36 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:02:36 INFO  : 'fpga -state' command is executed.
+13:02:36 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:02:36 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:02:36 INFO  : 'jtag frequency' command is executed.
+13:02:36 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:02:36 INFO  : Context for 'APU' is selected.
+13:02:36 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:02:36 INFO  : 'configparams force-mem-access 1' command is executed.
+13:02:36 INFO  : Context for 'APU' is selected.
+13:02:36 INFO  : 'stop' command is executed.
+13:02:36 ERROR : Memory read error at 0xF800070C. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+13:02:36 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:03:36 INFO  : Registering command handlers for SDK TCF services
+13:03:36 INFO  : Launching XSCT server: xsct -n -interactive /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/temp_xsdb_launch_script.tcl
+13:03:38 INFO  : XSCT server has started successfully.
+13:03:38 INFO  : Successfully done setting XSCT server connection channel  
+13:03:39 INFO  : Successfully done setting SDK workspace  
+13:03:39 INFO  : Processing command line option -hwspec /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf.
+13:03:39 INFO  : Checking for hwspec changes in the project QpixProtoTop_hw_platform_0.
+13:03:51 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:03:51 INFO  : 'fpga -state' command is executed.
+13:03:51 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:03:51 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:03:51 INFO  : 'jtag frequency' command is executed.
+13:03:51 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:03:51 INFO  : Context for 'APU' is selected.
+13:03:51 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:03:51 INFO  : 'configparams force-mem-access 1' command is executed.
+13:03:51 INFO  : Context for 'APU' is selected.
+13:03:51 INFO  : 'stop' command is executed.
+13:03:54 INFO  : 'ps7_init' command is executed.
+13:03:54 INFO  : 'ps7_post_config' command is executed.
+13:03:54 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+13:03:54 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+13:03:54 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+13:03:56 ERROR : Memory write error at 0x100000. AP transaction timeout
+13:03:56 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+----------------End of Script----------------
+
+13:04:19 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:04:19 INFO  : 'fpga -state' command is executed.
+13:04:19 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:04:19 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:04:19 INFO  : 'jtag frequency' command is executed.
+13:04:19 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:04:19 INFO  : Context for 'APU' is selected.
+13:04:19 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:04:19 INFO  : 'configparams force-mem-access 1' command is executed.
+13:04:19 INFO  : Context for 'APU' is selected.
+13:04:20 INFO  : 'stop' command is executed.
+13:04:20 ERROR : Memory write error at 0xF8000714. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: all fine
+13:04:20 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:04:51 ERROR : (XSDB Server)invalid command name "dics"
+
+13:04:53 ERROR : (XSDB Server)invalid command name "dicsonnect"
+
+13:04:59 ERROR : (XSDB Server)wrong # args: should be "close channelId"
+
+13:05:07 ERROR : (XSDB Server)invalid command name "tara"
+
+13:05:10 ERROR : (XSDB Server)can not find channel named "3"
+
+13:05:26 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:05:26 INFO  : 'fpga -state' command is executed.
+13:05:26 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:05:26 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:05:26 INFO  : 'jtag frequency' command is executed.
+13:05:26 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:05:26 INFO  : Context for 'APU' is selected.
+13:05:26 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:05:26 INFO  : 'configparams force-mem-access 1' command is executed.
+13:05:26 INFO  : Context for 'APU' is selected.
+13:05:26 INFO  : 'stop' command is executed.
+13:05:27 ERROR : Memory write error at 0xF80007B0. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+13:05:27 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:05:57 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:05:57 INFO  : 'fpga -state' command is executed.
+13:05:57 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:05:57 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:05:57 INFO  : 'jtag frequency' command is executed.
+13:05:57 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:05:57 INFO  : Context for 'APU' is selected.
+13:05:57 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:05:57 INFO  : 'configparams force-mem-access 1' command is executed.
+13:05:57 INFO  : Context for 'APU' is selected.
+13:05:57 INFO  : 'stop' command is executed.
+13:05:58 ERROR : Memory write error at 0xF80007AC. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+13:05:58 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:06:14 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:06:14 INFO  : 'fpga -state' command is executed.
+13:06:14 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:06:14 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:06:14 INFO  : 'jtag frequency' command is executed.
+13:06:14 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:06:14 INFO  : Context for 'APU' is selected.
+13:06:14 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:06:14 INFO  : 'configparams force-mem-access 1' command is executed.
+13:06:14 INFO  : Context for 'APU' is selected.
+13:06:14 INFO  : 'stop' command is executed.
+13:06:14 ERROR : Memory write error at 0xF800071C. Cannot flush JTAG server queue. ftdi_read_data failed: usb bulk read failed
+13:06:14 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:07:07 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:07:07 INFO  : 'fpga -state' command is executed.
+13:07:07 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:07:07 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:07:07 INFO  : 'jtag frequency' command is executed.
+13:07:07 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:07:07 INFO  : Context for 'APU' is selected.
+13:07:09 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:07:09 INFO  : 'configparams force-mem-access 1' command is executed.
+13:07:09 INFO  : Context for 'APU' is selected.
+13:07:09 INFO  : 'stop' command is executed.
+13:07:09 ERROR : Memory read error at 0xF8000100. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+13:07:09 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:07:30 ERROR : (XSDB Server)invalid command name "restart"
+
+13:08:44 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:08:44 INFO  : 'fpga -state' command is executed.
+13:08:44 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:08:44 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:08:44 INFO  : 'jtag frequency' command is executed.
+13:08:44 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:08:44 INFO  : Context for 'APU' is selected.
+13:08:44 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:08:44 INFO  : 'configparams force-mem-access 1' command is executed.
+13:08:44 INFO  : Context for 'APU' is selected.
+13:08:44 INFO  : 'stop' command is executed.
+13:08:44 INFO  : 'ps7_init' command is executed.
+13:08:44 INFO  : 'ps7_post_config' command is executed.
+13:08:44 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+13:08:44 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+13:08:44 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+13:08:45 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+13:08:45 INFO  : 'configparams force-mem-access 0' command is executed.
+13:08:45 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+13:08:45 INFO  : Memory regions updated for context APU
+13:08:45 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+13:08:45 INFO  : 'con' command is executed.
+13:08:45 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+13:08:45 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+13:22:45 INFO  : SDK has detected change in the last modified timestamps for source hardware specification file Source:1602224564000,  Project:1602201971000
+13:22:45 INFO  : Project QpixProtoTop_hw_platform_0's source hardware specification located at /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf is now different from the local copy.
+		 The local copy will be replaced with the source specification and your workspace will be updated.
+13:22:47 INFO  : Copied contents of /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop.hdf into /QpixProtoTop_hw_platform_0/system.hdf.
+13:22:49 INFO  : Synchronizing projects in the workspace with the hardware platform specification changes.
+13:22:50 INFO  : 
+13:22:51 INFO  : Updating hardware inferred compiler options for qpix_ctrl.
+13:22:51 INFO  : Clearing existing target manager status.
+13:22:51 INFO  : Closing and re-opening the MSS file of ther project qpix_ctrl_bsp
+13:22:52 INFO  : Workspace synchronized with the new hardware specification file. Cleaning dependent projects...
+13:22:52 WARN  : Linker script will not be updated automatically. Users need to update it manually.
+13:23:27 INFO  : Disconnected from the channel tcfchan#2.
+13:23:28 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:23:28 INFO  : 'fpga -state' command is executed.
+13:23:28 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:23:28 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:23:28 INFO  : 'jtag frequency' command is executed.
+13:23:28 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:23:28 INFO  : Context for 'APU' is selected.
+13:23:28 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:23:28 INFO  : 'configparams force-mem-access 1' command is executed.
+13:23:28 INFO  : Context for 'APU' is selected.
+13:23:28 INFO  : 'stop' command is executed.
+13:23:29 INFO  : 'ps7_init' command is executed.
+13:23:29 INFO  : 'ps7_post_config' command is executed.
+13:23:29 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+13:23:29 INFO  : Processor reset is completed for 'ps7_cortexa9_0'.
+13:23:29 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+13:23:32 ERROR : Memory write error at 0x100000. AP transaction timeout
+13:23:32 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -processor
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+----------------End of Script----------------
+
+13:23:44 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:23:44 INFO  : 'fpga -state' command is executed.
+13:23:49 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:23:49 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:23:49 INFO  : 'jtag frequency' command is executed.
+13:23:49 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:23:52 ERROR : no targets found with "name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"". available targets:
+  1  DAP (JTAG port open error. AP transaction error, DAP status 30000021)
+  4* xc7z010
+13:23:52 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+----------------End of Script----------------
+
+13:24:13 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:24:13 INFO  : 'fpga -state' command is executed.
+13:24:13 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:24:13 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:24:13 INFO  : 'jtag frequency' command is executed.
+13:24:13 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:24:13 INFO  : Context for 'APU' is selected.
+13:24:13 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:24:13 INFO  : 'configparams force-mem-access 1' command is executed.
+13:24:13 INFO  : Context for 'APU' is selected.
+13:24:13 INFO  : 'stop' command is executed.
+13:24:13 ERROR : Memory write error at 0xF8000B64. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+13:24:13 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:24:31 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:24:31 INFO  : 'fpga -state' command is executed.
+13:24:31 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:24:32 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:24:32 INFO  : 'jtag frequency' command is executed.
+13:24:32 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:24:32 INFO  : Context for 'APU' is selected.
+13:24:32 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:24:32 INFO  : 'configparams force-mem-access 1' command is executed.
+13:24:32 INFO  : Context for 'APU' is selected.
+13:24:32 INFO  : 'stop' command is executed.
+13:24:32 ERROR : Memory write error at 0xF8000B58. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+13:24:32 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:24:52 ERROR : (XSDB Server)wrong # args: should be "close channelId"
+
+13:25:17 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:25:17 INFO  : 'fpga -state' command is executed.
+13:25:17 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:25:17 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:25:17 INFO  : 'jtag frequency' command is executed.
+13:25:17 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:25:17 INFO  : Context for 'APU' is selected.
+13:25:17 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:25:17 INFO  : 'configparams force-mem-access 1' command is executed.
+13:25:17 INFO  : Context for 'APU' is selected.
+13:25:17 INFO  : 'stop' command is executed.
+13:25:18 ERROR : Memory read error at 0xF8000B64. Cannot flush JTAG server queue. ftdi_transfer_data_done failed: usb bulk read failed
+13:25:18 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+stop
+ps7_init
+----------------End of Script----------------
+
+13:27:10 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+13:27:10 INFO  : 'fpga -state' command is executed.
+13:27:10 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+13:27:10 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+13:27:10 INFO  : 'jtag frequency' command is executed.
+13:27:10 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+13:27:10 INFO  : Context for 'APU' is selected.
+13:27:10 INFO  : System reset is completed.
+13:27:13 INFO  : 'after 3000' command is executed.
+13:27:13 INFO  : Context for 'APU' is selected.
+13:27:13 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+13:27:13 INFO  : 'configparams force-mem-access 1' command is executed.
+13:27:13 INFO  : Context for 'APU' is selected.
+13:27:14 INFO  : 'ps7_init' command is executed.
+13:27:14 INFO  : 'ps7_post_config' command is executed.
+13:27:14 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+13:27:14 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+13:27:14 INFO  : 'configparams force-mem-access 0' command is executed.
+13:27:14 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -system
+after 3000
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+13:27:14 INFO  : Memory regions updated for context APU
+13:27:14 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+13:27:14 INFO  : 'con' command is executed.
+13:27:14 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+13:27:14 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+14:12:48 INFO  : Disconnected from the channel tcfchan#3.
+14:12:49 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+14:12:49 INFO  : 'fpga -state' command is executed.
+14:12:49 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+14:12:49 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+14:12:49 INFO  : 'jtag frequency' command is executed.
+14:12:49 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+14:12:49 INFO  : Context for 'APU' is selected.
+14:12:49 INFO  : System reset is completed.
+14:12:52 INFO  : 'after 3000' command is executed.
+14:12:52 INFO  : Context for 'APU' is selected.
+14:12:54 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+14:12:54 INFO  : 'configparams force-mem-access 1' command is executed.
+14:12:54 INFO  : Context for 'APU' is selected.
+14:12:55 INFO  : 'ps7_init' command is executed.
+14:12:55 INFO  : 'ps7_post_config' command is executed.
+14:12:55 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+14:12:55 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+14:12:55 INFO  : 'configparams force-mem-access 0' command is executed.
+14:12:55 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -system
+after 3000
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+14:12:55 INFO  : Memory regions updated for context APU
+14:12:55 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+14:12:55 INFO  : 'con' command is executed.
+14:12:55 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+14:12:55 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+14:24:13 INFO  : Disconnected from the channel tcfchan#4.
+14:24:15 INFO  : 'targets -set -filter {jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA" && level==0} -index 1' command is executed.
+14:24:15 INFO  : 'fpga -state' command is executed.
+14:24:16 INFO  : Connected to target on host '127.0.0.1' and port '3121'.
+14:24:16 INFO  : Jtag cable 'Digilent Zybo Z7 210351A77F8AA' is selected.
+14:24:16 INFO  : 'jtag frequency' command is executed.
+14:24:16 INFO  : Sourcing of '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl' is done.
+14:24:16 INFO  : Context for 'APU' is selected.
+14:24:16 INFO  : System reset is completed.
+14:24:19 INFO  : 'after 3000' command is executed.
+14:24:19 INFO  : Context for 'APU' is selected.
+14:24:19 INFO  : Hardware design information is loaded from '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf'.
+14:24:19 INFO  : 'configparams force-mem-access 1' command is executed.
+14:24:19 INFO  : Context for 'APU' is selected.
+14:24:19 INFO  : 'ps7_init' command is executed.
+14:24:19 INFO  : 'ps7_post_config' command is executed.
+14:24:19 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+14:24:19 INFO  : The application '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf' is downloaded to processor 'ps7_cortexa9_0'.
+14:24:19 INFO  : 'configparams force-mem-access 0' command is executed.
+14:24:19 INFO  : ----------------XSDB Script----------------
+connect -url tcp:127.0.0.1:3121
+source /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/ps7_init.tcl
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+rst -system
+after 3000
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+loadhw -hw /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/QpixProtoTop_hw_platform_0/system.hdf -mem-ranges [list {0x40000000 0xbfffffff}]
+configparams force-mem-access 1
+targets -set -nocase -filter {name =~"APU*" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+ps7_init
+ps7_post_config
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+dow /home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/qpix_ctrl/Debug/qpix_ctrl.elf
+configparams force-mem-access 0
+----------------End of Script----------------
+
+14:24:19 INFO  : Memory regions updated for context APU
+14:24:20 INFO  : Context for processor 'ps7_cortexa9_0' is selected.
+14:24:20 INFO  : 'con' command is executed.
+14:24:20 INFO  : ----------------XSDB Script (After Launch)----------------
+targets -set -nocase -filter {name =~ "ARM*#0" && jtag_cable_name =~ "Digilent Zybo Z7 210351A77F8AA"} -index 0
+con
+----------------End of Script----------------
+
+14:24:20 INFO  : Launch script is exported to file '/home/shebalin/work/q-pix/qpix-digital/prototype/QpixProto/QpixProto.sdk/.sdk/launch_scripts/xilinx_c-c++_application_(system_debugger)/system_debugger_using_debug_qpix_ctrl.elf_on_local.tcl'
+18:51:07 INFO  : Disconnected from the channel tcfchan#5.
