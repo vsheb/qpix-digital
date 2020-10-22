@@ -12,6 +12,7 @@ use work.QpixProtoPkg.all;
 
 entity QpixProtoTop is
    generic (
+      BOARD_G : string  := "MINIZED"; -- ZYBO, MINIZED
       X_NUM_G : natural := 3;
       Y_NUM_G : natural := 3
       
@@ -125,55 +126,108 @@ begin
    ---------------------------------------------------
    -- Processing system
    ---------------------------------------------------
-   design_1_U : entity work.design_1_wrapper
-      port map (
-         DDR_addr(14 downto 0)     => DDR_addr(14 downto 0),
-         DDR_ba(2 downto 0)        => DDR_ba(2 downto 0),
-         DDR_cas_n                 => DDR_cas_n,
-         DDR_ck_n                  => DDR_ck_n,
-         DDR_ck_p                  => DDR_ck_p,
-         DDR_cke                   => DDR_cke,
-         DDR_cs_n                  => DDR_cs_n,
-         DDR_dm(3 downto 0)        => DDR_dm(3 downto 0),
-         DDR_dq(31 downto 0)       => DDR_dq(31 downto 0),
-         DDR_dqs_n(3 downto 0)     => DDR_dqs_n(3 downto 0),
-         DDR_dqs_p(3 downto 0)     => DDR_dqs_p(3 downto 0),
-         DDR_odt                   => DDR_odt,
-         DDR_ras_n                 => DDR_ras_n,
-         DDR_reset_n               => DDR_reset_n,
-         DDR_we_n                  => DDR_we_n,
-         FIXED_IO_ddr_vrn          => FIXED_IO_ddr_vrn,
-         FIXED_IO_ddr_vrp          => FIXED_IO_ddr_vrp,
-         FIXED_IO_mio(53 downto 0) => FIXED_IO_mio(53 downto 0),
-         FIXED_IO_ps_clk           => FIXED_IO_ps_clk,
-         FIXED_IO_ps_porb          => FIXED_IO_ps_porb,
-         FIXED_IO_ps_srstb         => FIXED_IO_ps_srstb,
+   GEN_ZYBO : if BOARD_G = "ZYBO" generate
+      design_1_U : entity work.design_1_wrapper
+         port map (
+            DDR_addr(14 downto 0)     => DDR_addr(14 downto 0),
+            DDR_ba(2 downto 0)        => DDR_ba(2 downto 0),
+            DDR_cas_n                 => DDR_cas_n,
+            DDR_ck_n                  => DDR_ck_n,
+            DDR_ck_p                  => DDR_ck_p,
+            DDR_cke                   => DDR_cke,
+            DDR_cs_n                  => DDR_cs_n,
+            DDR_dm(3 downto 0)        => DDR_dm(3 downto 0),
+            DDR_dq(31 downto 0)       => DDR_dq(31 downto 0),
+            DDR_dqs_n(3 downto 0)     => DDR_dqs_n(3 downto 0),
+            DDR_dqs_p(3 downto 0)     => DDR_dqs_p(3 downto 0),
+            DDR_odt                   => DDR_odt,
+            DDR_ras_n                 => DDR_ras_n,
+            DDR_reset_n               => DDR_reset_n,
+            DDR_we_n                  => DDR_we_n,
+            FIXED_IO_ddr_vrn          => FIXED_IO_ddr_vrn,
+            FIXED_IO_ddr_vrp          => FIXED_IO_ddr_vrp,
+            FIXED_IO_mio(53 downto 0) => FIXED_IO_mio(53 downto 0),
+            FIXED_IO_ps_clk           => FIXED_IO_ps_clk,
+            FIXED_IO_ps_porb          => FIXED_IO_ps_porb,
+            FIXED_IO_ps_srstb         => FIXED_IO_ps_srstb,
 
-         reset_rtl                 => '0',
+            reset_rtl                 => '0',
 
-         -- axi interface to PL
-         M_AXI_0_awaddr            => axi_awaddr,
-         M_AXI_0_awprot            => axi_awprot, 
-         M_AXI_0_awvalid           => axi_awvalid,
-         M_AXI_0_awready           => axi_awready,
-         M_AXI_0_wdata             => axi_wdata,  
-         M_AXI_0_wstrb             => axi_wstrb,  
-         M_AXI_0_wvalid            => axi_wvalid, 
-         M_AXI_0_wready            => axi_wready, 
-         M_AXI_0_bresp             => axi_bresp,  
-         M_AXI_0_bvalid            => axi_bvalid, 
-         M_AXI_0_bready            => axi_bready, 
-         M_AXI_0_araddr            => axi_araddr, 
-         M_AXI_0_arprot            => axi_arprot, 
-         M_AXI_0_arvalid           => axi_arvalid,
-         M_AXI_0_arready           => axi_arready,
-         M_AXI_0_rdata             => axi_rdata,  
-         M_AXI_0_rresp             => axi_rresp,  
-         M_AXI_0_rvalid            => axi_rvalid, 
-         M_AXI_0_rready            => axi_rready, 
-         aresetn                   => axi_resetn,
-         fclk                      => fclk 
-      );
+            -- axi interface to PL
+            M_AXI_0_awaddr            => axi_awaddr,
+            M_AXI_0_awprot            => axi_awprot, 
+            M_AXI_0_awvalid           => axi_awvalid,
+            M_AXI_0_awready           => axi_awready,
+            M_AXI_0_wdata             => axi_wdata,  
+            M_AXI_0_wstrb             => axi_wstrb,  
+            M_AXI_0_wvalid            => axi_wvalid, 
+            M_AXI_0_wready            => axi_wready, 
+            M_AXI_0_bresp             => axi_bresp,  
+            M_AXI_0_bvalid            => axi_bvalid, 
+            M_AXI_0_bready            => axi_bready, 
+            M_AXI_0_araddr            => axi_araddr, 
+            M_AXI_0_arprot            => axi_arprot, 
+            M_AXI_0_arvalid           => axi_arvalid,
+            M_AXI_0_arready           => axi_arready,
+            M_AXI_0_rdata             => axi_rdata,  
+            M_AXI_0_rresp             => axi_rresp,  
+            M_AXI_0_rvalid            => axi_rvalid, 
+            M_AXI_0_rready            => axi_rready, 
+            aresetn                   => axi_resetn,
+            fclk                      => fclk 
+         );
+      end generate GEN_ZYBO;
+   GEN_MINIZED : if BOARD_G = "MINIZED" generate
+      design_1_U : entity work.design_1_wrapper
+         port map (
+            DDR_addr(14 downto 0)     => DDR_addr(14 downto 0),
+            DDR_ba(2 downto 0)        => DDR_ba(2 downto 0),
+            DDR_cas_n                 => DDR_cas_n,
+            DDR_ck_n                  => DDR_ck_n,
+            DDR_ck_p                  => DDR_ck_p,
+            DDR_cke                   => DDR_cke,
+            DDR_cs_n                  => DDR_cs_n,
+            DDR_dm(1 downto 0)        => DDR_dm(1 downto 0),
+            DDR_dq(15 downto 0)       => DDR_dq(15 downto 0),
+            DDR_dqs_n(1 downto 0)     => DDR_dqs_n(1 downto 0),
+            DDR_dqs_p(1 downto 0)     => DDR_dqs_p(1 downto 0),
+            DDR_odt                   => DDR_odt,
+            DDR_ras_n                 => DDR_ras_n,
+            DDR_reset_n               => DDR_reset_n,
+            DDR_we_n                  => DDR_we_n,
+            FIXED_IO_ddr_vrn          => FIXED_IO_ddr_vrn,
+            FIXED_IO_ddr_vrp          => FIXED_IO_ddr_vrp,
+            FIXED_IO_mio(31 downto 0) => FIXED_IO_mio(31 downto 0),
+            FIXED_IO_ps_clk           => FIXED_IO_ps_clk,
+            FIXED_IO_ps_porb          => FIXED_IO_ps_porb,
+            FIXED_IO_ps_srstb         => FIXED_IO_ps_srstb,
+
+            reset_rtl                 => '0',
+
+            -- axi interface to PL
+            M_AXI_0_awaddr            => axi_awaddr,
+            M_AXI_0_awprot            => axi_awprot, 
+            M_AXI_0_awvalid           => axi_awvalid,
+            M_AXI_0_awready           => axi_awready,
+            M_AXI_0_wdata             => axi_wdata,  
+            M_AXI_0_wstrb             => axi_wstrb,  
+            M_AXI_0_wvalid            => axi_wvalid, 
+            M_AXI_0_wready            => axi_wready, 
+            M_AXI_0_bresp             => axi_bresp,  
+            M_AXI_0_bvalid            => axi_bvalid, 
+            M_AXI_0_bready            => axi_bready, 
+            M_AXI_0_araddr            => axi_araddr, 
+            M_AXI_0_arprot            => axi_arprot, 
+            M_AXI_0_arvalid           => axi_arvalid,
+            M_AXI_0_arready           => axi_arready,
+            M_AXI_0_rdata             => axi_rdata,  
+            M_AXI_0_rresp             => axi_rresp,  
+            M_AXI_0_rvalid            => axi_rvalid, 
+            M_AXI_0_rready            => axi_rready, 
+            aresetn                   => axi_resetn,
+            fclk                      => fclk 
+         );
+      end generate GEN_MINIZED;
    ---------------------------------------------------
 
    ---------------------------------------------------
