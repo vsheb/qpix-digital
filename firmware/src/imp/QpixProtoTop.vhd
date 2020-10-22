@@ -20,7 +20,7 @@ entity QpixProtoTop is
    port (
          
       sysClk    : in std_logic;
-      led       : out std_logic_vector(3 downto 0);
+      --led       : out std_logic_vector(3 downto 0);
 
       -- PS ports
       DDR_addr : inout STD_LOGIC_VECTOR ( 14 downto 0 );
@@ -108,6 +108,8 @@ architecture behav of QpixProtoTop is
    signal memRdAck    : std_logic := '0';
    signal memRdReq    : std_logic := '0';
    signal memEvtSize  : std_logic_vector (G_QPIX_PROTO_MEM_DEPTH-1 downto 0) := (others => '0');
+
+   signal leds        : std_logic_vector(3 downto 0) := (others => '0');
 
    signal qpixDebugArr : QpixDebug2DArrayType(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
 
@@ -365,7 +367,7 @@ begin
          clk        => clk,
          rst        => rst,
 
-         led        => led,
+         led        => leds,
 
          daqTx      => daqTx,
          daqRx      => daqRx,
