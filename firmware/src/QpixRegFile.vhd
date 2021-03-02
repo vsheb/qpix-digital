@@ -93,15 +93,15 @@ begin
 
             if regData.Valid = '1' and thisAsicDest = '1' then
                case regData.Addr is
+                  -- CMD reg
                   when x"0001" => 
-                     if regData.Data(0) = '1' then
-                        qpixReq_r.Interrogation <= '1';
-                     end if;
-                     if regData.Data(1) = '1' then
-                        qpixReq_r.ResetState <= '1';
-                     end if;
+                     qpixReq_r.Interrogation <= regData.Data(0);
+                     qpixReq_r.ResetState    <= regData.Data(1);
+                     qpixReq_r.AsicReset     <= regData.Data(2);
                   --when G_REG_RESET   => 
                   --when G_REG_SETPOS  =>
+
+                  -- TIMEOUT reg
                   when x"0002" =>
                      if regData.OpWrite = '1' then
                         qpixConf_r.Timeout <= regData.Data;
@@ -113,6 +113,8 @@ begin
                         regResp_r.YDest <= std_logic_vector(to_unsigned(Y_POS_G, G_POS_BITS));
                         regResp_r.Valid <= '1';
                      end if;
+
+                  -- DirMask and Manual routing
                   when x"0003" =>
                      if regData.OpWrite = '1' then
                         qpixConf_r.DirMask    <= regData.Data(3 downto 0);

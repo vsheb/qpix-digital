@@ -25,8 +25,13 @@ entity QpixProtoRegMap is
       wen         : in  std_logic;
       ack         : out std_logic;
 
+      asic_mask   : out std_logic_vector(15 downto 0);
+
       -- status regs
       evtSize     : in std_logic_vector(31 downto 0);
+      status      : in std_logic_vector(31 downto 0);
+      daqFrameErrCnt : in std_logic_vector(31 downto 0);
+      daqBreakErrCnt : in std_logic_vector(31 downto 0);
 
       extFifoMax  :   Slv4b2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
       
@@ -34,6 +39,7 @@ entity QpixProtoRegMap is
       trgTime     : in std_logic_vector(31 downto 0);
       hitMask     : out Sl2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
       timestamp   : out std_logic_vector(31 downto 0);
+      chanMask    : out std_logic_vector(G_N_ANALOG_CHAN-1 downto 0);
    
       -- asics interfaces
       trg         : out std_logic;
@@ -61,6 +67,8 @@ architecture behav of QpixProtoRegMap is
    
    signal s_reg_arr    : reg_arr_t := (others => (others => '0'));
    signal s_timestamp  : std_logic_vector (G_TIMESTAMP_BITS-1 downto 0) := (others => '0');
+   signal s_chanMask   : std_logic_vector (G_N_ANALOG_CHAN-1 downto 0)  := (others => '0');
+   signal s_asic_mask  : std_logic_vector (15 downto 0) := (others => '1');
 
 begin
 
@@ -83,7 +91,7 @@ begin
 
          -- reg mapping
          
-         if s_addr(15 downto 12) = x"0" then
+         if s_addr(SUBADDR_RANGE) = x"0" then
             ack     <= req;
             v_reg_ind := to_integer(unsigned(a_reg_addr));
             case a_reg_addr is 
@@ -93,12 +101,8 @@ begin
                      trg <= wdata(0);
                   end if;
                
-               when REGMAP_TEST    =>
-                  if req and wen  then
-                     s_reg_arr(0) <= wdata;
-                  else 
-                     rdata <= s_reg_arr(0);
-                  end if;
+               when REGMAP_STATUS    =>
+                  rdata <= status;
 
                when REGMAP_HITMASK =>
                   if wen = '1' and req = '1' and ack = '1' then
@@ -115,6 +119,28 @@ begin
                      rdata(G_TIMESTAMP_BITS-1 downto 0) <= s_timestamp;
                   end if;
 
+               when REGMAP_CHANMASK =>
+                  if req = '1' and wen = '1' then
+                     s_chanMask <= wdata(G_N_ANALOG_CHAN-1 downto 0);
+                  else 
+                     rdata <= (others => '0');
+                     rdata(G_N_ANALOG_CHAN-1 downto 0) <= s_chanMask;
+                  end if;
+
+               when REGMAP_ASICMASK    =>
+                  if req and wen  then
+                     s_asic_mask <= wdata(15 downto 0);
+                  else 
+                     rdata <= (others => '0');
+                     rdata(15 downto 0) <= s_asic_mask;
+                  end if;
+
+               when REGMAP_FRAMEERR    =>
+                     rdata <= daqFrameErrCnt;
+
+               when REGMAP_BREAKERR    =>
+                     rdata <= daqFrameErrCnt;
+
                when REGMAP_EVTSIZE =>
                   rdata <= evtSize;
 
@@ -126,7 +152,7 @@ begin
 
             end case;
          -- event memory
-         elsif s_addr(15 downto 12) = x"1" then
+         elsif s_addr(SUBADDR_RANGE) = x"1" then
             memRdReq <= req;
             ack     <= memRdAck;
             if req then 
@@ -134,13 +160,13 @@ begin
                rdata   <= memData;
             end if;
          -- fifo counters
-         elsif s_addr(15 downto 12) = x"2" then
+         elsif s_addr(SUBADDR_RANGE) = x"2" then
             ack <= req;
             iX := to_integer(unsigned(a_reg_addr(3 downto 0)));
             iY := to_integer(unsigned(a_reg_addr(7 downto 4)));
             rdata <= extFifoMax(iX,iY);
          -- asic reg request
-         elsif s_addr(15 downto 12) = x"3" then
+         elsif s_addr(SUBADDR_RANGE) = x"3" then
             ack         <= req;
             rdata       <= x"aaaa_bbbb";
             if req = '1' and ack = '0' then
@@ -156,20 +182,12 @@ begin
 
          end if;
          
-         --if req = '1' then
-            --if wen = '1' then
-               --s_reg_arr(v_reg_ind) <= wdata;
-            --else
-               --rdata <= s_reg_arr(v_reg_ind);
-            --end if;
-            --ack <= '1';
-         --else
-            --rdata <= (others => '0');
-         --end if;
       end if;
    end process;
 
    timestamp <= s_timestamp;
+   chanMask  <= s_chanMask;
+   asic_mask <= s_asic_mask;
 
 
 end behav;

@@ -126,6 +126,7 @@ begin
       GEN_Y : for j in 0 to Y_NUM_G-1 generate
          QpixAsicTop_U : entity work.QpixAsicTop
             generic map (
+               TXRX_TYPE     => "ENDEAVOR",
                X_POS_G       => i,
                Y_POS_G       => j
             )
@@ -322,13 +323,19 @@ begin
       reg.Addr <= x"0001";
       reg.Data <= x"0001";
       reg.OpWrite <= '1';
+      reg.SrcDaq  <= '1';
+      reg.ReqId   <= x"1";
 
       wait until clk = '1';
-      hitMask(2,2) <= '1';
+      hitMask(1,0) <= '1';
+      wait until clk = '1';
+      wait until clk = '1';
+      wait until clk = '1';
+      wait until clk = '1';
       wait until clk = '1';
       --wait until clk = '1';
       --wait until clk = '1';
-      hitMask(2,2) <= '0';
+      hitMask(1,0) <= '0';
 
       wait for 500 ns;
       
@@ -343,9 +350,24 @@ begin
       daqTxByteValid <= '0';
       --XTxArr(0)(0).Valid <= '0';
 
-      wait for 1 ms;
+      wait for 1.0 ms;
       report "here!";
 
+      report "next trg";
+      reg.Addr <= x"0001";
+      reg.Data <= x"0001";
+      reg.OpWrite <= '1';
+      reg.SrcDaq  <= '1';
+      reg.ReqId   <= x"2";
+
+      wait until clk = '1';
+      daqTxByte <= fQpixRegToByte(reg);
+      daqTxByteValid <= '1';
+      wait until clk = '1';
+      daqTxByteValid <= '0';
+
+      wait for 0.5 ms;
+      report "here!";
 
 
    end process;

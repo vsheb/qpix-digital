@@ -1,4 +1,4 @@
-05:37:47 **** Auto Build of configuration Debug for project qpix_ctrl ****
+22:23:16 **** Incremental Build of configuration Debug for project qpix_ctrl ****
 make pre-build main-build 
 a9-linaro-pre-build-step
  
@@ -69,5 +69,5 @@ arm-none-eabi-size qpix_ctrl.elf  |tee "qpix_ctrl.elf.size"
 Finished building: qpix_ctrl.elf.size
  
 
-05:37:48 Build Finished (took 717ms)
+22:23:17 Build Finished (took 870ms)
 

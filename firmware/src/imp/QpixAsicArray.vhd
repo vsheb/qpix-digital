@@ -9,8 +9,9 @@ use work.QpixPkg.all;
 
 entity QpixAsicArray is
    generic (
-      X_NUM_G : natural := 3;
-      Y_NUM_G : natural := 3
+      TXRX_TYPE      : string  := "UART"; -- "DUMMY"/"UART"/"ENDEAVOR"
+      X_NUM_G        : natural := 3;
+      Y_NUM_G        : natural := 3
       
    );
    port (
@@ -70,6 +71,7 @@ begin
       GEN_Y : for j in 0 to Y_NUM_G-1 generate
          QpixAsicTop_U : entity work.QpixAsicTop
             generic map (
+               TXRX_TYPE     => TXRX_TYPE,
                X_POS_G       => i,
                Y_POS_G       => j
             )

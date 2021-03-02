@@ -14,11 +14,17 @@ entity UartTop is
    port (
       clk         : in  std_logic;
       sRst        : in  std_logic;
+      -- RX out
       rxByte      : out std_logic_vector(NUM_BITS_G-1 downto 0);
       rxByteValid : out std_logic;
+      -- RX Error statuses out
+      rxFrameErr  : out std_logic; -- No valid stop bit found
+      rxBreakErr  : out std_logic; -- Line low for longer than a character time
+      -- TX in 
       txByte      : in  std_logic_vector(NUM_BITS_G-1 downto 0) := (others => '0');
       txByteValid : in  std_logic := '0';
       txByteReady : out std_logic;
+      -- external ports
       uartRx      : in  std_logic;
       uartTx      : out std_logic
    );
@@ -44,7 +50,7 @@ begin
    --   );
    baudClkX8 <= clk;
 
-   -- Receive UART RX bytes
+   -- Receive UART RX bytes 
    U_UartRx : entity work.UartRx
       generic map (
          NUM_BITS_G   => NUM_BITS_G,
@@ -59,6 +65,10 @@ begin
          -- Byte signal out
          rxByte      => rxByte,
          rxByteValid => rxByteValid,
+         -- Error statuses out
+         rxFrameErr  => rxFrameErr,
+         rxBreakErr  => rxBreakErr,
+
          -- UART serial signal in
          uartRx      => uartRx
       );

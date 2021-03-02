@@ -23,6 +23,7 @@ entity QpixRoute is
       qpixConf        : in  QpixConfigType;
                       
       inData          : in  QpixDataFormatType;
+      localDataEna    : out std_logic;
                       
       txReady         : in  std_logic;
       txData          : out QpixDataFormatType;
@@ -30,6 +31,8 @@ entity QpixRoute is
       rxData          : in  QpixDataFormatType;
       
       debug           : out QpixDebugType;
+
+      routeErr        : out routeErrType;
                       
       routeStateInt   : out integer
       
@@ -82,44 +85,62 @@ architecture behav of QpixRoute is
    signal curReg : RegType := REG_INIT_C;
    signal nxtReg : RegType := REG_INIT_C;
 
-   signal locFifoEmpty : std_logic := '0';
-   signal locFifoDout  : std_logic_vector (G_TIMESTAMP_BITS-1 downto 0);
-   signal locFifoFull  : std_logic := '0';
+   signal locFifoEmpty   : std_logic := '0';
+   signal locFifoDin     : std_logic_vector (G_N_ANALOG_CHAN+G_TIMESTAMP_BITS-1 downto 0);
+   signal locFifoDout    : std_logic_vector (G_N_ANALOG_CHAN+G_TIMESTAMP_BITS-1 downto 0);
+   signal locFifoFull    : std_logic := '0';
+   signal locFifoFull_e  : std_logic := '0';
 
-   signal extFifoEmpty : std_logic := '0';
-   signal extFifoRen   : std_logic := '0';
-   signal extFifoDout  : std_logic_vector (G_DATA_BITS-1 downto 0);
-   signal extFifoFull  : std_logic := '0';
+
+   signal extFifoEmpty   : std_logic := '0';
+   signal extFifoRen     : std_logic := '0';
+   signal extFifoDout    : std_logic_vector (G_DATA_BITS-1 downto 0);
+   signal extFifoFull    : std_logic := '0';
+   signal extFifoFull_e  : std_logic := '0';
+
 
    signal respDir      : std_logic_vector(3 downto 0) := (others => '0');
 
-   signal stateInt : integer := 0;
+   signal stateInt       : integer := 0;
+
+   signal routeErr_i     : routeErrType := routeErrZero_C;
    ---------------------------------------------------
 
    constant timeoutZero_C : std_logic_vector(curReg.timeout'range) := (others => '0');
 
 begin
 
+   localDataEna <= '1';
+
    ---------------------------------------------------
    -- FIFO for local data
    ---------------------------------------------------
    FIFO_LOC_U : entity work.fifo_cc
    generic map(
-      DATA_WIDTH => G_TIMESTAMP_BITS,
+      DATA_WIDTH => G_N_ANALOG_CHAN + G_TIMESTAMP_BITS,
       DEPTH      => G_FIFO_LOC_DEPTH,
       RAM_TYPE   => "block"
    )
    port map(
       clk   => clk,
       rst   => rst,
-      din   => inData.Timestamp,
+      din   => locFifoDin,
       wen   => inData.DataValid,
       ren   => curReg.locFifoRen,
       dout  => locFifoDout, 
       empty => locFifoEmpty,
       full  => locFifoFull
    );
+   locFifoDin <= inData.ChanMask & inData.Timestamp;
    ---------------------------------------------------
+
+   locFifoFullEdgeDet_U : entity work.EdgeDetector 
+      port map ( 
+         clk    => clk,
+         rst    => rst, 
+         input  => locFifoFull,
+         output => locFifoFull_e
+      );
 
    ---------------------------------------------------
    -- FIFO for external data
@@ -141,6 +162,44 @@ begin
       full  => extFifoFull
    );
    ---------------------------------------------------
+
+   extFifoFullEdgeDet_U : entity work.EdgeDetector 
+      port map ( 
+         clk    => clk,
+         rst    => rst, 
+         input  => extFifoFull,
+         output => extFifoFull_e
+      );
+      
+   ---------------------------------------------------
+   -- Count errors
+   ---------------------------------------------------
+      process (clk)
+         constant locFifoCntMax : std_logic_vector(routeErr_i.locFifoFullCnt'range) := (others => '1');
+         constant extFifoCntMax : std_logic_vector(routeErr_i.extFifoFullCnt'range) := (others => '1');
+      begin
+         if rising_edge (clk) then
+            if rst = '1' then
+               routeErr_i <= routeErrZero_C;
+            else
+               if locFifoFull_e = '1' then
+                  if routeErr_i.locFifoFullCnt /= locFifoCntMax then
+                     routeErr_i.locFifoFullCnt <= routeErr_i.locFifoFullCnt + 1;
+                  end if;
+               end if;
+               if extFifoFull_e = '1' then
+                  if routeErr_i.extFifoFullCnt /= extFifoCntMax then
+                     routeErr_i.extFifoFullCnt <= routeErr_i.extFifoFullCnt + 1;
+                  end if;
+               end if;
+
+            end if;
+            
+         end if;
+      end process;
+   ---------------------------------------------------
+
+
 
    ---------------------------------------------------
    -- Combinational logic
@@ -208,6 +267,7 @@ begin
 
          -- report local hits
          when REP_LOCAL_S  =>
+            nxtReg.stateCnt <= curReg.stateCnt + 1;
             if locFifoEmpty = '0' then 
                if txReady = '1' then
                   if curReg.locFifoRen = '0' and curReg.stateCnt(1) = '1' then
@@ -215,7 +275,8 @@ begin
                      nxtReg.txData.DataValid <= '1';
                      nxtReg.txData.XPos      <= std_logic_vector(to_unsigned(X_POS_G, G_POS_BITS));
                      nxtReg.txData.YPos      <= std_logic_vector(to_unsigned(Y_POS_G, G_POS_BITS));
-                     nxtReg.txData.Timestamp <= locFifoDout;
+                     nxtReg.txData.Timestamp <= locFifoDout(G_TIMESTAMP_BITS - 1 downto 0);
+                     nxtReg.txData.ChanMask  <= locFifoDout(G_N_ANALOG_CHAN + G_TIMESTAMP_BITS - 1 downto G_TIMESTAMP_BITS);
                      nxtReg.txData.DirMask   <= nxtReg.respDir;
                      nxtReg.txData.WordType  <= G_WORD_TYPE_DATA;
                   else
@@ -227,9 +288,9 @@ begin
                nxtReg.state            <= REP_FINISH_S;
                nxtReg.stateCnt         <= (others => '0');
             end if;
-            nxtReg.stateCnt <= curReg.stateCnt + 1;
          when REP_FINISH_S => 
             -- all hits are done, send the packet which indicates that
+            nxtReg.stateCnt <= curReg.stateCnt + 1;
             if txReady = '1' then
                if curReg.stateCnt(1) = '1' then
                   nxtReg.txData.DataValid <= '1';
@@ -242,10 +303,11 @@ begin
                   nxtReg.stateCnt         <= (others => '0');
                end if;
             end if;
-            nxtReg.stateCnt <= curReg.stateCnt + 1;
 
          --report external hits being received from neighbour ASICs
          when REP_REMOTE_S =>
+
+            nxtReg.stateCnt <= curReg.stateCnt + 1;
             nxtReg.extFifoRen <= '0';
             if extFifoEmpty = '0' and txReady = '1' then 
                if curReg.extFifoRen = '0' and curReg.stateCnt(1) = '1' then
@@ -265,7 +327,6 @@ begin
                nxtReg.extFifoRen <= '0';
                nxtReg.txData <= QpixDataZero_C;
             end if;
-            nxtReg.stateCnt <= curReg.stateCnt + 1;
             
             if curReg.timeout /= timeoutZero_C then 
                if curReg.stateCnt(curReg.timeout'range) = curReg.timeout then
