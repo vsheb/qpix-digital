@@ -12,9 +12,10 @@ use work.QpixProtoPkg.all;
 
 entity QpixProtoTop is
    generic (
-      BOARD_G : string  := "MINIZED"; -- ZYBO, MINIZED
+      BOARD_G : string  := "ZYBO"; -- ZYBO, MINIZED
+      TXRX_TYPE : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
       X_NUM_G : natural := 3;
-      Y_NUM_G : natural := 3
+      Y_NUM_G : natural := 3 
       
    );
    port (
@@ -98,6 +99,7 @@ architecture behav of QpixProtoTop is
    signal asicReq     : std_logic := '0';
    --signal hitXY       : std_logic_vector (31 downto 0) := (others => '0');
    signal timestamp    : std_logic_vector (G_TIMESTAMP_BITS-1 downto 0) := (others => '0');
+   signal chanMask     : std_logic_vector (G_N_ANALOG_CHAN-1 downto 0)  := (others => '0');
    signal trgTime      : std_logic_vector (31 downto 0) := (others => '0');
 
    signal evtSize     : std_logic_vector (31 downto 0) := (others => '0');
@@ -115,6 +117,12 @@ architecture behav of QpixProtoTop is
 
    signal extFifoMaxArr : Slv4b2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
 
+   signal status      : std_logic_vector(31 downto 0) := (others => '0');
+
+   signal asic_mask   : std_logic_vector (15 downto 0) ;
+
+   signal daqFrameErrCnt : std_logic_vector (31 downto 0) := (others => '0');
+   signal daqBreakErrCnt : std_logic_vector (31 downto 0) := (others => '0');
 
 begin
    ---------------------------------------------------
@@ -122,7 +130,7 @@ begin
    ---------------------------------------------------
    --bufg_u : BUFG 
       --port map ( I => sysClk, O => clk);
-   clk <= fclk;
+   --clk <= fclk;
    ---------------------------------------------------
 
    ---------------------------------------------------
@@ -131,6 +139,7 @@ begin
    GEN_ZYBO : if BOARD_G = "ZYBO" generate
       design_1_U : entity work.design_1_wrapper
          port map (
+            -- PS ports
             DDR_addr(14 downto 0)     => DDR_addr(14 downto 0),
             DDR_ba(2 downto 0)        => DDR_ba(2 downto 0),
             DDR_cas_n                 => DDR_cas_n,
@@ -154,7 +163,6 @@ begin
             FIXED_IO_ps_srstb         => FIXED_IO_ps_srstb,
 
             reset_rtl                 => '0',
-
             -- axi interface to PL
             M_AXI_0_awaddr            => axi_awaddr,
             M_AXI_0_awprot            => axi_awprot, 
@@ -176,7 +184,13 @@ begin
             M_AXI_0_rvalid            => axi_rvalid, 
             M_AXI_0_rready            => axi_rready, 
             aresetn                   => axi_resetn,
-            fclk                      => fclk 
+            fclk                      => fclk, 
+
+            -- CLK Wizard
+            reset_rtl_0               => '0',
+            sys_clock                 => sysClk,
+            clk_out1_0                => clk,
+            locked_0                  => open
          );
       end generate GEN_ZYBO;
    GEN_MINIZED : if BOARD_G = "MINIZED" generate
@@ -227,7 +241,13 @@ begin
             M_AXI_0_rvalid            => axi_rvalid, 
             M_AXI_0_rready            => axi_rready, 
             aresetn                   => axi_resetn,
-            fclk                      => fclk 
+            fclk                      => fclk ,
+
+            -- CLK Wizard
+            reset_rtl_0               => '0',
+            sys_clock                 => sysClk,
+            clk_out1_0                => clk,
+            locked_0                  => open
          );
       end generate GEN_MINIZED;
    ---------------------------------------------------
@@ -287,12 +307,19 @@ begin
       wen          => reg_wen,
       ack          => reg_ack,
 
+      asic_mask    => asic_mask,
+
       evtSize      => evtSize,
+      status       => status,
       extFifoMax   => extFifoMaxArr,
+
+      daqFrameErrCnt => daqFrameErrCnt,
+      daqBreakErrCnt => daqBreakErrCnt,
 
       trgTime      => trgTime,
       timestamp    => timestamp,
       hitMask      => hitMask,
+      chanMask     => chanMask,
                   
       trg          => trg,
       asicAddr     => asicAddr,
@@ -307,12 +334,16 @@ begin
    );
    ---------------------------------------------------
 
+   ---------------------------------------------------
+   -- DAQ node
+   ---------------------------------------------------
    QpixDaqCtrl_U : entity work.QpixDaqCtrl
    generic map(
+      TXRX_TYPE  => TXRX_TYPE,
       MEM_DEPTH  => G_QPIX_PROTO_MEM_DEPTH
    )
    port map(
-      clk         => clk,
+      clk         => fclk,
       rst         => rst,
                   
       daqTx       => daqTx,
@@ -325,6 +356,10 @@ begin
       asicAddr    => asicAddr,
 
       trgTime     => trgTime,
+      evt_fin     => status(0),
+
+      uartFrameCnt => daqFrameErrCnt,
+      uartBreakCnt => daqBreakErrCnt,
 
       -- event memory ports
       memAddrRst  => memAddrRst,
@@ -337,6 +372,7 @@ begin
 
    );
    memAddrRst <= trg or asicReq;
+   ---------------------------------------------------
 
    ---------------------------------------------------
    ---------------------------------------------------
@@ -346,11 +382,12 @@ begin
          Y_NUM_G => Y_NUM_G
       )
       port map (
-         clk      => clk,
+         clk      => fclk,
          rst      => rst,
 
-         timestamp  => timestamp,
          hitMask    => hitMask, -- in
+         timestamp  => timestamp,
+         chanMask   => chanMask,
          inPortsArr => inPortsArr
       );
    ---------------------------------------------------
@@ -360,12 +397,13 @@ begin
    ---------------------------------------------------
    QpixAsicArray_U : entity work.QpixAsicArray
       generic map(
-         X_NUM_G => X_NUM_G,
-         Y_NUM_G => Y_NUM_G
+         TXRX_TYPE     => TXRX_TYPE,
+         X_NUM_G       => X_NUM_G,
+         Y_NUM_G       => Y_NUM_G
       )
       port map (
-         clk        => clk,
-         rst        => rst,
+         clk        => fclk,
+         rst        => '0', --rst,
 
          led        => leds,
 
@@ -373,17 +411,17 @@ begin
          daqRx      => daqRx,
          
          inPortsArr => inPortsArr,
-         debug      => qpixDebugArr
+         debug      => open --qpixDebugArr
          
       );
    ---------------------------------------------------
 
-   ---------------------------------------------------
+   -------------------------------------------------
    --GEN_DBG_X : for i in 0 to X_NUM_G-1 generate
       --GEN_DBG_Y : for j in 0 to Y_NUM_G-1 generate
-         --process (clk)
+         --process (fclk)
          --begin
-            --if rising_edge (clk) then
+            --if rising_edge (fclk) then
                --if trg = '1' then
                   --extFifoMaxArr(i,j) <= (others => '0');
                --else
@@ -395,7 +433,7 @@ begin
          --end process;
       --end generate GEN_DBG_Y;
    --end generate GEN_DBG_X;
-   ---------------------------------------------------
+   -------------------------------------------------
 
 
 end behav;

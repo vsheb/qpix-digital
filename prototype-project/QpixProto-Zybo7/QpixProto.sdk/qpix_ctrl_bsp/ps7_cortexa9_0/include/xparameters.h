@@ -19,7 +19,7 @@
 
 /* Definitions for interface M_AXI_0 */
 #define XPAR_M_AXI_0_BASEADDR 0x43C00000
-#define XPAR_M_AXI_0_HIGHADDR 0x43C0FFFF
+#define XPAR_M_AXI_0_HIGHADDR 0x43FFFFFF
 
 #include "xparameters_ps.h"
 

@@ -8,7 +8,8 @@ use work.QpixPkg.all;
 
 entity QpixDaqCtrl is
    generic (
-      MEM_DEPTH : natural := 9 
+      MEM_DEPTH : natural := 9;
+      TXRX_TYPE : string  := "UART" -- "DUMMY"/"UART"/"ENDEAVOR"
    );
    port (
       clk      : in std_logic;
@@ -24,13 +25,20 @@ entity QpixDaqCtrl is
       asicData    : in std_logic_vector(15 downto 0);
       asicAddr    : in std_logic_vector(31 downto 0);
       
+
+      asic_mask   : in std_logic_vector(15 downto 0) := (others => '1');
       
       --asicX      : in std_logic_vector(G_POS_BITS-1 downto 0);
       --asicY      : in std_logic_vector(G_POS_BITS-1 downto 0);
       --asicAddr   : in std_logic_vector(G_REG_ADDR_BITS-1 downto 0);
       --qpixReq    : QpixRegReqType;
       
-      trgTime    : out std_logic_vector(31 downto 0);
+      trgTime     : out std_logic_vector(31 downto 0);
+
+      evt_fin     : out std_logic; 
+
+      uartBreakCnt : out std_logic_vector(31 downto 0);
+      uartFrameCnt : out std_logic_vector(31 downto 0);
 
       -- event memory ports
       memEvtSize : out std_logic_vector(31 downto 0);
@@ -64,6 +72,23 @@ architecture behav of QpixDaqCtrl is
 
    signal clkCnt          : std_logic_vector(31 downto 0) := (others => '0');
 
+   signal asicReqID       : std_logic_vector(3 downto 0)  := x"1";
+
+   signal asic_mask_evt   : std_logic_vector(8 downto 0)  := (others => '0');
+   signal asic_mask_fin   : std_logic_vector(8 downto 0)  := (others => '0');
+
+   signal ro_finished     : std_logic := '0';
+
+   type   EvtCtrlStatesType is (EVT_CTRL_IDLE, EVT_CTRL_RUNNING);
+   signal evt_state : EvtCtrlStatesType := EVT_CTRL_IDLE;
+
+   signal daqRxFrameErr : std_logic := '0';
+   signal daqRxBreakErr : std_logic := '0';
+
+   signal daqFrameErrCnt : std_logic_vector (31 downto 0) := (others => '0');
+   signal daqBreakErrCnt : std_logic_vector (31 downto 0) := (others => '0');
+
+
 begin
 
    process (clk)
@@ -81,25 +106,68 @@ begin
       end if;
    end process;
 
-   QpixUartTxRx_U : entity work.UartTop
-   generic map (
-      NUM_BITS_G => G_DATA_BITS
-   )
-   port map (
-      clk         => clk,
-      sRst        => rst,
+   UART_GEN : if TXRX_TYPE = "UART" generate 
+      QpixUartTxRx_U : entity work.UartTop
+      generic map (
+         NUM_BITS_G => G_DATA_BITS
+      )
+      port map (
+         clk         => clk,
+         sRst        => rst,
 
-      txByte      => daqTxByte, 
-      txByteValid => daqTxByteValid, 
-      txByteReady => daqTxByteReady,
+         txByte      => daqTxByte, 
+         txByteValid => daqTxByteValid, 
+         txByteReady => daqTxByteReady,
 
-      rxByte      => daqRxByte,
-      rxByteValid => daqRxByteValid,
+         rxByte      => daqRxByte,
+         rxByteValid => daqRxByteValid,
+         rxFrameErr  => daqRxFrameErr,
+         rxBreakErr  => daqRxBreakErr,
 
-      uartTx      => daqTx,
-      uartRx      => daqRx
+         uartTx      => daqTx,
+         uartRx      => daqRx
 
-   );
+      );
+   end generate UART_GEN;
+
+   ENDEAROV_GEN : if TXRX_TYPE = "ENDEAVOR" generate
+      QpixUartTxRx_U : entity work.QpixEndeavorTop
+      generic map (
+         NUM_BITS_G => G_DATA_BITS
+      )
+      port map (
+         clk         => clk,
+         sRst        => rst,
+
+         txByte      => daqTxByte, 
+         txByteValid => daqTxByteValid, 
+         txByteReady => daqTxByteReady,
+
+         rxByte      => daqRxByte,
+         rxByteValid => daqRxByteValid,
+         rxFrameErr  => daqRxFrameErr,
+         rxBreakErr  => daqRxBreakErr,
+
+         Tx          => daqTx,
+         Rx          => daqRx
+
+      );
+   end generate ENDEAROV_GEN;
+
+   process (clk)
+   begin
+      if rising_edge (clk) then
+         if daqRxFrameErr = '1' then
+            daqFrameErrCnt <= daqFrameErrCnt + 1;
+         end if;
+         if daqRxBreakErr = '1' then
+            daqBreakErrCnt <= daqBreakErrCnt + 1;
+         end if;
+      end if;
+   end process;
+
+   uartFrameCnt <= daqFrameErrCnt;
+   uartBreakCnt <= daqBreakErrCnt;
 
    --QpixDummyTxRx_U : entity work.QpixDummyTxRx
    --generic map (
@@ -165,6 +233,49 @@ begin
       end if;
    end process;
 
+
+   ------------------------------------------------------------
+   -- make a flag indicating that all ASICs have been read out
+   ------------------------------------------------------------
+   process (clk)
+      variable qpix_data_v : QpixDataFormatType := QpixDataZero_C;
+      variable x : integer := 0;
+      variable y : integer := 0;
+   begin
+      if rising_edge (clk) then
+         case evt_state is 
+            when EVT_CTRL_IDLE => 
+               if trg = '1' then
+                  ro_finished <= '0';
+                  evt_state <= EVT_CTRL_RUNNING;
+                  asic_mask_evt <= (others => '0');
+               end if;
+            when EVT_CTRL_RUNNING => 
+               qpix_data_v := fQpixByteToRecord(daqRxByte); 
+               x := to_integer(unsigned(qpix_data_v.XPos));
+               y := to_integer(unsigned(qpix_data_v.YPos));
+               if daqRxByteValid = '1' then
+                  if qpix_data_v.WordType = G_WORD_TYPE_EVTEND then
+                     asic_mask_evt(x + y*3) <= '1';
+                     if asic_mask_evt(x + y*3) = '1' then
+                        -- rise some error flag TODO
+                     end if;
+                  end if;
+               end if;
+
+               if asic_mask_evt = asic_mask_fin then
+                  ro_finished <='1';
+                  evt_state   <= EVT_CTRL_IDLE;
+               end if;
+
+         end case;
+         
+      end if;
+   end process;
+
+   evt_fin <= ro_finished;
+   ------------------------------------------------------------
+
    memEvtSize <= std_logic_vector(resize(unsigned(wrAddr),32));
 
    -- accept trigger and send interrogation
@@ -178,6 +289,8 @@ begin
             r.Data := x"0001";
             r.OpWrite := '1';
             r.OpRead  := '0';
+            r.ReqID   := asicReqID;
+            asicReqID <= asicReqID + 1;
             daqTxByte      <= fQpixRegToByte(r);
             daqTxByteValid <= '1';
          elsif asicReq = '1' then
@@ -189,8 +302,12 @@ begin
             r.Data    := asicData;
             r.OpWrite := asicOpWrite;
             r.OpRead  := not asicOpWrite;
+            r.ReqID   := asicReqID;
+            r.SrcDaq  := '1';
             daqTxByte      <= fQpixRegToByte(r);
             daqTxByteValid <= '1';
+
+            asicReqID <= asicReqID + 1;
          else
             daqTxByteValid <= '0';
          end if;

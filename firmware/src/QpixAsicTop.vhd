@@ -9,8 +9,10 @@ use work.QpixPkg.all;
 
 entity QpixAsicTop is
    generic (
+
       X_POS_G        : natural := 0;
-      Y_POS_G        : natural := 0
+      Y_POS_G        : natural := 0;
+      TXRX_TYPE      : string  := "UART" -- "DUMMY"/"UART"/"ENDEAVOR"
    );
    port (
       clk            : in std_logic;
@@ -37,17 +39,21 @@ architecture behav of QpixAsicTop is
    ---------------------------------------------------
    -- Signals
    ---------------------------------------------------
-   signal inData   : QpixDataFormatType := QpixDataZero_C;
-   signal txData   : QpixDataFormatType := QpixDataZero_C;
-   signal rxData   : QpixDataFormatType := QpixDataZero_C;
+   signal inData       : QpixDataFormatType := QpixDataZero_C;
+   signal txData       : QpixDataFormatType := QpixDataZero_C;
+   signal rxData       : QpixDataFormatType := QpixDataZero_C;
+                      
+   signal regData      : QpixRegDataType    := QpixRegDataZero_C;
+   signal regResp              : QpixRegDataType  := QpixRegDataZero_C;
+                      
+   signal qpixConf     : QpixConfigType     := QpixConfigDef_C;
+   signal qpixReq      : QpixRequestType    := QpixRequestZero_C;
+                      
+   signal TxReady      : std_logic          := '0';
 
-   signal regData  : QpixRegDataType    := QpixRegDataZero_C;
-   signal regResp          : QpixRegDataType  := QpixRegDataZero_C;
+   signal localDataEna : std_logic := '0';
 
-   signal qpixConf : QpixConfigType     := QpixConfigDef_C;
-   signal qpixReq  : QpixRequestType    := QpixRequestZero_C;
-
-   signal TxReady  : std_logic          := '0';
+   signal asicRst      : std_logic := '0';
 
    ---------------------------------------------------
 
@@ -63,7 +69,9 @@ begin
    )
    port map(
       clk     => clk,
-      rst     => rst,
+      rst     => asicRst,
+
+      ena     => localDataEna,
 
       testEna => '0',
 
@@ -79,12 +87,13 @@ begin
    ---------------------------------------------------
    QpixComm_U : entity work.QpixComm
    generic map(
+      TXRX_TYPE     => TXRX_TYPE,
       X_POS_G       => X_POS_G,
       Y_POS_G       => Y_POS_G
    )                
    port map(
       clk => clk,
-      rst => rst,
+      rst => asicRst,
 
       outData_i      => txData,
       inData         => rxData,
@@ -115,7 +124,7 @@ begin
    )                
    port map(
       clk      => clk,
-      rst      => rst,
+      rst      => asicRst,
 
       regData  => regData,
       regResp  => regResp,
@@ -123,6 +132,8 @@ begin
       QpixConf => QpixConf,
       QpixReq  => QpixReq
    );
+
+   asicRst <= QpixReq.AsicReset or rst;
    ---------------------------------------------------
 
 
@@ -136,12 +147,13 @@ begin
    )                
    port map(        
       clk           => clk,
-      rst           => rst,
+      rst           => AsicRst,
                     
       qpixReq       => QpixReq,
       qpixConf      => QpixConf,
                     
       inData        => inData,
+      localDataEna  => localDataEna,
                     
       txReady       => TxReady,
       txData        => txData,

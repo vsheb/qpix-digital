@@ -62,7 +62,27 @@ begin
       --rxByteValid => RxByteValidArr(0)
    --);
 
-   QpixUartTxRx_U : entity work.UartTop
+   --QpixUartTxRx_U : entity work.UartTop
+   --generic map (
+      --NUM_BITS_G => G_DATA_BITS
+   --)
+   --port map (
+      --clk         => clk,
+      --sRst        => rst,
+
+      --txByte      => TxByteArr(0), 
+      --txByteValid => TxByteValidArr(0), 
+      --txByteReady => TxByteReadyArr(0),
+
+      --rxByte      => RxByteArr(0),
+      --rxByteValid => RxByteValidArr(0),
+
+      --uartTx      => Tx,
+      --uartRx      => Rx
+
+   --);
+
+   QpixEndeavorTxRx_U : entity work.QpixEndeavorTop
    generic map (
       NUM_BITS_G => G_DATA_BITS
    )
@@ -77,8 +97,8 @@ begin
       rxByte      => RxByteArr(0),
       rxByteValid => RxByteValidArr(0),
 
-      uartTx      => Tx,
-      uartRx      => Rx
+      Tx          => Tx,
+      Rx          => Rx
 
    );
 

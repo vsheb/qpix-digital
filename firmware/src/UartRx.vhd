@@ -74,10 +74,24 @@ architecture Behavioral of UartRx is
       lastRx    => '0'
    );
    
+   signal rx_q : std_logic_vector(1 downto 0);
+   signal rx_r : std_logic := '0';
+
+   attribute shreg_extract : string;
+   attribute shreg_extract of rx_q : signal is "no";
+
    signal curReg : RegType := REG_INIT_C;
    signal nxtReg : RegType := REG_INIT_C;
    
 begin
+
+   process (clk)
+   begin
+      if rising_edge (clk) then
+         rx_q <= rx_q(0 downto 0) & uartRx;
+      end if;
+   end process;
+   rx_r <= rx_q(1);
 
    -- Map to outputs
    rxByte      <= curReg.byte;
@@ -86,7 +100,7 @@ begin
    rxBreakErr  <= curReg.breakErr;
 
    -- Asynchronous state logic
-   process(curReg, uartRx, baudClkX8) begin
+   process(curReg, rx_r, baudClkX8) begin
       -- Set defaults
       nxtReg <= curReg;
       -- Default strobe signals are '0'
@@ -95,7 +109,7 @@ begin
       nxtReg.breakErr  <= '0';      
       
       -- Count consecutive low level
-      if uartRx = '1' or curReg.state = IDLE_S then
+      if rx_r = '1' or curReg.state = IDLE_S then
          nxtReg.lowCount <= (others => '0');
 --      elsif baudClkX8 = '1' and curReg.lowCount(curReg.lowCount'high) /= '1' then
       elsif curReg.lowCount(curReg.lowCount'high) /= '1' then
@@ -104,7 +118,7 @@ begin
       
       -- One bit pipe for last Rx state
 --      if baudClkX8 = '1' then
-         nxtReg.lastRx <= uartRx;
+         nxtReg.lastRx <= rx_r;
 --      end if;
       
       -- Actual state definitions
@@ -113,7 +127,7 @@ begin
          when IDLE_S  =>
             nxtReg.counter   <= (others => '0');
             nxtReg.byteCount <= (others => '0');
-            if uartRx = '0' and curReg.lastRx = '1' then
+            if rx_r = '0' and curReg.lastRx = '1' then
                nxtReg.state   <= START_S;
             end if;
          -- Look for at least half a bit wide low count.
@@ -121,7 +135,7 @@ begin
          when START_S =>
             if curReg.lowCount >= 3 then
                nxtReg.state <= DATA_S;
-            elsif uartRx = '1' then
+            elsif rx_r = '1' then
                nxtReg.state <= IDLE_S;
             end if;
          -- Wait a full bit time before accepting bits
@@ -129,7 +143,7 @@ begin
 --            if baudClkX8 = '1' then
                nxtReg.counter <= curReg.counter + 1;
                if curReg.counter = 7 then
-                  nxtReg.byte(to_integer(curReg.byteCount)) <= uartRx;
+                  nxtReg.byte(to_integer(curReg.byteCount)) <= rx_r;
                   nxtReg.byteCount <= curReg.byteCount + 1;
                   if curReg.byteCount = NUM_BITS_G-1 then
                      nxtReg.state <= STOP_S;
@@ -145,7 +159,7 @@ begin
                   -- Present data no matter what
                   nxtReg.byteValid <= '1';
                   -- Also present errors if applicable
-                  if uartRx /= '1' then
+                  if rx_r /= '1' then
                      nxtReg.frameErr <= '1';
                   end if;
                   if curReg.lowCount >= 72 then

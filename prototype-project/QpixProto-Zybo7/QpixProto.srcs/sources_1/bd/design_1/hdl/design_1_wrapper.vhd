@@ -1,8 +1,8 @@
 --Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 ----------------------------------------------------------------------------------
 --Tool Version: Vivado v.2018.1 (lin64) Build 2188600 Wed Apr  4 18:39:19 MDT 2018
---Date        : Fri Oct  9 13:22:23 2020
---Host        : shebalin-XPS running 64-bit Ubuntu 18.04.5 LTS
+--Date        : Sat Dec 19 04:56:05 2020
+--Host        : hPC running 64-bit Ubuntu 20.04.1 LTS
 --Command     : generate_target design_1_wrapper.bd
 --Design      : design_1_wrapper
 --Purpose     : IP block netlist
@@ -55,7 +55,11 @@ entity design_1_wrapper is
     M_AXI_0_wstrb : out STD_LOGIC_VECTOR ( 3 downto 0 );
     M_AXI_0_wvalid : out STD_LOGIC;
     aresetn : out STD_LOGIC_VECTOR ( 0 to 0 );
-    reset_rtl : in STD_LOGIC
+    clk_out1_0 : out STD_LOGIC;
+    locked_0 : out STD_LOGIC;
+    reset_rtl : in STD_LOGIC;
+    reset_rtl_0 : in STD_LOGIC;
+    sys_clock : in STD_LOGIC
   );
 end design_1_wrapper;
 
@@ -83,6 +87,13 @@ architecture STRUCTURE of design_1_wrapper is
     FIXED_IO_ps_srstb : inout STD_LOGIC;
     FIXED_IO_ps_clk : inout STD_LOGIC;
     FIXED_IO_ps_porb : inout STD_LOGIC;
+    reset_rtl : in STD_LOGIC;
+    FCLK : out STD_LOGIC;
+    aresetn : out STD_LOGIC_VECTOR ( 0 to 0 );
+    reset_rtl_0 : in STD_LOGIC;
+    sys_clock : in STD_LOGIC;
+    clk_out1_0 : out STD_LOGIC;
+    locked_0 : out STD_LOGIC;
     M_AXI_0_awaddr : out STD_LOGIC_VECTOR ( 31 downto 0 );
     M_AXI_0_awprot : out STD_LOGIC_VECTOR ( 2 downto 0 );
     M_AXI_0_awvalid : out STD_LOGIC;
@@ -101,10 +112,7 @@ architecture STRUCTURE of design_1_wrapper is
     M_AXI_0_rdata : in STD_LOGIC_VECTOR ( 31 downto 0 );
     M_AXI_0_rresp : in STD_LOGIC_VECTOR ( 1 downto 0 );
     M_AXI_0_rvalid : in STD_LOGIC;
-    M_AXI_0_rready : out STD_LOGIC;
-    FCLK : out STD_LOGIC;
-    aresetn : out STD_LOGIC_VECTOR ( 0 to 0 );
-    reset_rtl : in STD_LOGIC
+    M_AXI_0_rready : out STD_LOGIC
   );
   end component design_1;
 begin
@@ -152,6 +160,10 @@ design_1_i: component design_1
       M_AXI_0_wstrb(3 downto 0) => M_AXI_0_wstrb(3 downto 0),
       M_AXI_0_wvalid => M_AXI_0_wvalid,
       aresetn(0) => aresetn(0),
-      reset_rtl => reset_rtl
+      clk_out1_0 => clk_out1_0,
+      locked_0 => locked_0,
+      reset_rtl => reset_rtl,
+      reset_rtl_0 => reset_rtl_0,
+      sys_clock => sys_clock
     );
 end STRUCTURE;

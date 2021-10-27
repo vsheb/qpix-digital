@@ -19,6 +19,8 @@ entity QpixDataProc is
       clk      : in  std_logic;
       rst      : in  std_logic;
 
+      ena      : in  std_logic;
+
       testEna  : in  std_logic; 
 
       inPorts  : in  QpixInPortsType;
@@ -31,8 +33,13 @@ end entity QpixDataProc;
 
 architecture behav of QpixDataProc is
 
-   signal testData : QPixDataFormatType := QpixDataZero_C;
-   signal inData   : QPixDataFormatType := QpixDataZero_C;
+   signal testData  : QPixDataFormatType := QpixDataZero_C;
+   signal inData_r  : QPixDataFormatType := QpixDataZero_C;
+   signal inData_2r : QPixDataFormatType := QpixDataZero_C;
+
+   attribute shreg_extract : string;
+   attribute shreg_extract of inData_r : signal is "no";
+   attribute shreg_extract of inData_2r : signal is "no";
 
 begin
 
@@ -49,16 +56,23 @@ begin
       rst => rst,
 
       outData => testData
-   );
+   );  --- NOT USED FOR NOW
    ----------------------------------------------------------------------------------
 
    ----------------------------------------------------------------------------------
    -- Format the data
    ----------------------------------------------------------------------------------
-   inData.DataValid <= inPorts.Valid;
-   inData.XPos      <= std_logic_vector(to_unsigned(X_POS_G, G_POS_BITS));
-   inData.YPos      <= std_logic_vector(to_unsigned(Y_POS_G, G_POS_BITS));
-   inData.TimeStamp <= inPorts.TimeStamp;
+   process (clk)
+   begin
+      if rising_edge (clk) then
+         inData_r.DataValid <= inPorts.Valid;
+         inData_r.XPos      <= std_logic_vector(to_unsigned(X_POS_G, G_POS_BITS));
+         inData_r.YPos      <= std_logic_vector(to_unsigned(Y_POS_G, G_POS_BITS));
+         inData_r.TimeStamp <= inPorts.TimeStamp;
+         inData_r.ChanMask  <= inPorts.ChanMask;
+         inData_2r <= inData_r;
+      end if;
+   end process;
    ----------------------------------------------------------------------------------
 
    ----------------------------------------------------------------------------------
@@ -67,13 +81,11 @@ begin
    process (clk)
    begin
       if rising_edge (clk) then
-         --if testEna = '1' then
-         --if X_POS_G = 7 and Y_POS_G = 7 then
-            --outData <= testData;
-         --else
-            --outData <= inData;
-         --end if;
-         outData <= inData;
+         if ena = '1' then
+            outData <= inData_2r;
+         else
+            outData <= QpixDataZero_C;
+         end if;
          
       end if;
    end process;
