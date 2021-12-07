@@ -12,7 +12,7 @@ entity QpixAsicTop is
 
       X_POS_G        : natural := 0;
       Y_POS_G        : natural := 0;
-      TXRX_TYPE      : string  := "UART" -- "DUMMY"/"UART"/"ENDEAVOR"
+      TXRX_TYPE      : string  := "ENDEAVOR" -- "DUMMY"/"UART"/"ENDEAVOR"
    );
    port (
       clk            : in std_logic;
@@ -21,8 +21,8 @@ entity QpixAsicTop is
       -- timestamp data from QpixAnalog
       inPorts        : in   QpixInPortsType;
 
-      State          : out integer;
-      debug          : out QpixDebugType;
+      --State          : out integer;
+      --debug          : out QpixDebugType;
 
 
       -- TX ports to neighbour ASICs
@@ -159,9 +159,9 @@ begin
       txData        => txData,
       rxData        => rxData,
 
-      debug         => debug,
+      debug         => open,
 
-      routeStateInt => State
+      routeStateInt => open 
    );
    ---------------------------------------------------
 

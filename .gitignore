@@ -1,0 +1,9 @@
+**/.hdl_checker
+**/.*.un~
+**/.*.swo
+**/__pycache__*
+**/vivado**.jou
+**/vivado**.log
+**/vivado**.str
+**/vivado**.debug
+
