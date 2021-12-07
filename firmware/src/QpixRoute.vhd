@@ -32,10 +32,8 @@ entity QpixRoute is
       
       debug           : out QpixDebugType;
 
-      routeErr        : out routeErrType;
+      routeErr        : out routeErrType
                       
-      routeStateInt   : out integer
-      
    );
 end entity QpixRoute;
 
@@ -100,8 +98,6 @@ architecture behav of QpixRoute is
 
 
    signal respDir      : std_logic_vector(3 downto 0) := (others => '0');
-
-   signal stateInt       : integer := 0;
 
    signal routeErr_i     : routeErrType := routeErrZero_C;
    ---------------------------------------------------
@@ -363,22 +359,8 @@ begin
 
    
    txData     <= curReg.txData;
-   stateInt   <= RouteStatesType'pos(curReg.state);
    debug      <= curReg.debug;
 
-
-   process(all)
-   begin
-      if stateInt /= 2 then
-         routeStateInt <= stateInt;
-      else
-         if extFifoEmpty = '1' then 
-            routeStateInt <= 2;
-         else
-            routeStateInt <= 3;
-         end if;
-      end if;
-   end process;
 
 
 

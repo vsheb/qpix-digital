@@ -21,10 +21,6 @@ entity QpixAsicTop is
       -- timestamp data from QpixAnalog
       inPorts        : in   QpixInPortsType;
 
-      --State          : out integer;
-      --debug          : out QpixDebugType;
-
-
       -- TX ports to neighbour ASICs
       TxPortsArr     : out  QpixTxRxPortsArrType;
 
@@ -159,9 +155,7 @@ begin
       txData        => txData,
       rxData        => rxData,
 
-      debug         => open,
-
-      routeStateInt => open 
+      debug         => open
    );
    ---------------------------------------------------
 
