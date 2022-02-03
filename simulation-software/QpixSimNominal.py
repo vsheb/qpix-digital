@@ -11,7 +11,7 @@ import sys
 random.seed(2)
 
 # Debug status
-debugLevel = 1 #5 - debug
+debugLevel = 0 #5 - debug
 
 # Create an array of QPixAsics
 nRows = 16
@@ -160,8 +160,8 @@ while(timeNow < timeEnd):
                 for c in range(0,nCols):
                   print(str(asicMatrix[r][c].stateNum),end='')
                 print("")
-#              print("PrQ: ",end='')
-#              asicMatrix[i][j].PrintStatus()
+                # print("PrQ: ",end='')
+                # asicMatrix[i][j].PrintStatus()
 
 
     newQueueItems = nextAsic.ReceiveData(nextItem)
