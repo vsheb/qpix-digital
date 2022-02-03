@@ -91,7 +91,7 @@ begin
 
          -- reg mapping
          
-         if s_addr(SUBADDR_RANGE) = x"0" then
+         if s_addr(21 downto 18) = x"0" then
             ack     <= req;
             v_reg_ind := to_integer(unsigned(a_reg_addr));
             case a_reg_addr is 
@@ -151,8 +151,8 @@ begin
                   rdata <= x"0BAD_ADD0";
 
             end case;
-         -- event memory
-         elsif s_addr(SUBADDR_RANGE) = x"1" then
+		 -- event memory
+         elsif s_addr(21 downto 18) = x"1" then
             memRdReq <= req;
             ack     <= memRdAck;
             if req then 
@@ -160,13 +160,13 @@ begin
                rdata   <= memData;
             end if;
          -- fifo counters
-         elsif s_addr(SUBADDR_RANGE) = x"2" then
+         elsif s_addr(21 downto 18) = x"2" then
             ack <= req;
             iX := to_integer(unsigned(a_reg_addr(3 downto 0)));
             iY := to_integer(unsigned(a_reg_addr(7 downto 4)));
             rdata <= extFifoMax(iX,iY);
          -- asic reg request
-         elsif s_addr(SUBADDR_RANGE) = x"3" then
+         elsif s_addr(21 downto 18) = x"3" then
             ack         <= req;
             rdata       <= x"aaaa_bbbb";
             if req = '1' and ack = '0' then
