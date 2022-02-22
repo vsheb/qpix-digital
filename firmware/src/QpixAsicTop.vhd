@@ -4,7 +4,6 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 
-library work;
 use work.QpixPkg.all;
 
 entity QpixAsicTop is

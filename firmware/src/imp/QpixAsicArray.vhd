@@ -35,7 +35,8 @@ architecture behav of QpixAsicArray is
    -- type defenitions
    ---------------------------------------------------
    type AsicWireArrayType is array(0 to Y_NUM_G) of QpixTxRxPortType;
-   type AsicWire2DArrayType is array(0 to X_NUM_G) of AsicWireArrayType;
+   --type AsicWire2DArrayType is array(0 to X_NUM_G) of AsicWireArrayType;
+   type AsicWire2DArrayType is array(0 to X_NUM_G, 0 to Y_NUM_G) of QpixTxRxPortType;
    type RouteStatesArrType is array(0 to Y_NUM_G) of integer;
    type RouteStates2DArrType is array(0 to X_NUM_G) of RouteStatesArrType;
    ---------------------------------------------------
@@ -62,8 +63,8 @@ architecture behav of QpixAsicArray is
 
 begin
 
-   YTxArr(0)(0) <= daqTx;
-   daqRx <= YRxArr(0)(0);
+   YTxArr(0,0) <= daqTx;
+   daqRx <= YRxArr(0,0);
 
 
 
@@ -81,19 +82,19 @@ begin
                inPorts  => inPortsArr(i,j),
 
                -- TX 
-               TxPortsArr(0) => YRxArr(i)(j),   -- up
-               TxPortsArr(1) => XTxArr(i+1)(j), -- right
-               TxPortsArr(2) => YTxArr(i)(j+1), -- down
-               TxPortsArr(3) => XRxArr(i)(j),   -- left
+               TxPortsArr(0) => YRxArr(i,j),   -- up
+               TxPortsArr(1) => XTxArr(i+1,j), -- right
+               TxPortsArr(2) => YTxArr(i,j+1), -- down
+               TxPortsArr(3) => XRxArr(i,j),   -- left
 
                -- RX
-               RxPortsArr(0) => YTxArr(i)(j),   -- up 
-               RxPortsArr(1) => XRxArr(i+1)(j), -- right
-               RxPortsArr(2) => YRxArr(i)(j+1), -- down
-               RxPortsArr(3) => XTxArr(i)(j),   -- left
+               RxPortsArr(0) => YTxArr(i,j),   -- up 
+               RxPortsArr(1) => XRxArr(i+1,j), -- right
+               RxPortsArr(2) => YRxArr(i,j+1), -- down
+               RxPortsArr(3) => XTxArr(i,j)   -- left
 
-               State         => StatesArr(i)(j),
-               debug         => debug(i,j)
+               --State         => StatesArr(i)(j),
+               --debug         => debug(i,j)
             );
       end generate GEN_Y;
    end generate GEN_X;

@@ -85,7 +85,7 @@ class QPController:
 
   # Send interrogation (trigger) command
   def sendTrg(self) :
-    self.s.regWrite(REG_ADDR['CMD'],0x1);
+    self.s.regWrite(REG_ADDR['CMD'],0x1)
 
   # Reset routing state of the ASIC (finish event)
   def resetRouteState(self) : 
@@ -153,7 +153,7 @@ class QPController:
   #####################################
   # Read event data from the memory
   def readEvent(self):
-    recvd = [['x' for i in range(3)] for j in range(3)]
+    recvd = [['x' for i in range(3)] for _ in range(3)]
     siz = self.s.regRead(REG_ADDR['EVTSIZE']) 
     t_trg = self.s.regRead(REG_ADDR['TRGTIME'])
     print('TRG time : ',t_trg & 0xffff)
@@ -221,7 +221,7 @@ class QPController:
 
   #####################################
   def injectUniformN(self, n):
-    for i in range(n):
+    for _ in range(n):
       for x in range(3) :
         for y in range(3) :
           self.injectHit(x,y,n,123)
