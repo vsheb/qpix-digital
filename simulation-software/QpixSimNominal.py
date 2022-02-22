@@ -120,14 +120,14 @@ while(timeNow < timeEnd):
   # Make sure there's nothing to do right now
   # Now iterate through ASICs and keep doing processing on them until
   # they're caught up to the latest time.
-  for i in range(0,nRows):
-    for j in range(0,nCols):
+  for i in range(nRows):
+    for j in range(nCols):
       newProcessItems = asicMatrix[i][j].Process(timeNow - timeEpsilon)
       if len(newProcessItems) > 0:
         print("WARNING: ASIC ("+str(i)+","+str(j)+") had things left to do at next major time step")
         # Print states if they were updated
         if debugLevel >= 5:
-          print("Init: ",end='')
+          print("Init: ", end='')
           asicMatrix[i][j].PrintStatus()
 
   # Add a first timestamp at 1 second
@@ -136,19 +136,19 @@ while(timeNow < timeEnd):
 
   while(procQueue.Length() > 0):
     nextItem = procQueue.PopQueue()
-    nextAsic = nextItem[0]
+    nextAsic = nextItem.asic
 
     # Now iterate through ASICs and keep doing processing on them until
     # they're caught up to the latest time.
     somethingToDo = True
-    nextTime = nextItem[3]
+    nextTime = nextItem.absTime
     while somethingToDo:
       somethingToDo = False
       for i in range(0,nRows):
         for j in range(0,nCols):
           newProcessItems = asicMatrix[i][j].Process(nextTime)
           for item in newProcessItems:
-            procQueue.queue.append(item)
+            procQueue.AddQueueItem(*item)
           procQueue.SortQueue()
           if len(newProcessItems) > 0:
             somethingToDo = True
@@ -163,23 +163,22 @@ while(timeNow < timeEnd):
                 # print("PrQ: ",end='')
                 # asicMatrix[i][j].PrintStatus()
 
-
     newQueueItems = nextAsic.ReceiveData(nextItem)
     for item in newQueueItems:
-      procQueue.queue.append(item)
+      procQueue.AddQueueItem(*item)
       procQueue.SortQueue()
 
     # Now iterate through ASICs and keep doing processing on them until
     # they're caught up to the latest time.
     somethingToDo = True
-    nextTime = nextItem[3]
+    nextTime = nextItem.absTime
     while somethingToDo:
       somethingToDo = False
       for i in range(0,nRows):
         for j in range(0,nCols):
           newProcessItems = asicMatrix[i][j].Process(nextTime)
           for item in newProcessItems:
-            procQueue.queue.append(item)
+            procQueue.AddQueueItem(*item)
           procQueue.SortQueue()
           if len(newProcessItems) > 0:
             somethingToDo = True

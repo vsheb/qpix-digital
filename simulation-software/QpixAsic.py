@@ -2,9 +2,96 @@
 
 import random
 import math
+import time
+from enum import Enum
 
 #Enum-like things
 DIRECTIONS = ("North", "East", "South", "West")
+
+class AsicStates(Enum):
+  Measure = 0
+  TransmitLocal = 1
+  TransmitRemote = 2
+
+class ProcItem:
+  '''
+  Process item controlled by ProcQueue.
+  0 - asic, the ASIC being pushed to
+  1 - direction, where the new entry came from
+  2 - hit, a PixelHit object
+  3 - absTime, absolute time that the data would be received
+  '''
+
+  def __init__(self, asic, dir, pixelHit, absTime):
+    self.asic = asic
+    self.dir = dir
+    self.pixelHit = pixelHit
+    self.absTime = absTime
+    self._nextItem = None
+
+  def __gt__(self, otherItem):
+    '''
+    define that comparing process items based on what absTime the item should be
+    processed
+    '''
+    if isinstance(otherItem, ProcItem):
+      return self.absTime > otherItem.absTime
+    else:
+      return NotImplementedError
+
+class ProcQueue:
+  """
+  Processing queue which sorts ProcItems in ascending time.
+  """
+  def __init__(self, procItem=None):
+    self._curItem = procItem
+    self._entries = 0
+
+  def AddQueueItem(self, asic, dir, pixelHit, absTime):
+    '''
+    refactor
+    '''
+    procItem = ProcItem(asic, dir, pixelHit, absTime)
+    self._AddQueueItem(procItem)
+
+  def _AddQueueItem(self, procItem):
+    '''
+    include a new process item, inserting into list at appropriate time
+    '''
+    newItem = procItem
+    curItem = self._curItem
+    self._entries += 1
+
+    if curItem is None:
+      self._curItem = newItem
+    elif curItem > newItem:
+      h = self._curItem
+      self._curItem = newItem
+      self._curItem._nextItem = h
+    else:
+      while newItem > curItem and curItem._nextItem is not None:
+        curItem = curItem._nextItem 
+      newItem._nextItem = curItem._nextItem
+      curItem._nextItem = newItem
+
+    return self._entries
+
+  def PopQueue(self):
+    if self._curItem is None:
+        return None
+    self._entries -= 1
+    data = self._curItem
+    self._curItem = self._curItem._nextItem
+    return data
+
+  def SortQueue(self):
+    '''
+    deprecated
+    '''
+    pass
+
+  def Length(self):
+    return self._entries
 
 
 class QPixAsic:
@@ -18,15 +105,16 @@ class QPixAsic:
 
   fOsc       - Oscillator Frequency in Hz
   queue      - Queue 0/1 are a ping/pong buffer mechanism
-              You switch from one to another upon receipt of a timestamp
+               You switch from one to another upon receipt of a timestamp
   curQueue   - Tells us whether we're in ping or pong state
   lastTsDir  - Last direction timestamp was accepted from
   connQueues - A list of lists, one for each side, N E S W
   stateNum   - 0 - IDLE/MEASURING, 1 - REPORT_LOCAL, 2 - REPORT_REMOTE
   procQueue  - Data that is pending being pushed into this ASIC
-              Once pushed, it arrives at connQueues (if it is meant to)
+               Once pushed, it arrives at connQueues (if it is meant to)
   """
-  def __init__(self, fOsc = 50e6, nPixels = 16, randomRate = 1.0/9.0, timeout = 0.5, row = None, col = None, isDaqNode = False, transferTicks = 4*66):
+  def __init__(self, fOsc = 50e6, nPixels = 16, randomRate = 1.0/9.0, timeout = 0.5, row = None, col = None,
+               isDaqNode = False, transferTicks = 4*66):
     self.nPixels        = 16
     self.fOsc           = fOsc
     self.tOsc           = 1.0/fOsc
@@ -48,9 +136,14 @@ class QPixAsic:
     self.col            = col
     self.isDaqNode      = isDaqNode
     self.daqHits        = 0
+    self.creation_time = time.perf_counter()
+
+  def __repr__(self):
+    self.PrintStatus()
+    return ""
 
   def PrintStatus(self):
-    print(" ASIC ("+str(self.row)+","+str(self.col)+") ",end='')
+    print(" ASIC ("+str(self.row)+","+str(self.col)+") ", end="")
     print(" STATE "+str(self.stateNum),end='')
     print(" N_LOCAL(A,B) "+str(len(self.queues[0])) + "," + str(len(self.queues[1])),end='')
     print(" N_REMOTE(N,E,S,W) ",end='')
@@ -58,7 +151,89 @@ class QPixAsic:
       print(str(len(self.connQueues[d])) + ",",end='')
     print(" t = "+str(self.absTimeNow))
 
-  def GeneratePoissonHits(self, targetTime):
+  def CountConnections(self):
+    nConnected = 0
+    for conn in self.connections:
+      if conn:
+        nConnected += 1
+    return nConnected
+
+  def HasConnection(self, dir):
+    if self.connections[dir]:
+      return 1
+    else:
+      return 0
+
+  def ReceiveData(self, queueItem:ProcItem):
+    """
+    Receive data from a neighbor
+    queueItem - tuple of (asic, dir, hit, absTime)
+    """
+    # Output list of tuples for next actions, each entry of form (asic, dir, hit, absTime)
+    outList = [] 
+
+    inDir     = queueItem.dir
+    inHit     = queueItem.pixelHit
+    inAbsTime = queueItem.absTime
+
+    if self.isDaqNode:
+      # print("DAQ node received: ",end=' ')
+      # print("from: ("+str(inHit.originRow)+","+str(inHit.originCol)+")",end=' ')
+      # print("Hit: "+str(inHit.hitTime)+" , "+format(inHit.channelMask,'016b'),end=' ')
+      # print("absT: "+str(inAbsTime))
+      self.absTimeNow = inAbsTime
+      self.daqHits    += 1
+      return []
+
+    # print("Receive data called for ASIC ("+str(self.row)+","+str(self.col)+")")
+    # 0: MEASURING STATE
+    #    Wait for timestamps... when we see one:
+    #    a) Mark where the timestamp came from
+    #    b) Generate Poisson hits up to the current time
+    #    c) Add the timestamp as the last entry to the queue
+    #    d) Swap queues
+    #    e) Pass interrogation on to all other neighbors
+    #       (i.e., add them to the outList)
+    #    f) Advance to the next state
+    if self.stateNum == 0:
+      # If this is a timestamp from the DAQ node, do the above steps
+      if inHit.channelMask == 0 and inHit.originCol == None and inHit.originRow == None:
+        # a) Mark where the timestamp came from
+        self.lastTsDir = inDir
+        # b) Generate Poisson hits up to the current AbsTime
+        self._GeneratePoissonHits(inAbsTime)
+        # c) Add the timestamp as the last entry to the queue
+        self.queues[self.curQueue].append(PixelHit(inHit.hitTime, [], self.row, self.col))
+        #  update max queue depth
+        if len(self.queues[self.curQueue]) > self.maxDepth:
+          self.maxDepth = len(self.queues[self.curQueue])
+        # d) Swap recording queues
+        self.curQueue = (self.curQueue + 1) % 2
+        # e) Pass interrogation to all other neighbors
+        for i in range(0,4):
+          transactionCompleteTime = inAbsTime + self.transferTicks * self.tOsc
+          self.absTimeNow = transactionCompleteTime
+          if i != inDir and self.connections[i]:
+            outList.append((self.connections[i] , (i+2)%4, inHit, transactionCompleteTime))
+        # f) Advance to the next state
+        self.stateNum = 1
+      # It the inbound hit is anything else, don't do anything, the data is lost
+      else:
+        pass
+
+    # If we're in any other state, we should just queue up data into our local lists
+    else:
+      # Don't forward source timestamps
+      if inHit.originRow != None and inHit.originCol != None:
+        # print(str(self.row)+","+str(self.col)+" : adding hit from "+str(inHit.originRow)+","+str(inHit.originCol)+" at "+str(self.absTimeNow))
+        self.connQueues[inDir].append(inHit)
+        # update max queue depth
+        if len(self.connQueues[inDir]) > self.maxConnDepths[inDir]:
+          self.maxConnDepths[inDir] = len(self.connQueues[inDir])
+
+    return outList
+
+  def _GeneratePoissonHits(self, targetTime):
     """
     Generate Poisson hits for the time step ##
     Distribution of inter-arrival times can be modeled by throwing
@@ -82,26 +257,28 @@ class QPixAsic:
     thisQueueNum = self.curQueue
     nextQueueNum = (self.curQueue + 1) % 2
     # Generate new hits
-    for ch in range(0,self.nPixels):
+    for ch in range(self.nPixels):
       currentTime = self.lastAbsHitTime[ch]
       while currentTime < targetTime:
         p = random.random()
-        nextAbsHitTime = currentTime + ( -math.log(1.0 - p) / self.randomRate )
+        nextAbsHitTime = currentTime + (-math.log(1.0 - p) / self.randomRate)
         nextRelHitTime = int(math.floor(nextAbsHitTime / self.tOsc))
         if nextAbsHitTime < targetTime:
           tempList.append([ch,nextRelHitTime])
-          # print("generated hit in ("+str(self.row)+","+str(self.col)+") channel "+str(ch)+ " at absolute time "+str(nextAbsHitTime)+" rel time "+str(nextRelHitTime))
           currentTime = nextAbsHitTime
           self.lastAbsHitTime[ch] = currentTime
         elif nextAbsHitTime > targetTime:
           currentTime             = targetTime
-          self.lastAbsHitTime[ch] = targetTime 
+          self.lastAbsHitTime[ch] = targetTime
     tempList.sort(key=lambda x : x[1] , reverse = False)
-    self.CombineHitsAndAppend(tempList,self.queues[thisQueueNum])
+    self._CombineHitsAndAppend(tempList, self.queues[thisQueueNum])
     # Return the number of total hits added
     return len(tempList)
 
-  def CombineHitsAndAppend(self, hitList, queue):
+  def _CombineHitsAndAppend(self, hitList, queue):
+    '''
+    helper function within GeneratePoissonHits
+    '''
     lastEntry = None
     nextEntry = None
     for i in range(0,len(hitList)):
@@ -119,162 +296,98 @@ class QPixAsic:
       queue.append(lastEntry)
     return None
 
-  def CountConnections(self):
-    nConnected = 0
-    for conn in self.connections:
-      if conn:
-        nConnected += 1
-    return nConnected
-
-  def HasConnection(self, dir):
-    if self.connections[dir]:
-      return 1
-    else:
-      return 0
-
-  def ReceiveData(self, queueItem):
-    """
-    Receive data from a neighbor
-    Received data is of the form (asic, dir, hit, absTime)
-    """
-    # Output list of tuples for next actions, each entry of form (asic, dir, hit, absTime)
-    outList = [] 
-    #
-    inDir     = queueItem[1]
-    inHit     = queueItem[2]
-    inAbsTime = queueItem[3]
-
-    if self.isDaqNode:
-      # print("DAQ node received: ",end='')
-      # print(" from: ("+str(inHit.originRow)+","+str(inHit.originCol)+")",end='')
-      # print(" Hit: "+str(inHit.hitTime)+" , "+format(inHit.channelMask,'016b'),end='')
-      # print(" absT: "+str(inAbsTime))
-      self.absTimeNow = inAbsTime
-      self.daqHits    += 1
-      return []
-
-    # print("Receive data called for ASIC ("+str(self.row)+","+str(self.col)+")")
-    # 0: MEASURING STATE
-    #    Wait for timestamps... when we see one:
-    #    a) Mark where the timestamp came from
-    #    b) Generate Poisson hits up to the current time
-    #    c) Add the timestamp as the last entry to the queue
-    #    d) Swap queues
-    #    e) Pass interrogation on to all other neighbors
-    #       (i.e., add them to the outList)
-    #    f) Advance to the next state
-    if self.stateNum == 0:
-      # If this is a timestamp from the DAQ node, do the above steps
-      if inHit.channelMask == 0 and inHit.originCol == None and inHit.originRow == None:
-        # a) Mark where the timestamp came from
-        self.lastTsDir = inDir
-        # b) Generate Poisson hits up to the current AbsTime
-        self.GeneratePoissonHits(inAbsTime)
-        # c) Add the timestamp as the last entry to the queue
-        tsHit = PixelHit( inHit.hitTime, [], self.row, self.col )
-        self.queues[self.curQueue].append(tsHit)
-        #    update max queue depth
-        if len(self.queues[self.curQueue]) > self.maxDepth:
-          self.maxDepth = len(self.queues[self.curQueue])
-        # d) Swap recording queues
-        self.curQueue = (self.curQueue + 1) % 2
-        # e) Pass interrogation to all other neighbors
-        for i in range(0,4):
-          transactionCompleteTime = inAbsTime + self.transferTicks * self.tOsc
-          if i != inDir and self.connections[i]:
-            outList.append( (self.connections[i] , (i+2)%4, inHit, transactionCompleteTime) )
-
-          self.absTimeNow = transactionCompleteTime
-        # f) Advance to the next state
-        self.stateNum = 1
-      # It the inbound hit is anything else, don't do anything, the data is lost
-      else:
-        pass
-
-    # If we're in any other state, we should just queue up data into our local lists
-    else:
-      # Don't forward source timestamps
-      if inHit.originRow != None and inHit.originCol != None:
-        # print(str(self.row)+","+str(self.col)+" : adding hit from "+str(inHit.originRow)+","+str(inHit.originCol)+" at "+str(self.absTimeNow))
-        self.connQueues[inDir].append(inHit)
-        # update max queue depth
-        if len(self.connQueues[inDir]) > self.maxConnDepths[inDir]:
-          self.maxConnDepths[inDir] = len(self.connQueues[inDir])
-
-    return outList
-
-  def Process(self,targetTime):
+  def Process(self, targetTime):
     """
     This is a state where we just process the current goings ons for this ASIC
     """
-    if self.isDaqNode:
+    # nothing to process if DAQ or if target time is in past
+    if self.isDaqNode or self.absTimeNow > targetTime:
       return []
 
-    # print("Process called for ASIC ("+str(self.row)+","+str(self.col)+")")
-    outList = []
-    # If the targetTime is greater than the current time, process once
-    # Otherwise, we've run past the target time already so nothing to do yet
-    if targetTime < self.absTimeNow:
-      return outList
-
     # 0: MEASURING STATE: Do nothing, we already did everything we needed when we received data
-    # 1: TRANSMIT LOCAL: Move a local hit out 
-    # 2: TRANSMIT REMOTE: Until timeout, move a remote hit out if you have one
     if self.stateNum == 0:
-      self.absTimeNow = targetTime
-      return outList
+      return self._processMeasuringState(targetTime)
+
+    # 1: TRANSMIT LOCAL: Move a local hit out
     elif self.stateNum == 1:
-      # Transmit local hits back to lastTsDir
-      transactionCompleteTime = self.absTimeNow + self.transferTicks * self.tOsc
-      # Note that hits come from the prior queue, since curQueue tracks where we're
-      # now storing new hits, so the previous one is the one to empty now.
-      if len(self.queues[(self.curQueue+1)%2]) > 0:
-        hit =  self.queues[(self.curQueue+1)%2].pop(0)
-        outList.append( (self.connections[self.lastTsDir] , (self.lastTsDir+2)%4, hit, transactionCompleteTime ) )
-        self.absTimeNow = transactionCompleteTime
-        # print(str(self.row)+","+str(self.col)+" : sending local hit to "+DIRECTIONS[self.lastTsDir]+" at "+str(transactionCompleteTime))
-      else:
-        self.stateNum = 2 
-        self.timeoutStart = self.absTimeNow
-      return outList
+      return self._processTransmitLocalState(targetTime)
 
     # 2: TRANSMIT REMOTE
     elif self.stateNum == 2:
-      # If we're timed out, just kill it
+      return self._processTransmitRemoteState(targetTime)
+
+    # undefined state
+    print("WARNING! ASIC in undefined state")
+    return []
+
+  def _processMeasuringState(self, targetTime):
+    """
+    helper function when processing in Measuring state
+    """
+    self.absTimeNow = targetTime
+    return []
+
+  def _processTransmitLocalState(self, targetTime):
+    """
+    helper function for processing sending local data where it needs to go
+    """
+
+    outList = []
+    transactionCompleteTime = self.absTimeNow + self.transferTicks * self.tOsc
+
+    # Note that hits come from the prior queue, since curQueue tracks where we're
+    # now storing new hits, so the previous one is the one to empty now.
+    if len(self.queues[(self.curQueue+1)%2]) > 0:
+      hit =  self.queues[(self.curQueue+1)%2].pop(0)
+      outList.append((self.connections[self.lastTsDir] , (self.lastTsDir+2)%4, hit, transactionCompleteTime))
+      self.absTimeNow = transactionCompleteTime
+      # print(str(self.row)+","+str(self.col)+" : sending local hit to "+DIRECTIONS[self.lastTsDir]+" at "+str(transactionCompleteTime))
+    else:
+      self.stateNum = 2
+      self.timeoutStart = self.absTimeNow
+
+    return outList
+
+  def _processTransmitRemoteState(self, targetTime):
+    """
+    helper function for sending remote data where it needs to go
+    """
+
+    outList = []
+    # If we're timed out, just kill it
+    if self.absTimeNow - self.timeoutStart > self.timeout:
+      self.stateNum = 0
+      for q in self.queues:
+        if len(q) > 0:
+          print("Lost "+str(len(q))+" hits that were left to forward!")
+      self.queues = [[],[],[],[]]
+      return outList
+
+    # If there's nothing to forward, just bring us up to requested time
+    hitsToForward = False
+    for q in self.connQueues:
+      if len(q) > 0:
+        hitsToForward = True
+    if not(hitsToForward):
+      self.absTimeNow = targetTime
       if self.absTimeNow - self.timeoutStart > self.timeout:
         self.stateNum = 0
-        for q in self.queues:
-          if len(q) > 0:
-            print("Lost "+str(len(q))+" hits that were left to forward!")
-        self.queues = [[],[],[],[]]
-        return outList
+      return outList
 
-      # If there's nothing to forward, just bring us up to requested time
-      hitsToForward = False
-      for q in self.connQueues:
-        if len(q) > 0:
-          hitsToForward = True
-      if not(hitsToForward):
-        self.absTimeNow = targetTime
-        if self.absTimeNow - self.timeoutStart > self.timeout:
-          self.stateNum = 0
-        return outList
-
-      # Otherwise, check if there's a hit to forward, if so, forward it
-      # Using a fixed priority here
-      transactionCompleteTime = self.absTimeNow + self.transferTicks * self.tOsc
-      hit = None
-      for cq in self.connQueues:
-        if len(cq) > 0:
-          hit = cq.pop(0)
-          break
-      if hit:
-        # print(str(self.row)+","+str(self.col)+" : forwarding hit from "+str(hit.originRow)+","+str(hit.originCol)+" at "+str(transactionCompleteTime))
-        outList.append( (self.connections[self.lastTsDir], (self.lastTsDir+2)%4 , hit, transactionCompleteTime) )
-        self.absTimeNow = transactionCompleteTime
-
-    # Whatever state you were in, pass back the outbound transactions list
+    # Otherwise, check if there's a hit to forward, if so, forward it
+    # Using a fixed priority here
+    transactionCompleteTime = self.absTimeNow + self.transferTicks * self.tOsc
+    hit = None
+    for cq in self.connQueues:
+      if len(cq) > 0:
+        hit = cq.pop(0)
+        break
+    if hit:
+      # print(str(self.row)+","+str(self.col)+" : forwarding hit from "+str(hit.originRow)+","+str(hit.originCol)+" at "+str(transactionCompleteTime))
+      outList.append((self.connections[self.lastTsDir], (self.lastTsDir+2)%4 , hit, transactionCompleteTime))
+      self.absTimeNow = transactionCompleteTime
     return outList
+
 
 class PixelHit:
   """
@@ -292,32 +405,3 @@ class PixelHit:
 
   def AddChannel(self, channel):
     self.channelMask |= 0x1 << channel
-
-class ProcQueue:
-  """
-  Processing queue that's used to determine which events to service next
-  Each entry in the queue is a tuple of:
-  0 - asic, the ASIC being pushed to
-  1 - direction, where the new entry came from
-  2 - hit, a PixelHit object
-  3 - absTime, absolute time that the data would be received
-  """
-  def __init__(self):
-    self.queue = []
-
-  def AddQueueItem(self, asic, dir, hit, absTime):
-    self.queue.append((asic, dir, hit, absTime))
-    return len(self.queue)
-
-  def SortQueue(self):
-    self.queue.sort(key=lambda x : x[3] , reverse = False)
-    return None
-
-  def PopQueue(self):
-    if len(self.queue) > 0:
-      return self.queue.pop(0)
-    else:
-      return None
-
-  def Length(self):
-    return len(self.queue)
