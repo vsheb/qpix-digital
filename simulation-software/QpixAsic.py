@@ -13,6 +13,23 @@ class AsicStates(Enum):
   TransmitLocal = 1
   TransmitRemote = 2
 
+class PixelHit:
+  """
+  Something like a struct to store actual hits.
+  A hit corresponds to what would be a bitmask of channels hit for a given timestamp
+  We'll just treat that mask as a list of channels for now
+  """
+  def __init__(self, hitTime, channelList, originRow, originCol):
+    self.hitTime     = hitTime
+    self.originRow   = originRow
+    self.originCol   = originCol
+    self.channelMask = 0
+    for ch in channelList: 
+      self.channelMask |= 0x1 << ch
+
+  def AddChannel(self, channel):
+    self.channelMask |= 0x1 << channel
+
 class ProcItem:
   '''
   Process item controlled by ProcQueue.
@@ -93,7 +110,6 @@ class ProcQueue:
   def Length(self):
     return self._entries
 
-
 class QPixAsic:
   """
   A Q-Pix ASIC fundamentally consists of:
@@ -104,39 +120,46 @@ class QPixAsic:
   Each has its own queue
 
   fOsc       - Oscillator Frequency in Hz
+  lastTsDir  - Last direction timestamp was accepted from
+  state      - IDLE/MEASURING, - REPORT_LOCAL, - REPORT_REMOTE
   queue      - Queue 0/1 are a ping/pong buffer mechanism
                You switch from one to another upon receipt of a timestamp
-  curQueue   - Tells us whether we're in ping or pong state
-  lastTsDir  - Last direction timestamp was accepted from
-  connQueues - A list of lists, one for each side, N E S W
-  stateNum   - 0 - IDLE/MEASURING, 1 - REPORT_LOCAL, 2 - REPORT_REMOTE
-  procQueue  - Data that is pending being pushed into this ASIC
-               Once pushed, it arrives at connQueues (if it is meant to)
+  _curLocalQueue - Tells us whether we're in ping or pong state
+  _remoteQueues  - A list of lists, one for each side, N E S W, which stores hits
   """
   def __init__(self, fOsc = 50e6, nPixels = 16, randomRate = 1.0/9.0, timeout = 0.5, row = None, col = None,
-               isDaqNode = False, transferTicks = 4*66):
+               isDaqNode = False, transferTicks = 4*66, debugLevel=0):
+    # relevant asic parameters
     self.nPixels        = 16
     self.fOsc           = fOsc
     self.tOsc           = 1.0/fOsc
-    self.queues         = [[],[]]
-    self.curQueue       = 0
+    self._curLocalQueue = 0
     self.lastTsDir      = None
-    self.absTimeNow     = 0
-    self.lastAbsHitTime = [0] * self.nPixels
-    self.connections    = [None] * 4
-    self.connQueues     = [[],[],[],[]]
-    self.maxConnDepths  = [0,0,0,0]
-    self.maxDepth       = 0
-    self.stateNum       = 0
+    self._maxLocalDepth = 0
+    self.state          = 0
     self.randomRate     = randomRate
     self.transferTicks  = transferTicks
     self.timeoutStart   = 0
     self.timeout        = timeout
     self.row            = row
     self.col            = col
+    # timing
+    self.lastAbsHitTime = [0] * self.nPixels
+    self.absTimeNow     = 0
+    self.absTicksNow    = 0
+    # daq node
     self.isDaqNode      = isDaqNode
     self.daqHits        = 0
-    self.creation_time = time.perf_counter()
+    # queues
+    self._localQueues   = [[],[]]
+    self.connections    = [None] * 4
+    self._remoteQueues  = [[],[],[],[]]
+    self.maxConnDepths  = [0,0,0,0]
+    # additional
+    self._debugLevel = debugLevel
+    self._measurements = 0
+    self._transmissions = 0
+    self._receptions = 0
 
   def __repr__(self):
     self.PrintStatus()
@@ -144,12 +167,14 @@ class QPixAsic:
 
   def PrintStatus(self):
     print(" ASIC ("+str(self.row)+","+str(self.col)+") ", end="")
-    print(" STATE "+str(self.stateNum),end='')
-    print(" N_LOCAL(A,B) "+str(len(self.queues[0])) + "," + str(len(self.queues[1])),end='')
+    print(" STATE "+str(self.state),end='')
+    print(" N_LOCAL(A,B) "+str(len(self._localQueues[0])) + "," + str(len(self._localQueues[1])),end='')
     print(" N_REMOTE(N,E,S,W) ",end='')
     for d in range(0,4):
-      print(str(len(self.connQueues[d])) + ",",end='')
+      print(str(len(self._remoteQueues[d])) + ",",end='')
     print(" t = "+str(self.absTimeNow))
+    print(" ticks = "+str(self.absTicksNow))
+    print("Measurements:", self._measurements, "Transactions:", self._transmissions)
 
   def CountConnections(self):
     nConnected = 0
@@ -169,9 +194,6 @@ class QPixAsic:
     Receive data from a neighbor
     queueItem - tuple of (asic, dir, hit, absTime)
     """
-    # Output list of tuples for next actions, each entry of form (asic, dir, hit, absTime)
-    outList = [] 
-
     inDir     = queueItem.dir
     inHit     = queueItem.pixelHit
     inAbsTime = queueItem.absTime
@@ -186,50 +208,53 @@ class QPixAsic:
       return []
 
     # print("Receive data called for ASIC ("+str(self.row)+","+str(self.col)+")")
+    outList = [] 
     # 0: MEASURING STATE
     #    Wait for timestamps... when we see one:
     #    a) Mark where the timestamp came from
     #    b) Generate Poisson hits up to the current time
     #    c) Add the timestamp as the last entry to the queue
-    #    d) Swap queues
+    #    d) Swap _localQueues
     #    e) Pass interrogation on to all other neighbors
     #       (i.e., add them to the outList)
     #    f) Advance to the next state
-    if self.stateNum == 0:
-      # If this is a timestamp from the DAQ node, do the above steps
+    if self.state == 0:
+      # If this is a timestamp from the DAQ node, do the below steps
       if inHit.channelMask == 0 and inHit.originCol == None and inHit.originRow == None:
         # a) Mark where the timestamp came from
         self.lastTsDir = inDir
         # b) Generate Poisson hits up to the current AbsTime
         self._GeneratePoissonHits(inAbsTime)
         # c) Add the timestamp as the last entry to the queue
-        self.queues[self.curQueue].append(PixelHit(inHit.hitTime, [], self.row, self.col))
+        self._localQueues[self._curLocalQueue].append(PixelHit(inHit.hitTime, [], self.row, self.col))
         #  update max queue depth
-        if len(self.queues[self.curQueue]) > self.maxDepth:
-          self.maxDepth = len(self.queues[self.curQueue])
-        # d) Swap recording queues
-        self.curQueue = (self.curQueue + 1) % 2
+        if len(self._localQueues[self._curLocalQueue]) > self._maxLocalDepth:
+          self._maxLocalDepth = len(self._localQueues[self._curLocalQueue])
+        # d) Swap recording _localQueues
+        self._curLocalQueue = (self._curLocalQueue + 1) % 2
         # e) Pass interrogation to all other neighbors
-        for i in range(0,4):
-          transactionCompleteTime = inAbsTime + self.transferTicks * self.tOsc
-          self.absTimeNow = transactionCompleteTime
+        transactionCompleteTime = inAbsTime + self.transferTicks * self.tOsc
+        self.absTimeNow = transactionCompleteTime
+        for i in range(4):
           if i != inDir and self.connections[i]:
             outList.append((self.connections[i] , (i+2)%4, inHit, transactionCompleteTime))
         # f) Advance to the next state
-        self.stateNum = 1
-      # It the inbound hit is anything else, don't do anything, the data is lost
+        self.state = 1
+        self._measurements += 1
+      # If the inbound hit is anything else, don't do anything, the data is lost
       else:
-        pass
+        print("WARNING lost data! Can't send data while measuring!")
 
     # If we're in any other state, we should just queue up data into our local lists
     else:
       # Don't forward source timestamps
-      if inHit.originRow != None and inHit.originCol != None:
+      if inHit.originRow is not None and inHit.originCol is not None:
         # print(str(self.row)+","+str(self.col)+" : adding hit from "+str(inHit.originRow)+","+str(inHit.originCol)+" at "+str(self.absTimeNow))
-        self.connQueues[inDir].append(inHit)
+        self._remoteQueues[inDir].append(inHit)
+        self._receptions += 1
         # update max queue depth
-        if len(self.connQueues[inDir]) > self.maxConnDepths[inDir]:
-          self.maxConnDepths[inDir] = len(self.connQueues[inDir])
+        if len(self._remoteQueues[inDir]) > self.maxConnDepths[inDir]:
+          self.maxConnDepths[inDir] = len(self._remoteQueues[inDir])
 
     return outList
 
@@ -251,11 +276,8 @@ class QPixAsic:
       foreach unique entry in the timestamp list, create a hit with proper parameters,
       add it to the queue (A or B)
     """
-
     tempList = []
-    # Bookeeping for queues
-    thisQueueNum = self.curQueue
-    nextQueueNum = (self.curQueue + 1) % 2
+
     # Generate new hits
     for ch in range(self.nPixels):
       currentTime = self.lastAbsHitTime[ch]
@@ -270,9 +292,9 @@ class QPixAsic:
         elif nextAbsHitTime > targetTime:
           currentTime             = targetTime
           self.lastAbsHitTime[ch] = targetTime
-    tempList.sort(key=lambda x : x[1] , reverse = False)
-    self._CombineHitsAndAppend(tempList, self.queues[thisQueueNum])
-    # Return the number of total hits added
+    tempList.sort(key=lambda x : x[1], reverse = False)
+    self._CombineHitsAndAppend(tempList, self._localQueues[self._curLocalQueue])
+
     return len(tempList)
 
   def _CombineHitsAndAppend(self, hitList, queue):
@@ -281,9 +303,9 @@ class QPixAsic:
     '''
     lastEntry = None
     nextEntry = None
-    for i in range(0,len(hitList)):
+    for i in range(len(hitList)):
       thisTime = hitList[i][1]
-      thisCh   = hitList[i][0]
+      thisCh = hitList[i][0]
       if not(lastEntry):
         lastEntry = PixelHit(thisTime, [thisCh], self.row, self.col)
       else:
@@ -304,20 +326,18 @@ class QPixAsic:
     if self.isDaqNode or self.absTimeNow > targetTime:
       return []
 
-    # 0: MEASURING STATE: Do nothing, we already did everything we needed when we received data
-    if self.stateNum == 0:
+    if self.state == 0:
       return self._processMeasuringState(targetTime)
 
-    # 1: TRANSMIT LOCAL: Move a local hit out
-    elif self.stateNum == 1:
+    elif self.state == 1:
       return self._processTransmitLocalState(targetTime)
 
-    # 2: TRANSMIT REMOTE
-    elif self.stateNum == 2:
+    elif self.state == 2:
       return self._processTransmitRemoteState(targetTime)
 
     # undefined state
     print("WARNING! ASIC in undefined state")
+    self.state = 0
     return []
 
   def _processMeasuringState(self, targetTime):
@@ -329,21 +349,22 @@ class QPixAsic:
 
   def _processTransmitLocalState(self, targetTime):
     """
-    helper function for processing sending local data where it needs to go
+    helper function for sending local data where it needs to go
     """
 
     outList = []
     transactionCompleteTime = self.absTimeNow + self.transferTicks * self.tOsc
+    self._transmissions += 1
 
-    # Note that hits come from the prior queue, since curQueue tracks where we're
+    # Note that hits come from the prior queue, since _curLocalQueue tracks where we're
     # now storing new hits, so the previous one is the one to empty now.
-    if len(self.queues[(self.curQueue+1)%2]) > 0:
-      hit =  self.queues[(self.curQueue+1)%2].pop(0)
-      outList.append((self.connections[self.lastTsDir] , (self.lastTsDir+2)%4, hit, transactionCompleteTime))
+    if len(self._localQueues[(self._curLocalQueue+1)%2]) > 0:
+      hit = self._localQueues[(self._curLocalQueue+1)%2].pop(0)
+      outList.append((self.connections[self.lastTsDir], (self.lastTsDir+2)%4, hit, transactionCompleteTime))
       self.absTimeNow = transactionCompleteTime
       # print(str(self.row)+","+str(self.col)+" : sending local hit to "+DIRECTIONS[self.lastTsDir]+" at "+str(transactionCompleteTime))
     else:
-      self.stateNum = 2
+      self.state = 2
       self.timeoutStart = self.absTimeNow
 
     return outList
@@ -353,55 +374,38 @@ class QPixAsic:
     helper function for sending remote data where it needs to go
     """
 
-    outList = []
     # If we're timed out, just kill it
     if self.absTimeNow - self.timeoutStart > self.timeout:
-      self.stateNum = 0
-      for q in self.queues:
+      self.state = 0
+      for q in self._localQueues:
         if len(q) > 0:
           print("Lost "+str(len(q))+" hits that were left to forward!")
-      self.queues = [[],[],[],[]]
-      return outList
+      self._localQueues = [[], []]
+      return []
 
     # If there's nothing to forward, just bring us up to requested time
     hitsToForward = False
-    for q in self.connQueues:
+    for q in self._remoteQueues:
       if len(q) > 0:
         hitsToForward = True
     if not(hitsToForward):
       self.absTimeNow = targetTime
       if self.absTimeNow - self.timeoutStart > self.timeout:
-        self.stateNum = 0
-      return outList
+        self.state = 0
+      return []
 
     # Otherwise, check if there's a hit to forward, if so, forward it
     # Using a fixed priority here
+    outList = []
     transactionCompleteTime = self.absTimeNow + self.transferTicks * self.tOsc
     hit = None
-    for cq in self.connQueues:
+    for cq in self._remoteQueues:
       if len(cq) > 0:
         hit = cq.pop(0)
         break
     if hit:
       # print(str(self.row)+","+str(self.col)+" : forwarding hit from "+str(hit.originRow)+","+str(hit.originCol)+" at "+str(transactionCompleteTime))
+      self._transmissions += 1
       outList.append((self.connections[self.lastTsDir], (self.lastTsDir+2)%4 , hit, transactionCompleteTime))
       self.absTimeNow = transactionCompleteTime
     return outList
-
-
-class PixelHit:
-  """
-  Something like a struct to store actual hits.
-  A hit corresponds to what would be a bitmask of channels hit for a given timestamp
-  We'll just treat that mask as a list of channels for now
-  """
-  def __init__(self, hitTime, channelList, originRow, originCol):
-    self.originRow   = originRow
-    self.originCol   = originCol
-    self.hitTime     = hitTime
-    self.channelMask = 0
-    for ch in channelList: 
-      self.channelMask |= 0x1 << ch
-
-  def AddChannel(self, channel):
-    self.channelMask |= 0x1 << channel

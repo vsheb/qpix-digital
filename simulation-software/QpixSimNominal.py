@@ -114,7 +114,7 @@ while(timeNow < timeEnd):
     print("t = "+str(timeNow))
     for r in range(0,nRows):
       for c in range(0,nCols):
-        print(str(asicMatrix[r][c].stateNum),end='')
+        print(str(asicMatrix[r][c].state),end='')
       print("")
 
   # Make sure there's nothing to do right now
@@ -158,7 +158,7 @@ while(timeNow < timeEnd):
               print("t = "+str(procQueue.queue[0][3]))
               for r in range(0,nRows):
                 for c in range(0,nCols):
-                  print(str(asicMatrix[r][c].stateNum),end='')
+                  print(str(asicMatrix[r][c].state),end='')
                 print("")
                 # print("PrQ: ",end='')
                 # asicMatrix[i][j].PrintStatus()
@@ -166,7 +166,7 @@ while(timeNow < timeEnd):
     newQueueItems = nextAsic.ReceiveData(nextItem)
     for item in newQueueItems:
       procQueue.AddQueueItem(*item)
-      procQueue.SortQueue()
+    procQueue.SortQueue()
 
     # Now iterate through ASICs and keep doing processing on them until
     # they're caught up to the latest time.
@@ -188,7 +188,7 @@ while(timeNow < timeEnd):
               print("t = "+str(procQueue.queue[0][3]))
               for r in range(0,nRows):
                 for c in range(0,nCols):
-                  print(str(asicMatrix[r][c].stateNum),end='')
+                  print(str(asicMatrix[r][c].state),end='')
                 print("")
 
             # Print states if they were updated
@@ -211,7 +211,7 @@ print("MAX QUEUE DEPTHS")
 # Check the current queue depths
 for i in range(0,nRows):
   for j in range(0,nCols):
-    print(str(i)+" "+str(j)+" "+str(asicMatrix[i][j].maxDepth)+" ",end='')
+    print(str(i)+" "+str(j)+" "+str(asicMatrix[i][j]._maxLocalDepth)+" ",end='')
     for d in range(0,4):
       print(str(asicMatrix[i][j].maxConnDepths[d])+" ",end='')
     print()

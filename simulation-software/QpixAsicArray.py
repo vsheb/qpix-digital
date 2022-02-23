@@ -29,9 +29,6 @@ class QpixAsicArray():
         self.fNominal = fNominal
         self.pctSpread = pctSpread
 
-        # time tracking - track the global cpu time of when the array is first created
-        self._start = time.perf_counter()
-
         # Make the array and connections
         self._asics = self._makeArray()
         self._daqNode = qpa.QPixAsic(self.fNominal, 0, isDaqNode=True)
@@ -62,7 +59,7 @@ class QpixAsicArray():
         for i in range(self._nrows):
             for j in range(self._ncols):
                 frq = random.gauss(self.fNominal,self.fNominal*self.pctSpread)
-                matrix[i].append(qpa.QPixAsic(frq, self._nPixs, row = i, col = j))
+                matrix[i].append(qpa.QPixAsic(frq, self._nPixs, row = i, col = j, debugLevel=self._debugLevel))
                 if self._debugLevel >= 5:
                     print(f"Created ASIC at row {i} col {j} with frq: {frq:.2f}")
 
@@ -106,9 +103,8 @@ class QpixAsicArray():
         VARS:
             interval - time in seconds to issue two different commands and to read time value pairs back from asics
         """
-        for i in range(self._nrows):
-            for j in range(self._ncols):
-                newProcessItems = self._asics[i][j].Process(interval)
+        for asic in self:
+            newProcessItems = asic.Process(interval)
         print("calibration complete!")
 
     def Command(self, data):
@@ -117,6 +113,23 @@ class QpixAsicArray():
         VARS:
             data - struct value sent to daq node, which relays information to the rest of the boards
         """
+
+    def ProcessArray(self, procQueue, nextTime):
+        """
+        move all processing of the array up to absTime
+        """
+        processed = 0
+        somethingToDo = True
+        while somethingToDo:
+            somethingToDo = False
+            for asic in self:
+                newProcessItems = asic.Process(nextTime)
+                if newProcessItems:
+                    processed += 1
+                    somethingToDo = True
+                    for item in newProcessItems:
+                        procQueue.AddQueueItem(*item)
+        return processed
 
 if __name__ == "__main__":
     array = QpixAsicArray(2,2)
