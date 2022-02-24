@@ -19,11 +19,13 @@ class PixelHit:
   A hit corresponds to what would be a bitmask of channels hit for a given timestamp
   We'll just treat that mask as a list of channels for now
   """
-  def __init__(self, hitTime, channelList, originRow, originCol):
+  def __init__(self, hitTime, channelList, originRow, originCol, data=None):
     self.hitTime     = hitTime
     self.originRow   = originRow
     self.originCol   = originCol
     self.channelMask = 0
+    # extra data to lug around for commands send to ASICs
+    self.data = data
     for ch in channelList: 
       self.channelMask |= 0x1 << ch
 
@@ -151,9 +153,11 @@ class QPixAsic:
     self._absTimeNow    = 0
     self.relTimeNow     = (random.random()-0.5) * self.tOsc
     self.relTicksNow    = 0
-    # daq node
+    # daq node Configuration
     self.isDaqNode      = isDaqNode
-    self.daqHits        = 0
+    if self.isDaqNode:
+      self.daqHits        = 0
+      self.pixelData = {}
     # queues
     self._localQueues   = [[],[]]
     self.connections    = [None] * 4
@@ -202,19 +206,30 @@ class QPixAsic:
     Receive data from a neighbor
     queueItem - tuple of (asic, dir, hit, inTime)
     """
-    if self.isDaqNode:
-      # print("DAQ node received: ",end=' ')
-      # print("from: ("+str(inHit.originRow)+","+str(inHit.originCol)+")",end=' ')
-      # print("Hit: "+str(inHit.hitTime)+" , "+format(inHit.channelMask,'016b'),end=' ')
-      # print("absT: "+str(inTime))
-      self.UpdateTime(queueItem.inTime)
-      self.daqHits += 1
-      return []
-
     inDir     = queueItem.dir
     inHit     = queueItem.pixelHit
     inTime    = queueItem.inTime
     inCommand = queueItem.command
+
+    # how a DAQNode records and stores data
+    if self.isDaqNode:
+      self.UpdateTime(queueItem.inTime)
+      self.daqHits += 1
+      if self._debugLevel > 0:
+        print(f"DAQ-{self.relTicksNow} ",end=' ')
+        print(f"from: ({inHit.originRow},{inHit.originCol})",end='\n\t')
+        print(f"Hit Time: {inHit.hitTime} "+format(inHit.channelMask,'016b'),end='\n\t')
+        print(f"absT: {inTime}", end='\n\t')
+        print(f"tDiff (ns): {(self.relTimeNow-inTime)*1e9:2.2f}")
+      # store relevant data from the hit if necessary
+      if hasattr(inHit, "data"):
+        pixel = f"({inHit.originRow},{inHit.originCol})"
+        if pixel not in self.pixelData:
+          self.pixelData[pixel] = []
+        self.pixelData[pixel].append((self.relTicksNow, inHit.data))
+        print("received data!", inHit.data)
+      return []
+
     fromAsic = self.connections[inDir]
     if fromAsic is None:
       print("WARNING receiving data from non-existent connection!")
@@ -239,13 +254,16 @@ class QPixAsic:
           if i != inDir and self.connections[i]:
             outList.append((self.connections[i] , (i+2)%4, inHit, transactionCompleteTime, inCommand))
 
-        # Build hits if default inCommand
+        # Build hits on local queues for default inCommand
         if inCommand is None:
           self._GeneratePoissonHits(inTime)
           self._localQueues[self._curLocalQueue].append(PixelHit(inHit.hitTime, [], self.row, self.col))
           if len(self._localQueues[self._curLocalQueue]) > self._maxLocalDepth:
             self._maxLocalDepth = len(self._localQueues[self._curLocalQueue])
           self._curLocalQueue = (self._curLocalQueue + 1) % 2
+        # alternative responses to incoming daq nodes here
+        else:
+          self._command = inCommand
       else:
         print("WARNING lost data! Can't send data while measuring!")
 
@@ -330,13 +348,21 @@ class QPixAsic:
     if self.isDaqNode or self._absTimeNow > targetTime:
       return []
 
-    elif self.state == 0:
+    # Process incoming commands first
+    if hasattr(self, "_command") and self._command is not None:
+      # print(f"Asic-{self.row}-{self.col}.{self.state} received broadcast: {self._command}")
+      self._command = None
+      # all commands build local queues, and the command should build up any 'hit' of interest
+      self.state = 1
+      self._localQueues[(self._curLocalQueue+1)%2].append(PixelHit(self._measuredTime, [], self.row, self.col, data=self.relTicksNow))
+
+    if self.state == 0:
       return self._processMeasuringState(targetTime)
 
-    elif self.state == 1:
+    if self.state == 1:
       return self._processTransmitLocalState(targetTime)
 
-    elif self.state == 2:
+    if self.state == 2:
       return self._processTransmitRemoteState(targetTime)
 
     else:

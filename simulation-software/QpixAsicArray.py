@@ -31,7 +31,7 @@ class QpixAsicArray():
 
         # Make the array and connections
         self._asics = self._makeArray()
-        self._daqNode = qpa.QPixAsic(self.fNominal, 0, isDaqNode=True)
+        self._daqNode = qpa.QPixAsic(self.fNominal, 0, isDaqNode=True, debugLevel=self._debugLevel)
         self._asics[0][0].connections[3] = self._daqNode
 
         # the array also manages all of the processing queue times to use
