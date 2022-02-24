@@ -29,16 +29,16 @@ while(timeNow < timeEnd):
     while(procQueue.Length() > 0):
 
         nextItem = procQueue.PopQueue()
-        qpa.ProcessArray(procQueue, nextItem.absTime)
+        qpa.ProcessArray(procQueue, nextItem.inTime)
 
         newProcessItems = nextItem.asic.ReceiveData(nextItem)
         if newProcessItems:
             for item in newProcessItems:
                 procQueue.AddQueueItem(*item)
 
-        qpa.ProcessArray(procQueue, nextItem.absTime)
+        qpa.ProcessArray(procQueue, nextItem.inTime)
 
-    eventTimes.append(qpa._daqNode.absTimeNow-timeNow)
+    eventTimes.append(qpa._daqNode._absTimeNow-timeNow)
     hitsPerEvent.append(qpa._daqNode.daqHits)
     qpa._daqNode.daqHits = 0
     timeNow += deltaT
@@ -59,3 +59,9 @@ for i in range(0,len(eventTimes)):
 print("HITS PER EVENT")
 for i in range(0,len(hitsPerEvent)):
   print(str(hitsPerEvent[i]))
+
+qpa._timeNow = timeNow
+qpa._tickNow = tickNow
+
+qpa.Calibrate(1)
+qpa.PrintTimeMap()

@@ -16,10 +16,10 @@ class QpixAsicArray():
       deltaT=1.0     -
       timeEpsilon=1e-6 - stepping time interval for simulation
       timeEnd=2.5 - stop time for simulation
-      debug=5.0 - debug level, values >= 5 produce text output
+      debug=0.0 - debug level, values >= 5 produce text output
     """
     def __init__(self, nrows, ncols, nPixs=16, fNominal=50e6, pctSpread=0.05, deltaT=1.0, timeEpsilon=1e-6,
-                timeEnd=2.5, debug=5.0):
+                timeEnd=2.5, debug=0.0):
 
         # array parameters
         self._nrows = nrows
@@ -36,6 +36,11 @@ class QpixAsicArray():
 
         # the array also manages all of the processing queue times to use
         self._queue = qpa.ProcQueue()
+        self._tickNow = 50e6
+        self._deltaT = 1.0
+        self._deltaTick = 50e6
+        self._timeEpsilon = 1e-6
+        self._timeNow = 0
     
     def __iter__(self):
         '''returns iterable through the asics within the array'''
@@ -103,16 +108,67 @@ class QpixAsicArray():
         VARS:
             interval - time in seconds to issue two different commands and to read time value pairs back from asics
         """
-        for asic in self:
-            newProcessItems = asic.Process(interval)
-        print("calibration complete!")
 
-    def Command(self, data):
+        print("performing calibration..")
+        timeEnd = self._timeNow + interval
+
+        # hard reset asic time values
+        for asic in self:
+            asic._measurements = 0
+            asic._hitReceptions = 0
+            asic._remoteTransmissions = 0
+            asic._localTransmissions = 0
+            asic._measuredTime = 0
+
+        calibrateSteps = self._Command(timeEnd, command="Calibrate")
+        print(f"calibration complete in {calibrateSteps} steps!")
+
+    def timeStamp(self, interval=1.0):
         """
-        funciton used to issue a command sequence given by data to all of the boards
+        Function for issueing command to base node from daq node, and beginning
+        a full readout sequence of timestamp data
         VARS:
-            data - struct value sent to daq node, which relays information to the rest of the boards
+            interval - seconds of time for how long the array will process data
         """
+        print("performing timestamp..")
+        timeEnd = self._timeNow + interval
+        readoutSteps = self._Command(timeEnd)
+        print(f"timestamp complete in {readoutSteps} steps!")
+
+    def _Command(self, timeEnd, command=None):
+        """
+        Function for issueing command to base node from daq node, and beginning
+        a full readout sequence
+        VARS:
+            timeEnd - how long the array should be processed until
+            command - string argument that the asics receive to tell them what readout is coming in from DAQnode
+        """
+        steps = 0
+        while(self._timeNow < timeEnd):
+
+            for asic in self:
+                newProcessItems = asic.Process(self._timeNow - self._timeEpsilon)
+                if newProcessItems:
+                    print("WARNING: ASIC had things left to do at next maor time step")
+
+            self._queue.AddQueueItem(self[0][0], 3, qpa.PixelHit(self._tickNow, [], None, None), self._timeNow, command=command)
+
+            while(self._queue.Length() > 0):
+
+                steps += 1
+                nextItem = self._queue.PopQueue()
+                self.ProcessArray(self._queue, nextItem.inTime)
+
+                newProcessItems = nextItem.asic.ReceiveData(nextItem)
+                if newProcessItems:
+                    for item in newProcessItems:
+                        self._queue.AddQueueItem(*item)
+
+                self.ProcessArray(self._queue, nextItem.inTime)
+
+            self._timeNow += self._deltaT
+            self._tickNow += self._deltaTick
+        return steps
 
     def ProcessArray(self, procQueue, nextTime):
         """
@@ -130,6 +186,76 @@ class QpixAsicArray():
                     for item in newProcessItems:
                         procQueue.AddQueueItem(*item)
         return processed
+
+    def PrintTsMap(self):
+        """
+        boiler plate code for printing interesting data about each asic
+        """
+        for i, asic in enumerate(self):
+            print(asic.lastTsDir, end=" ")
+            if (i+1)%self._nrows == 0:
+                print()
+
+    def PrintTimeMap(self):
+        for i, asic in enumerate(self):
+            print(asic.relTimeNow, end=" ")
+            if (i+1)%self._nrows == 0:
+                print()
+
+    def PrintTicksMap(self):
+        print("Total Ticks")
+        for i, asic in enumerate(self):
+            print(asic.relTicksNow, end=" ")
+            if (i+1)%self._nrows == 0:
+                print()
+
+    def PrintMeasureMap(self):
+        print("Measured Transmissions:")
+        for i, asic in enumerate(self):
+            print(asic._measurements, end=" ")
+            if (i+1)%self._nrows == 0:
+                print()
+
+    def PrintReceiveMap(self):
+        print("Received Transmissions:")
+        for i, asic in enumerate(self):
+            print(asic._hitReceptions, end=" ")
+            if (i+1)%self._nrows == 0:
+                print()
+
+    def PrintTimes(self):
+        print("Tick Values :")
+        for i, asic in enumerate(self):
+            print(f"{asic.relTicksNow:1.2E}", end=" ")
+            if (i+1)%self._nrows == 0:
+                print()
+        print("Rel Time Values (us):")
+        for i, asic in enumerate(self):
+            print(f"{(asic.relTimeNow)*1e6:1.2E}", end=" ")
+            if (i+1)%self._nrows == 0:
+                print()
+        print("Abs Time Values (us):")
+        for i, asic in enumerate(self):
+            print(f"{(asic._absTimeNow - self[0][0]._absTimeNow)*1e6:1.2E}", end=" ")
+            if (i+1)%self._nrows == 0:
+                print()
+        print("Measured Time Values (us):")
+        for i, asic in enumerate(self):
+            print(f"{(asic._measuredTime - self[0][0]._measuredTime)*1e6:3.2f}", end=" ")
+            if (i+1)%self._nrows == 0:
+                print()
+
+    def PrintTransactMap(self):
+        print("Local Transmissions:")
+        for i, asic in enumerate(self):
+            print(asic._localTransmissions, end=" ")
+            if (i+1)%self._nrows == 0:
+                print()
+        print("Remote Transmissions:")
+        for i, asic in enumerate(self):
+            print(asic._remoteTransmissions, end=" ")
+            if (i+1)%self._nrows == 0:
+                print()
 
 if __name__ == "__main__":
     array = QpixAsicArray(2,2)
