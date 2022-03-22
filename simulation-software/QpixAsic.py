@@ -227,7 +227,7 @@ class QPixAsic:
         if pixel not in self.pixelData:
           self.pixelData[pixel] = []
         self.pixelData[pixel].append((self.relTicksNow, inHit.data))
-        print("received data!", inHit.data)
+        # print("received data!", inHit.data)
       return []
 
     fromAsic = self.connections[inDir]
