@@ -37,9 +37,9 @@ class QpixAsicArray():
         # the array also manages all of the processing queue times to use
         self._queue = qpa.ProcQueue()
         self._tickNow = 50e6
-        self._deltaT = 1.0
-        self._deltaTick = 50e6
         self._timeEpsilon = 1e-6
+        self._deltaT = deltaT
+        self._deltaTick = 50e6 * self._deltaT
         self._timeNow = 0
     
     def __iter__(self):
@@ -122,6 +122,7 @@ class QpixAsicArray():
 
         calibrateSteps = self._Command(timeEnd, command="Calibrate")
         print(f"calibration complete in {calibrateSteps} steps!")
+        print(f"current time is {self._timeNow}")
 
     def timeStamp(self, interval=1.0):
         """
