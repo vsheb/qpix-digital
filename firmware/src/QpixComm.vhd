@@ -94,50 +94,50 @@ begin
          --);
       --end generate DUMMY_GEN;
 
-      --UART_GEN : if TXRX_TYPE = "UART" generate 
-         --QpixTxRx_U : entity work.UartTop
-         --generic map (
-            --NUM_BITS_G => NUM_BITS_G
-         --)
-         --port map (
-            --clk         => clk,
-            --sRst        => rst,
+      UART_GEN : if TXRX_TYPE = "UART" generate 
+         QpixTxRx_U : entity work.UartTop
+         generic map (
+            NUM_BITS_G => NUM_BITS_G
+         )
+         port map (
+            clk         => clk,
+            sRst        => rst,
 
-            ----txValid     => TxPortsArr(i).Valid,
-            --txByte      => TxByteArr(i), 
-            --txByteValid => TxByteValidArr(i), 
-            --txByteReady => TxByteReadyArr(i),
+            --txValid     => TxPortsArr(i).Valid,
+            txByte      => TxByteArr(i), 
+            txByteValid => TxByteValidArr(i), 
+            txByteReady => TxByteReadyArr(i),
 
-            ----rxValid     => RxPortsArr(i).Valid,
-            --rxByte      => RxByteArr(i),
-            --rxByteValid => RxByteValidArr(i),
-            --rxFrameErr  => open,
-            --rxBreakErr  => open,
+            --rxValid     => RxPortsArr(i).Valid,
+            rxByte      => RxByteArr(i),
+            rxByteValid => RxByteValidArr(i),
+            rxFrameErr  => open,
+            rxBreakErr  => open,
 
-            --uartRx      => RxPortsArr(i),
-            --uartTx      => TxPortsArr(i)
+            uartRx      => RxPortsArr(i),
+            uartTx      => TxPortsArr(i)
             
-         --);
-      --end generate UART_GEN;
+         );
+      end generate UART_GEN;
 
-      --ENDEAROV_GEN : if TXRX_TYPE = "ENDEAVOR" generate
+      ENDEAROV_GEN : if TXRX_TYPE = "ENDEAVOR" generate
          --GEN_POS : if (X_POS_G = 0 and i = 3) or (Y_POS_G = 2 and i = 2) or (X_POS_G = 2 and i = 1) generate
             --RxByteArr(i) <= (others => '0');
             --RxByteValidArr(i) <= '0';
             --TxPortsArr(i)  <= QpixTxRxPortZero_C;
          --else generate
---         GEN_POS : if (X_POS_G = 0 and i = 3) or (Y_POS_G = 2 and i = 2) or 
---            (Y_POS_G = 0 and i = 0 and X_POS_G /= 0) or (X_POS_G = 2 and i = 1) generate
---         --GEN_POS : if X_POS_G = 2 and Y_POS_G = 2 and i = 2 generate
---            RxByteArr(i) <= (others => '0');
---            RxByteValidArr(i) <= '0';
---            TxByteReadyArr(i)    <= '1';
---            TxPortsArr(i)  <= QpixTxRxPortZero_C;
---            RxFifoDoutArr(i) <= (others => '0');
---            RxFifoEmptyArr(i) <= '1';
---            RxFifoFullArr(i)  <= '0';
+         GEN_POS : if (X_POS_G = 0 and i = 3) or (Y_POS_G = 2 and i = 2) or 
+            (Y_POS_G = 0 and i = 0 and X_POS_G /= 0) or (X_POS_G = 2 and i = 1) generate
+         --GEN_POS : if X_POS_G = 2 and Y_POS_G = 2 and i = 2 generate
+            RxByteArr(i) <= (others => '0');
+            RxByteValidArr(i) <= '0';
+            TxByteReadyArr(i)    <= '1';
+            TxPortsArr(i)  <= QpixTxRxPortZero_C;
+            RxFifoDoutArr(i) <= (others => '0');
+            RxFifoEmptyArr(i) <= '1';
+            RxFifoFullArr(i)  <= '0';
 
---         else generate
+         else generate
             QpixTXRx_U : entity work.QpixEndeavorTop
             generic map (
                NUM_BITS_G => NUM_BITS_G
@@ -175,8 +175,8 @@ begin
                empty => RxFifoEmptyArr(i),
                full  => RxFifoFullArr(i)
             );
---         end generate;
-      --end generate ENDEAROV_GEN;
+         end generate;
+      end generate ENDEAROV_GEN;
 
    end generate GEN_TXRX;
    ------------------------------------------------------------

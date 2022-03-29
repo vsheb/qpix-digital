@@ -9,7 +9,7 @@ use work.QpixPkg.all;
 
 entity QpixAsicArray is
    generic (
-      TXRX_TYPE      : string  := "UART"; -- "DUMMY"/"UART"/"ENDEAVOR"
+      TXRX_TYPE      : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
       X_NUM_G        : natural := 3;
       Y_NUM_G        : natural := 3
       
@@ -90,10 +90,10 @@ begin
                RxPortsArr(0) => YTxArr(i)(j),   -- up 
                RxPortsArr(1) => XRxArr(i+1)(j), -- right
                RxPortsArr(2) => YRxArr(i)(j+1), -- down
-               RxPortsArr(3) => XTxArr(i)(j),   -- left
+               RxPortsArr(3) => XTxArr(i)(j)   -- left
 
-               State         => StatesArr(i)(j),
-               debug         => debug(i,j)
+               --State         => StatesArr(i)(j),
+               --debug         => debug(i,j)
             );
       end generate GEN_Y;
    end generate GEN_X;
