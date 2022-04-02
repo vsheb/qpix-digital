@@ -24,7 +24,7 @@ package QpixProtoPkg is
    constant REGMAP_FRAMEERR  : QpixProtoAddr_t := int2slv(8, G_QPIXPROTO_ADDR_BITS);
    constant REGMAP_BREAKERR  : QpixProtoAddr_t := int2slv(9, G_QPIXPROTO_ADDR_BITS);
 
-   type SUBADDR_RANGE is range 21 downto 18;
+   subtype SUBADDR_RANGE is natural range 21 downto 18;
 
 
 end package;
