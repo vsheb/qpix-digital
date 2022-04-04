@@ -8,7 +8,7 @@ from enum import Enum
 #Enum-like things
 DIRECTIONS = ("North", "East", "South", "West")
 
-class AsicStates(Enum):
+class AicStates(Enum):
   Measure = 0
   TransmitLocal = 1
   TransmitRemote = 2

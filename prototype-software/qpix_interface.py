@@ -8,8 +8,7 @@ import glob
 
 import time
 
-from collections import namedtuple 
-  
+from collections import namedtuple
 
 QP_IP      = '192.168.1.10'
 QP_PORT    = 7
@@ -359,13 +358,16 @@ class QPController(QPInterface):
 
       f.write("%d %d %d \n" % (d_t, ev.n_hits, int(ev.ok)))
 
-
 if __name__ == '__main__':
+
+  print("making the controller and looking for ports!")
   qpc = QPController()
+  print("attempting register read and write requests..")
   print(f"0x{qpc.regRead(0):02x}")
   print(f"0x{qpc.regRead(2**18+32):02x}")
   print(f"evtsize: 0x{qpc.regRead(REG_ADDR['EVTSIZE']):02x}")
   print(f"trigTime: 0x{qpc.regRead(REG_ADDR['TRGTIME']):02x}")
+  lakjsdf
   time = 0
   print(f"setting timeout: {time:02x}")
   qpc.setAsicsTimeout(time)
