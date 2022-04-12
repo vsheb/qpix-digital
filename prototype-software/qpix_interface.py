@@ -102,7 +102,6 @@ class QPInterface:
 
   def send(self, args):
     bytearr = self.pack(args)
-    pkg_len = len(bytearr)
     self.socket.send(bytearr)
 
   def pack(self, data):
@@ -133,7 +132,6 @@ class QPInterface:
     return struct.pack('<I', int_val)
 
   def _recvInt(self):
-
     """
     Receive int from socket and convert it from big-endian
     """
@@ -240,7 +238,7 @@ class QPController(QPInterface):
     even_list = []
     t_daq = 0
     print('Event size', siz)
-    for i in range(siz) :
+    for i in range(siz):
 
       b0 = self.memRead(i*4)
       b1 = self.memRead(i*4+1)
@@ -250,7 +248,7 @@ class QPController(QPInterface):
       y  = self.getDataY(b0,b1)
       w  = self.getWordType(b0,b1)
       if w == 5 :
-        if x in range(3) and y in range(3) :
+        if x in range(3) and y in range(3):
           recvd[y][x] = 'o'
         even_list.append(self.evtDataConv(b0,b1))
         print(0xffff&b2,': ',hex(b1),hex(b0), 'time0: ', (b0>>16)&0xffff,' time:',b0&0xffff,'X:',x,'Y:',y,"Word type:",w)
