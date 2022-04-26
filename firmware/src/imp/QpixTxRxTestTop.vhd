@@ -18,6 +18,8 @@ entity QpixTxRxTestTop is
    port (
       sysClk    : in std_logic;
       --led       : out std_logic_vector(3 downto 0);
+      daqtx        : out std_logic;
+      daqrx        : in  std_logic;
 
       -- PS ports
       DDR_addr : inout STD_LOGIC_VECTOR ( 14 downto 0 );
