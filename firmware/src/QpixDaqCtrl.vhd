@@ -217,7 +217,7 @@ begin
    begin
       if rising_edge (clk) then
          memRdReq_r <= memRdReq;
-         memRdAck <= memRdReq_r;
+         memRdAck   <= memRdReq_r;
       end if;
    end process;
    

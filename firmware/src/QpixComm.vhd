@@ -15,7 +15,7 @@ entity QpixComm is
       GATE_DELAY_G   : time    := 1 ns;
       X_POS_G        : natural := 0;
       Y_POS_G        : natural := 0;
-      TXRX_TYPE      : string  := "UART" -- "DUMMY"/"UART"/"ENDEAVOR"
+      TXRX_TYPE      : string  := "ENDEAVOR" -- "DUMMY"/"UART"/"ENDEAVOR"
    );
    port (
       clk            : in std_logic;
