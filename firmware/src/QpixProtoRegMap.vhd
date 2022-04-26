@@ -55,7 +55,7 @@ entity QpixProtoRegMap is
       memData     : in  std_logic_vector(31 downto 0);
       memAddr     : out std_logic_vector(G_QPIX_PROTO_MEM_DEPTH-1+2 downto 0);
 
-      daqTestWordIn  : in std_logic_vector(G_DATA_BITS-1 downto 0);
+      daqTestWordIn  : in std_logic_vector(G_DATA_BITS-1 downto 0) := (others => '0');
       daqTestWordOut : out  std_logic_vector(G_DATA_BITS-1 downto 0)
 
 

@@ -80,8 +80,8 @@ architecture behav of QpixTxRxTestTop is
    signal reg_wen     : std_logic := '0';
    signal reg_ack     : std_logic := '0';
 
-   signal daqTx       : QpixTxRxPortType := QpixTxRxPortZero_C;
-   signal daqRx       : QpixTxRxPortType := QpixTxRxPortZero_C;
+   --signal daqTx       : QpixTxRxPortType := QpixTxRxPortZero_C;
+   --signal daqRx       : QpixTxRxPortType := QpixTxRxPortZero_C;
 
    signal TxPortsArr  : QpixTxRxPortsArrType;
    signal RxPortsArr  : QpixTxRxPortsArrType;
@@ -290,16 +290,17 @@ begin
    memAddrRst <= trg or asicReq;
    ---------------------------------------------------
 
-   QpixAsicDummyTop_u1 : entity work.QpixAsicDummyTop
-   port map (
-      clk             => fclk,
-      rst             => '0',
-      -- TX ports to neighbour ASICs
-      Tx      => TxPortsArr(0),
-      -- RX ports to neighbour ASICs
-      Rx      => RxPortsArr(0)
-   );
+   --RxPortsArr(0) <= daqTx;
+   --daqRx <= TxPortsArr(0);
+
+   --QpixAsicDummyTop_u1 : entity work.QpixAsicDummyTop
+   --port map (
+      --clk             => fclk,
+      --rst             => '0',
+      ---- TX ports to neighbour ASICs
+      --Tx      => TxPortsArr(0),
+      ---- RX ports to neighbour ASICs
+      --Rx      => RxPortsArr(0)
+   --);
    
-   RxPortsArr(0) <= daqTx;
-   daqRx <= TxPortsArr(0);
 end behav;

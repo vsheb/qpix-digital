@@ -23,6 +23,9 @@ entity QpixProtoTop is
       sysClk    : in std_logic;
       --led       : out std_logic_vector(3 downto 0);
 
+      daqTx        : out std_logic;
+      daqRx        : in  std_logic;
+
       -- PS ports
       DDR_addr : inout STD_LOGIC_VECTOR ( 14 downto 0 );
       DDR_ba : inout STD_LOGIC_VECTOR ( 2 downto 0 );
