@@ -10,7 +10,7 @@ import time
 
 from collections import namedtuple
 
-QP_IP      = '192.168.1.10'
+QP_IP      = '192.168.1.27'
 QP_PORT    = 7
 BUFFER_SIZE = 1024
 
@@ -94,6 +94,17 @@ class QPInterface:
     # print(hex(val))
     return val
 
+  def asicRegRead(self, addr, val):
+    """
+    custom asic remote reg read
+    """
+    args = ['QRR', addr, val]
+    self.send(args)
+    rsp = self.socket.recv(4)
+    val = self._recvInt()
+    # print(hex(val))
+    return val
+
   def regWrite(self, addr, val):
     args = ['QRW',addr,val]
     self.send(args)
@@ -170,7 +181,17 @@ class QPController(QPInterface):
     self.regWrite((ASIC_REQ_OFFSET) + (0<<4) + 1,2)
 
   def setAsicDirMask(self, x=0, y=0, mask=0) :
-    self.regWrite((ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 3,0x10 + (mask&0xf))
+    """
+    sets the asic at location x,y with a direction mask to the mask direction
+    """
+    addr = (ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 3
+    asic_mask = 0x10 + (mask&0xf)
+    self.regWrite(addr, asic_mask)
+    # verify that we wrote what we wanted
+    read_mask = self.regRead(addr)
+    if read_mask != asic_mask:
+      print("\nWARNING, ASIC_MASK unequal!")
+      print(f"read_mask: {read_mask}\nasic_mask: {asic_mask}\n")
 
   def clearAsicDirMask(self, x=0, y=0) :
     self.regWrite((ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 3,0)
@@ -358,15 +379,21 @@ class QPController(QPInterface):
 
 if __name__ == '__main__':
 
-  print("making the controller and looking for ports!")
   qpc = QPController()
-  print("attempting register read and write requests..")
-  print(f"0x{qpc.regRead(0):02x}")
-  print(f"0x{qpc.regRead(2**18+32):02x}")
-  print(f"evtsize: 0x{qpc.regRead(REG_ADDR['EVTSIZE']):02x}")
-  print(f"trigTime: 0x{qpc.regRead(REG_ADDR['TRGTIME']):02x}")
-  lakjsdf
-  time = 0
-  print(f"setting timeout: {time:02x}")
-  qpc.setAsicsTimeout(time)
-  print(f"timeOut: 0x{qpc.regRead(ASIC_REQ_OFFSET+2):02x}")
+  print("setting dirMask for asic C..")
+  qpc.setAsicDirMask(0, 0, mask=4)
+
+  input("sending trigger..")
+  qpc.sendTrg()
+
+  print("attempting to read the event size..")
+  siz = qpc.regRead(REG_ADDR['EVTSIZE'])
+  input(f"evt size: 0x{siz:08x}")
+
+  if siz > 0:
+    print("reading events since found event!")
+    qpc.readEvent()
+
+  print("attempting to read the events..")
+  val = qpc.regRead(int(0x10004)+1)
+  input(f"val from read: 0x{val:08x}")
