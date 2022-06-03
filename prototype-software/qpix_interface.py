@@ -10,8 +10,8 @@ import time
 
 from collections import namedtuple
 
-QP_IP      = '192.168.1.27'
-QP_PORT    = 7
+QP_IP      = '192.169.1.27'
+QP_PORT    = 42069
 BUFFER_SIZE = 1024
 
 ###############################################
@@ -159,6 +159,26 @@ class QPInterface:
       print(exc)
       sys.exit(0)
 
+  def verify(self):
+    """
+    send information to the blank scratch register and make sure you can read
+    and write back a random word
+    """
+    verification = 0x10101010
+    version = self.regRead(0x0);
+    print(f"Running version: 0x{version:08x}")
+    self.regWrite(0x0, verification);
+    check = self.regRead(0x0);
+    if check != verification:
+      print("WARNING verification check failed!")
+      print(f"0x{verification:08x} != 0x{check:08x}")
+    else:
+      print("verification passed. communication with registers established..")
+      self.regWrite(0x0, version);
+    status = self.regRead(0x1);
+    print("current status:", status)
+
+
 class QPController(QPInterface):
   """
   Controller class to manage interfacing socket, and to expose public
@@ -167,12 +187,30 @@ class QPController(QPInterface):
   """
   def __init__(self, ip=QP_IP, port=QP_PORT, buf_sz=BUFFER_SIZE):
     super().__init__(ip, port, buf_sz)
+    self.verify()
 
   def sendTrg(self) :
     """
     Send interrogation (trigger) command
     """
     self.regWrite(REG_ADDR['CMD'],0x1);
+
+  def resetAsic(self, x=0, y=0) :
+    """
+    Send reset command to remove asic
+    """
+    # this sets dest flag, sets 3 bit x pos and 3 bit y pos, and last three bits
+    # are remote asic addr space, as constructed in QpixDaqCtrl.vhd
+    addr = (ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 1
+    self.regWrite(addr, 0x4)
+
+  def readAsicTimeout(self, x=0, y=0):
+    """
+    probe the timeout register on a remote asic
+    """
+    addr = (ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 2
+    timeout = self.regRead(addr)
+    return timeout
 
   def resetRouteState(self) : 
     """
@@ -187,13 +225,11 @@ class QPController(QPInterface):
     addr = (ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 3
     asic_mask = 0x10 + (mask&0xf)
     self.regWrite(addr, asic_mask)
-    # verify that we wrote what we wanted
-    read_mask = self.regRead(addr)
-    if read_mask != asic_mask:
-      print("\nWARNING, ASIC_MASK unequal!")
-      print(f"read_mask: {read_mask}\nasic_mask: {asic_mask}\n")
 
   def clearAsicDirMask(self, x=0, y=0) :
+    """
+    turns off ManRouting for asic as specified location
+    """
     self.regWrite((ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 3,0)
 
   def setAsicsTimeout(self, timeout=0) :
@@ -380,20 +416,41 @@ class QPController(QPInterface):
 if __name__ == '__main__':
 
   qpc = QPController()
-  print("setting dirMask for asic C..")
-  qpc.setAsicDirMask(0, 0, mask=4)
 
-  input("sending trigger..")
-  qpc.sendTrg()
+  # successful ping of qpixReq.AsicReset - can also write other values there
+  # send a reset since we're just talking to it for the first time
+  qpc.resetAsic()
 
-  print("attempting to read the event size..")
-  siz = qpc.regRead(REG_ADDR['EVTSIZE'])
-  input(f"evt size: 0x{siz:08x}")
+  # other initial config to read baseline C-ASIC
+  qpc.setAsicDirMask(x=0, y=0, mask=4) # verified mask working too on conf
 
-  if siz > 0:
-    print("reading events since found event!")
-    qpc.readEvent()
+  # make sure we can try seeing the timeout to what it thinks should be the default
+  qpc.setAsicsTimeout(15000)
+  # print("timeout set.. waiting 1s..")
+  # time.sleep(1.0)
 
-  print("attempting to read the events..")
-  val = qpc.regRead(int(0x10004)+1)
-  input(f"val from read: 0x{val:08x}")
+  # verified! Turns off dir mask!
+  # qpc.clearAsicDirMask(x=0, y=0)
+
+  # get the timeout - successful regResp.valid signal
+  # timeout = qpc.readAsicTimeout()
+  # print(f"read in timeout: 0x{timeout:08x}")
+
+  while True:
+    input("send trig?")
+    qpc.sendTrg()
+    siz = qpc.regRead(0x4)
+    if siz > 0:
+      print("EVENTS!!", siz)
+
+    # check for errors
+    frame_err = qpc.regRead(0x8)
+    break_err = qpc.regRead(0x9)
+    if frame_err > 0 or break_err > 0:
+      print(f"encountered errors, frame: {frame_err} break: {break_err}")
+
+    # look for data
+    # addr = 0
+    # data = qpc.memRead(addr)
+    # if data>0:
+    #   print("found data at addr:", addr)
