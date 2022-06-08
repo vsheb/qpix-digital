@@ -106,7 +106,7 @@ class QPInterface:
     return val
 
   def regWrite(self, addr, val):
-    args = ['QRW',addr,val]
+    args = ['QRW', addr, val]
     self.send(args)
     rsp = self.socket.recv(4)
     # print(rsp)
@@ -116,12 +116,13 @@ class QPInterface:
     self.socket.send(bytearr)
 
   def pack(self, data):
+    prepack = data
     if isinstance(data, str): data = data.split(' ')
     hdr = data[0]+'\0'
-    # print(hdr)
     byte_arr = str.encode(hdr)
-    # form byte message 
-    for arg in data[1:]:
+
+    # form byte message
+    for i, arg in enumerate(data[1:]):
       if not isinstance(arg, int): arg = int(arg, 0)
       byte_arr += self._intToLittleEndian(arg)
 
@@ -175,6 +176,7 @@ class QPInterface:
     else:
       print("verification passed. communication with registers established..")
       self.regWrite(0x0, version);
+      input("waiting..")
     status = self.regRead(0x1);
     print("current status:", status)
 
@@ -185,9 +187,10 @@ class QPController(QPInterface):
   commands for communicating with Prototype's DAQ nodes, and ASICs within
   the array.
   """
-  def __init__(self, ip=QP_IP, port=QP_PORT, buf_sz=BUFFER_SIZE):
+  def __init__(self, ip=QP_IP, port=QP_PORT, buf_sz=BUFFER_SIZE, check=True):
     super().__init__(ip, port, buf_sz)
-    self.verify()
+    if check:
+      self.verify()
 
   def sendTrg(self) :
     """
@@ -224,6 +227,7 @@ class QPController(QPInterface):
     """
     addr = (ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 3
     asic_mask = 0x10 + (mask&0xf)
+    print("reseting", f"0x{addr:08x}", f"0x{asic_mask:08x}")
     self.regWrite(addr, asic_mask)
 
   def clearAsicDirMask(self, x=0, y=0) :
@@ -425,7 +429,7 @@ if __name__ == '__main__':
   qpc.setAsicDirMask(x=0, y=0, mask=4) # verified mask working too on conf
 
   # make sure we can try seeing the timeout to what it thinks should be the default
-  qpc.setAsicsTimeout(15000)
+  # qpc.setAsicsTimeout(15000)
   # print("timeout set.. waiting 1s..")
   # time.sleep(1.0)
 

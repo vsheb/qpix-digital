@@ -1,23 +1,23 @@
-import qpix_interface as qpi
+from qdb_interface import reg, AsicREG, AsicCMD, AsicMask, qdb_interface, QDBBadAddr
 import sys
 
 # GUI things
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QPushButton
 from PyQt5.QtCore import QProcess
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
 
 
 class QPIX_GUI(QMainWindow):
-    def __init__(self, ip, port):
+    def __init__(self):
         super(QMainWindow, self).__init__()
+
+        # network interface
+        self.qpi = qdb_interface()
+
+        # window setup
         self.setWindowTitle('QDB Viewer')
-        self._QP_IP = ip
-        self._QP_PORT = port
-        self._BUFFER_SIZE = 1024
-        self._asicReg = qpi.ASIC_REQ_OFFSET
-        self.qpc = qpi.QPController(ip=self._QP_IP, port=self._QP_PORT)
 
         # main window
         self.main_wid = QWidget() # store the main layout
@@ -28,9 +28,57 @@ class QPIX_GUI(QMainWindow):
         # initialize the sub menus
         self._make_menuBar()
 
+        btn = QPushButton(self.main_wid)
+        btn.setText('trigger')
+        btn.move(0,0)
+        btn.clicked.connect(self.trigger)
+
+        btn_rst = QPushButton(self.main_wid)
+        btn_rst.setText('reset')
+        btn_rst.move(0,32)
+        btn_rst.clicked.connect(self.resetAsic)
+
+        btn_mask = QPushButton(self.main_wid)
+        btn_mask.setText('mask')
+        btn_mask.move(0,64)
+        btn_mask.clicked.connect(self.setAsicDirMask)
+
         # show the main window
         self.show()
 
+    def trigger(self):
+        """
+        send a basic trigger packet to the board
+        """
+        addr = reg.CMD
+        val = AsicCMD.Interrogation.value
+        wrote = self.qpi.regWrite(addr, val)
+        try:
+            print(f"read back 0x{wrote:08x}")
+        except:
+            print("bad wrote type", wrote)
+
+    def resetAsic(self, xpos=0, ypos=0):
+        """
+        Reset asic at position (xpos, ypos)
+        """
+        print("reseting asic:", xpos, ypos)
+        addr = reg.ASIC(xpos, ypos, AsicREG.CMD)
+        val = AsicCMD.ResetAsic.value
+        print("reseting", f"0x{addr:08x}", val)
+        self.qpi.regWrite(addr, val)
+
+
+    def setAsicDirMask(self, xpos=0, ypos=0, mask=AsicMask.DirDown):
+        """
+        Change ASIC mask at position (xpos, ypos)
+        """
+        if not isinstance(mask, AsicMask):
+            raise QDBBadAddr("Incorrect AsicMask!")
+        print("setting asic mask:", xpos, ypos)
+        addr = reg.ASIC(xpos, ypos, AsicREG.DIR)
+        val = mask.value
+        self.qpi.regWrite(addr, val)
 
     def _make_menuBar(self):
         menubar = self.menuBar()
@@ -46,22 +94,9 @@ class QPIX_GUI(QMainWindow):
         fileMenu = menubar.addMenu('File')
         fileMenu.addAction(exitAct)
 
-    def run(self):
-        """current placeholder for the GUI"""
-        print("qpc trying to read an event:")
-        self.qpc.readEvent()
-
-        input("waiting.. qpc sending a trigger?")
-        self.qpc.sendTrg() # flash Rx
-
-        input(f"waiting.. qpc reading from ASIC reg request at 0x{asicReg:02x}")
-        self.qpc.regRead(asicReg) # flash Tx
-
 if __name__ == "__main__":
 
-    ip = '192.168.1.27'
-    port = 7
-
-    window = QPIX_GUI(ip, port)
+    app = QApplication(sys.argv)
+    window = QPIX_GUI()
     window.resize(800,700)
     app.exec_()
