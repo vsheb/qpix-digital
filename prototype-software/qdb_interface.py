@@ -32,6 +32,8 @@ class AsicREG(Enum):
     CMD = 1
     TIMEOUT = 2
     DIR = 3
+    # special address where both data will be written over the top of addr
+    CAL = 4
 
 def MemAddr(evt, pos):
     """

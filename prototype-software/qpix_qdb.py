@@ -186,14 +186,14 @@ class QPIX_GUI(QMainWindow):
 
         ARGS: Delay - how long to wait in seconds
 
-        Issues two different 'Calibration' Triggers to record times on the Zybo
-        and QDB arrays. print out interesting time measurements between the trigger
-        to estimate a frequency: counts / time
+        Issues two different 'Calibration' asic requests and records times from
+        the Zybo and QDB arrays. print out interesting time measurements between
+        the trigger to estimate a frequency: counts / time
         """
 
         # get the starting times
         time_start = time.time()
-        self.trigger()
+        asic_time_s = self.getAsicTime()
         time_trig_start = time.time()
         time_s = (time_start + time_trig_start)/2
         daq_trig_start = self.getTrigTime()
@@ -202,14 +202,19 @@ class QPIX_GUI(QMainWindow):
 
         # get the end times
         time_end = time.time()
-        self.trigger()
+        asic_time_e = self.getAsicTime()
         time_trig_end = time.time()
         time_e = (time_end + time_trig_end)/2
         daq_trig_end = self.getTrigTime()
 
         daq_cnt = daq_trig_end - daq_trig_start
         dt = time_e - time_s
-        print(f"Estimated Daq Frq: {(daq_cnt / dt)/1e6:0.4f} MHz")
+        fdaq = (daq_cnt / dt)
+        print(f"Estimated Daq Frq: {fdaq/1e6:0.4f} MHz")
+
+        asic_cnt = asic_time_e - asic_time_s
+        fasic = fdaq * (asic_cnt / daq_cnt)
+        print(f"Estimated ASIC Frq: {fasic/1e6:0.4f} MHz")
 
 
     ############################
@@ -248,23 +253,29 @@ class QPIX_GUI(QMainWindow):
         """
         addr = REG.ASIC(xpos, ypos, AsicREG.TIMEOUT)
         read = self.qpi.regRead(addr)
-        # note that request data from an asic resets MEM addr,
-        # and that the MEM addr goes back to zero..
-        self._readAsicMemory()
+        x, y, wordType, addr, asicTimeout = self._readAsicTimeout()
 
-    def _readAsicMemory(self):
+        if x != xpos or y != ypos:
+            print(f"Timeout WARNING: Read ({x}, {y}) instead of ({xpos},{ypos})")
+
+        return asicTimeout
+
+    def _readAsicTimeout(self):
         """
         special helper function to unpack ASIC request word from BRAM memory.
 
         Layering of ASIC data is stored within QpixPkg.vhd, fQpixRegToByte function.
         """
+        # NOTE: A request data from an asic resets MEM addr,
+        # and that the MEM addr goes back to zero..
         word1 = self.qpi.regRead(REG.MEM(0, 0))
         word2 = self.qpi.regRead(REG.MEM(0, 1))
-        # records the last trigger event, and not related to ASIC reg request
+
+        # records when byte was received, and not related to ASIC cal request
         # daqTime = self.qpi.regRead(REG.MEM(0, 2))
 
         # first 32 bits
-        data = word1 & 0xffff
+        timeout = word1 & 0xffff
         addr = (word1 >> 16) & 0xffff
 
         # next 32 bits
@@ -272,7 +283,41 @@ class QPIX_GUI(QMainWindow):
         x = (word2 >> 4) & 0xf
         wordType = (word2 >> 24) & 0xf
 
-        print(f"Read x{wordType:01x} ASIC @ {addr:04x} data: 0x{data:04x}", data)
+        print(f"Read x{wordType:01x} ASIC @ {addr:04x} timeout: 0x{data:04x}", data)
+
+        return x, y, wordType, addr, timeout
+
+    def getAsicTime(self, xpos=0, ypos=0):
+        """
+        wrapper function for reading clkCnt register within QDBAsic, as defined
+        in QPixRegFile.vhd
+        """
+        addr = REG.ASIC(xpos, ypos, AsicREG.CAL)
+        read = self.qpi.regRead(addr)
+        x, y, wordType, timestamp = self._readAsicTime()
+
+        if x != xpos or y != ypos:
+            print(f"CAL WARNING: Read ({x}, {y}) instead of ({xpos},{ypos})")
+
+        return timestamp
+
+    def _readAsicTime(self):
+        """
+        helper function to parse data from the asic cal as stored in RegFile.vhd.
+
+        This method is similar to _readAsicTimeout.
+        """
+
+        # this register stores the whole stamp in the bottom 32 bits
+        timestamp = self.qpi.regRead(REG.MEM(0, 0))
+
+        # next 32 bits
+        word2 = self.qpi.regRead(REG.MEM(0, 1))
+        y = word2 & 0xf
+        x = (word2 >> 4) & 0xf
+        wordType = (word2 >> 24) & 0xf
+
+        return x, y, wordType, timestamp
 
 
     ###########################
