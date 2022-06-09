@@ -34,6 +34,8 @@ class AsicREG(Enum):
     DIR = 3
     # special address where both data will be written over the top of addr
     CAL = 4
+    # enable addr, write only
+    ENA = 5
 
 def MemAddr(evt, pos):
     """
@@ -86,6 +88,7 @@ def AsicAddr(xpos=0, ypos=0, remote_addr=AsicREG.CMD):
         addr = asic_addr_flag + dest_flag + xp + yp + remote_addr.value
         return addr
 
+
 class AsicMask(Enum):
     """
     Represents Values.
@@ -101,20 +104,39 @@ class AsicMask(Enum):
     DirDown = 4 + 0x10
     DirLeft = 8 + 0x10
 
+
 class AsicCMD(Enum):
     """
     Represents Values.
 
     Simple Enum class to simplify remote ASIC individual commands.
 
-    These remote commands can only be used at the specfic REG.ASIC(x, y,
-    AsicREG.CMD) address.
-
-    NOTE: using a 'trigger' calls the equivalent of an Interrogation at all remote ASICs.
+    These values should only be used at the specfic addr REG.ASIC(x, y, AsicREG.CMD).
     """
     Interrogation = 0x1
     ResetState = 0x2
     ResetAsic = 0x4
+
+
+class AsicEnable(Enum):
+    """
+    Represents Values.
+
+    Usage:
+    qpi.regWrite(REG.ASIC(x, y, AsicREG.ENA), AsicEnable.SND)
+
+    Simple Enum class to simplify remote ASIC enable types.
+
+    These values can only be used at the specfic addr REG.ASIC(x, y, AsicREG.ENA).
+
+    Values are defined in QpixRegFile.vhd and written to QpixConf type, defined
+    in QPixPkg.vhd.
+    """
+    SND = 0x1 # enables analog data while sending
+    RCV = 0x2 # enables analog data while receiving
+    REG = 0x4 # enables analog data while broadcasting
+    ALL = 0x7 # enables analog data in all situations
+    OFF = 0x0 # disables analog data
 
 
 class REG(Enum):
@@ -238,6 +260,8 @@ class qdb_interface(QObject):
             raise QDBBadAddr("Incorrect REG address on regWrite!")
         elif hasattr(addr, "value"):
             addr = addr.value
+        if hasattr(val, "value"):
+            val = val.value
 
         # form byte message
         args = ['QRW', addr, val]

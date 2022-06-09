@@ -1,11 +1,11 @@
 # interfacing dependcies
-from qdb_interface import AsicREG, AsicCMD, AsicMask, qdb_interface, QDBBadAddr, REG
+from qdb_interface import AsicREG, AsicCMD, AsicEnable, AsicMask, qdb_interface, QDBBadAddr, REG
 import sys
 import time
 
 # GUI things
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QPushButton
+from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox
 from PyQt5.QtCore import QProcess
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
@@ -93,6 +93,12 @@ class QPIX_GUI(QMainWindow):
         btn_stimeout.move(160,0)
         btn_stimeout.clicked.connect(self.setAsicTimeout)
 
+        chk_enable = QCheckBox(self.main_wid)
+        chk_enable.setText('asic enable')
+        chk_enable.setCheckState(0)
+        chk_enable.move(160, 40)
+        chk_enable.stateChanged.connect(self.enableAsic)
+
         # show the main window
         self.show()
 
@@ -107,7 +113,7 @@ class QPIX_GUI(QMainWindow):
         will be recorded into the BRAM within QpixDaqCtrl.vhd.
         """
         addr = REG.CMD
-        val = AsicCMD.Interrogation.value
+        val = AsicCMD.Interrogation
         wrote = self.qpi.regWrite(addr, val)
 
     def readEvents(self):
@@ -198,7 +204,7 @@ class QPIX_GUI(QMainWindow):
         time_s = (time_start + time_trig_start)/2
         daq_trig_start = self.getTrigTime()
 
-        time.sleep(1)
+        time.sleep(0.1)
 
         # get the end times
         time_end = time.time()
@@ -224,10 +230,20 @@ class QPIX_GUI(QMainWindow):
         """
         Reset asic at position (xpos, ypos)
         """
-        print("reseting asic:", xpos, ypos)
         addr = REG.ASIC(xpos, ypos, AsicREG.CMD)
-        val = AsicCMD.ResetAsic.value
+        val = AsicCMD.ResetAsic
         self.qpi.regWrite(addr, val)
+
+    def enableAsic(self, xpos=0, ypos=0):
+        """
+        Use AsicReg.ENA addr to set various types of AsicEnable configurations
+
+        Default is all on.
+        """
+        addr = REG.ASIC(xpos, ypos, AsicREG.ENA)
+        val = AsicEnable.ALL
+        self.qpi.regWrite(addr, val)
+
 
     def setAsicDirMask(self, xpos=0, ypos=0, mask=AsicMask.DirDown):
         """
@@ -235,8 +251,9 @@ class QPIX_GUI(QMainWindow):
         """
         if not isinstance(mask, AsicMask):
             raise QDBBadAddr("Incorrect AsicMask!")
+
         addr = REG.ASIC(xpos, ypos, AsicREG.DIR)
-        val = mask.value
+        val = mask
         self.qpi.regWrite(addr, val)
 
     def setAsicTimeout(self, xpos=0, ypos=0, timeout=15000):
@@ -283,7 +300,7 @@ class QPIX_GUI(QMainWindow):
         x = (word2 >> 4) & 0xf
         wordType = (word2 >> 24) & 0xf
 
-        print(f"Read x{wordType:01x} ASIC @ {addr:04x} timeout: 0x{data:04x}", data)
+        print(f"Read x{wordType:01x} ASIC @ {addr:04x} timeout: 0x{timeout:04x}-{timeout}")
 
         return x, y, wordType, addr, timeout
 
