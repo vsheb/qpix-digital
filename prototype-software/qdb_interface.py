@@ -33,6 +33,57 @@ class AsicREG(Enum):
     TIMEOUT = 2
     DIR = 3
 
+def MemAddr(evt, pos):
+    """
+    Return address space for the event at a specific memory location.
+    ARGS:
+       evt - number of event
+       pos - which 32 bit word within the event
+    NOTE:
+       Values are stored in BRAM located within DaqCtrl.vhd. only 32*3 bits are
+       used (highest 32 are trimmed.)
+
+       Readout procedure is also defined within DaqCtrl, where bottom two bits
+       of the MemAddr is used to mux the word.
+    """
+    if pos not in [0,1,2]:
+        raise QDBBadAddr("Incorrect Memory Read address! not acceptible word position!")
+    if evt > 4095:
+        raise QDBBadAddr("Incorrect Memory Read address! Evt too high!")
+
+    # defined in ProtoRegMap
+    evtMask = 1 << 16
+
+    # defined as offset above addr for location in bram
+    event = evt << 2
+
+    # full address here
+    return evtMask + event + pos
+
+
+def AsicAddr(xpos=0, ypos=0, remote_addr=AsicREG.CMD):
+    """
+    return address space for remote ASIC.
+
+    NOTE: remote_addr is the subaddr space at the remote ASIC definedin QpixRegFile.vhd
+
+    This protocol is implemented in QpixDaqCtrl.vhd
+    """
+    if not isinstance(remote_addr, AsicREG):
+        raise QDBBadAddr("Incorrect Remote ASIC ADDR!")
+    else:
+        # QpixDaqCtrl.vhd selects these address spaces:
+        xp = ((xpos & 0b111)<<6)
+        yp = ((ypos & 0b111)<<3)
+        dest_flag = 1 << 9
+
+        # this address flag is defined within QpixProtoRegMap.vhd
+        asic_addr_flag = 3 << 16
+
+        # combine and return net addr space
+        addr = asic_addr_flag + dest_flag + xp + yp + remote_addr.value
+        return addr
+
 class AsicMask(Enum):
     """
     Represents Values.
@@ -63,18 +114,18 @@ class AsicCMD(Enum):
     ResetState = 0x2
     ResetAsic = 0x4
 
-class REG():
+
+class REG(Enum):
     """
-    REG is an class which returns a register address space for both the Zybo board
+    REG is an Enum class which returns a register address space for both the Zybo board
     and all of the remote ASICs in an array.
 
     There are two sets of addresses: Zybo address and remote ASIC address.
 
-    A Zybo address is treated as a public member of this class, i.e. REG.CMD
+    A Zybo address is treated as a normal Enum member, i.e. REG.CMD.value
 
-    A remote ASIC address is retrieved with the ASIC(xpos, ypos, AsicREG) method, i.e.
+    A remote ASIC address is retrieved with REG.ASIC(xpos, ypos, AsicREG) method, i.e.
     REG.ASIC(0, 0) returns the ASIC at x=0, y=0 position.
-    NOTE: remote_addr is the subaddr space at the remote ASIC definedin QpixRegFile.vhd
 
     NOTE: There are two types of register transactions, either a read or a write; some
     addresses only support one type.
@@ -83,49 +134,30 @@ class REG():
     QpixProtoPkg.vhd
     QpixRegFile.vhd
     """
-    def __init__(self):
 
-        # all of these addresses are defined in QpixProtoPkg.vhd
-        self.SCRATCH   = 0x00
-        self.CMD       = 0x0A
-        self.STATUS    = 0x01
-        self.HITMASK   = 0x02
-        self.TIMESTAMP = 0x03
-        self.EVTSIZE   = 0x04
-        self.TRGTIME   = 0x05
-        self.CHANMASK  = 0x06
-        self.ASICMASK  = 0x07
-        self.FRAMEERR  = 0x08
-        self.BREAKERR  = 0x09
-        self.TESTOUT_H = 0x0b
-        self.TESTOUT_L = 0x0c
-        self.TESTIN_H  = 0x0d
-        self.TESTIN_L  = 0x0e
+    # all of these addresses are defined in QpixProtoPkg.vhd
+    SCRATCH   = 0x00
+    CMD       = 0x0A
+    STATUS    = 0x01
+    HITMASK   = 0x02
+    TIMESTAMP = 0x03
+    EVTSIZE   = 0x04
+    TRGTIME   = 0x05
+    CHANMASK  = 0x06
+    ASICMASK  = 0x07
+    FRAMEERR  = 0x08
+    BREAKERR  = 0x09
+    TESTOUT_H = 0x0b
+    TESTOUT_L = 0x0c
+    TESTIN_H  = 0x0d
+    TESTIN_L  = 0x0e
 
+    # event memory slots
+    MEM = MemAddr
 
-    def ASIC(self, xpos, ypos, remote_addr=AsicREG):
-        """
-        return address space for remote ASIC.
+    # remote Asic Callable address class
+    ASIC = AsicAddr
 
-        This protocol is implemented in QpixDaqCtrl.vhd
-        """
-        if not isinstance(remote_addr, AsicREG):
-            raise QDBBadAddr("Incorrect Remote ASIC ADDR!")
-        else:
-            # QpixDaqCtrl.vhd selects these address spaces:
-            xp = ((xpos & 0b111)<<6)
-            yp = ((ypos & 0b111)<<3)
-            dest_flag = 1 << 9
-
-            # this address flag is defined within QpixProtoRegMap.vhd
-            asic_addr_flag = 3 << 16
-
-            # combine and return net addr space
-            addr = asic_addr_flag + dest_flag + xp + yp + remote_addr.value
-            return addr
-
-
-reg = REG()
 
 class qdb_interface(QObject):
     """
@@ -167,15 +199,17 @@ class qdb_interface(QObject):
 
         Returns last 32 bit word from the register readout.
         """
-        # if not isinstance(addr, REG):
-        #     raise QDBBadAddr("Incorrect Remote REG address on regRead!")
+        # allow passing of REG enum types directly
+        if not isinstance(addr, REG) and hasattr(addr, "value"):
+            raise QDBBadAddr("Incorrect REG address on regWrite!")
+        elif hasattr(addr, "value"):
+            addr = addr.value
 
+        # form byte message
         args = ['QRR', addr]
         if isinstance(args, str): args = args.split(' ')
         hdr = args[0]+'\0'
         byte_arr = str.encode(hdr)
-
-        # form byte message
         for arg in args[1:]:
             if not isinstance(arg, int): arg = int(arg, 0)
             byte_arr += struct.pack('<I', arg)
@@ -197,15 +231,17 @@ class qdb_interface(QObject):
         Register write command, used for either writing directly to remote ASICs
         or Zybo.
         """
-        # if not isinstance(addr, REG):
-        #     raise QDBBadAddr("Incorrect REG address on regWrite!")
+        # allow passing of REG enum types directly
+        if not isinstance(addr, REG) and hasattr(addr, "value"):
+            raise QDBBadAddr("Incorrect REG address on regWrite!")
+        elif hasattr(addr, "value"):
+            addr = addr.value
 
+        # form byte message
         args = ['QRW', addr, val]
         if isinstance(args, str): args = args.split(' ')
         hdr = args[0]+'\0'
         byte_arr = str.encode(hdr)
-
-        # form byte message
         for arg in args[1:]:
             if not isinstance(arg, int): arg = int(arg, 0)
             byte_arr += struct.pack('<I', arg)
@@ -223,19 +259,19 @@ class qdb_interface(QObject):
         A correct verification performs a successful regRead and regWrite of the
         REG.SCRATCH buffer.
         """
-        version = self.regRead(reg.SCRATCH)
+        version = self.regRead(REG.SCRATCH)
         print(f"Running version: 0x{version:08x}.. verifying..", end=" ")
 
         # update and check
         checksum = 0x0a0a_a0a0
-        self.regWrite(reg.SCRATCH, checksum)
-        verify  = self.regRead(reg.SCRATCH)
+        self.regWrite(REG.SCRATCH, checksum)
+        verify  = self.regRead(REG.SCRATCH)
         if checksum != verify:
             print("warning verification failed")
             print(f"0x{checksum:08x} != 0x{verify:08x}")
         else:
             print("verification passed!")
-            self.regWrite(reg.SCRATCH, version)
+            self.regWrite(REG.SCRATCH, version)
 
         return checksum == verify
 
