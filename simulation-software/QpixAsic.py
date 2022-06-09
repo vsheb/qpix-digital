@@ -8,7 +8,7 @@ from enum import Enum
 #Enum-like things
 DIRECTIONS = ("North", "East", "South", "West")
 
-class AicStates(Enum):
+class AsicStates(Enum):
   Measure = 0
   TransmitLocal = 1
   TransmitRemote = 2
@@ -147,7 +147,7 @@ class QPixAsic:
     # timing, absolute and relative with random starting phase
     self.timeoutStart   = 0
     self.timeout        = timeout
-    self.transferTicks  = transferTicks
+    self.transferTicks  = transferTicks # why 264 transfer ticks?
     self.transferTime = self.transferTicks * self.tOsc
     self.lastAbsHitTime = [0] * self.nPixels
     self._absTimeNow    = 0
@@ -159,9 +159,9 @@ class QPixAsic:
       self.daqHits        = 0
       self.pixelData = {}
     # queues
-    self._localQueues   = [[],[]]
+    self._localQueues   = [[],[]] #buffer depths
     self.connections    = [None] * 4
-    self._remoteQueues  = [[],[],[],[]]
+    self._remoteQueues  = [[],[],[],[]] #buffer depths
     self.maxConnDepths  = [0,0,0,0]
     # additional
     self._debugLevel = debugLevel
@@ -227,7 +227,11 @@ class QPixAsic:
         if pixel not in self.pixelData:
           self.pixelData[pixel] = []
         self.pixelData[pixel].append((self.relTicksNow, inHit.data))
-        # print("received data!", inHit.data)
+        # print(f"received data! from asic {pixel}", inHit.data)
+        print(f'the pixelData for asic {pixel} is {self.pixelData[pixel]}')
+        # print(f'the (daq?) tick counter is {self.relTicksNow}')
+        # print(f'the (asic?) tick counter is {inHit.data}')
+        # print("the new pixelData for the Daq is: ", self.pixelData)
       return []
 
     fromAsic = self.connections[inDir]
@@ -237,6 +241,7 @@ class QPixAsic:
     # print("Receive data called for ASIC ("+str(self.row)+","+str(self.col)+")")
     outList = [] 
     fromDaq = inHit.channelMask == 0 and inHit.originCol is None and inHit.originRow is None
+    # ^ boolean
 
     # 0: MEASURING STATE
     if self.state == 0:
@@ -286,7 +291,7 @@ class QPixAsic:
     Distribution of inter-arrival times can be modeled by throwing
     p = Uniform(0,1) and feeding it to -ln(1.0 - p)/aveRate
     General strategy for moving forward to some timestep is:
-      foreach channel:
+      for each channel:
         currentTime = now
         while currentTime < targetTime:
           generate nextHitTime from distribution above
@@ -298,14 +303,16 @@ class QPixAsic:
       foreach unique entry in the timestamp list, create a hit with proper parameters,
       add it to the queue (A or B)
     """
+    print('generating poisson hits')
     tempList = []
 
     # Generate new hits
     for ch in range(self.nPixels):
       currentTime = self.lastAbsHitTime[ch]
       while currentTime < targetTime:
-        p = random.random()
+        p = random.random() #prints random real between 0 and 1
         nextAbsHitTime = currentTime + (-math.log(1.0 - p) / self.randomRate)
+        print(f'the next absolute time for hit is {nextAbsHitTime}')
         nextRelHitTime = int(math.floor(nextAbsHitTime / self.tOsc))
         if nextAbsHitTime < targetTime:
           tempList.append([ch,nextRelHitTime])
@@ -342,7 +349,7 @@ class QPixAsic:
 
   def Process(self, targetTime):
     """
-    This is a state where we just process the current goings ons for this ASIC
+    Transmits local and remote data when asked 
     """
     # nothing to process if DAQ or if target time is in past
     if self.isDaqNode or self._absTimeNow > targetTime:
@@ -353,16 +360,18 @@ class QPixAsic:
       # print(f"Asic-{self.row}-{self.col}.{self.state} received broadcast: {self._command}")
       self._command = None
       # all commands build local queues, and the command should build up any 'hit' of interest
-      self.state = 1
-      self._localQueues[(self._curLocalQueue+1)%2].append(PixelHit(self._measuredTime, [], self.row, self.col, data=self.relTicksNow))
+      self.state = 1 #transmit local state
+      self._localQueues[(self._curLocalQueue+1)%2].append(PixelHit(self._measuredTime, [], self.row, self.col, data=self.relTicksNow)) #relTicks now is the total number of ticks of the ASIC
 
-    if self.state == 0:
+    if self.state == AsicStates.Measure:
       return self._processMeasuringState(targetTime)
 
-    if self.state == 1:
+    if self.state == AsicStates.TransmitLocal:
+      # print(f'processing transmission from local state for asic ({self.row}, {self.col})')
       return self._processTransmitLocalState(targetTime)
 
-    if self.state == 2:
+    if self.state == AsicStates.TransmitRemote:
+      # print(f'processing transmission from remote state for asic ({self.row}, {self.col})')
       return self._processTransmitRemoteState(targetTime)
 
     else:
@@ -384,14 +393,16 @@ class QPixAsic:
     sends a single local state queue item into the outlist
     """
 
-    outList = []
+    outList = [] # list to send out
     transactionCompleteTime = self._absTimeNow + self.transferTime
+    # print(f'transaction of local data complete in {transactionCompleteTime} for asic ({self.row}, {self.col})')
 
     # Note that hits come from the prior queue, since _curLocalQueue tracks where we're
     # now storing new hits, so the previous one is the one to empty now.
     if len(self._localQueues[(self._curLocalQueue+1)%2]) > 0:
       hit = self._localQueues[(self._curLocalQueue+1)%2].pop(0)
       outList.append((self.connections[self.lastTsDir], (self.lastTsDir+2)%4, hit, transactionCompleteTime))
+      #appends direction to send data, direction data came from, the data, time of data transaction
       self.UpdateTime(transactionCompleteTime)
       self._localTransmissions += 1
       # print(str(self.row)+","+str(self.col)+" : sending local hit to "+DIRECTIONS[self.lastTsDir]+" at "+str(transactionCompleteTime))
@@ -445,11 +456,15 @@ class QPixAsic:
 
   def UpdateTime(self, absTime):
     """
+    absTime - the time an asic is asked for data
+
     function keeps track of updating absTime and performs necessary updates to
-    relTime and relTicksNow any time that absTime is updated. Direct assignments
-    should not be made to absTime
+    relTime and relTicksNow any time that absTime is updated. 
+    
+    Direct assignments should not be made to absTime
     """
     self._absTimeNow = absTime
+    # print(f'the absolute time is now {self._absTimeNow} and the relative time of asic ({self.row}, {self.col}) is {self.relTimeNow}')
 
     # only update the relTime if the asic needs to
     if self._absTimeNow > self.relTimeNow:
