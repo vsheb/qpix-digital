@@ -165,12 +165,12 @@ class QPixAsic:
     self.maxConnDepths  = [0,0,0,0]
     # additional
     self._debugLevel = debugLevel
-    self._measurements = 0
+    self._measurements = 0 # number of measurements made
     self._measuredTime = 0
     self._localTransmissions = 0
     self._remoteTransmissions = 0
     self._hitReceptions = 0
-    self._measuredTime = 0
+
 
   def __repr__(self):
     self.PrintStatus()
@@ -205,6 +205,9 @@ class QPixAsic:
     """
     Receive data from a neighbor
     queueItem - tuple of (asic, dir, hit, inTime)
+
+    pixelData records the ticks from when the Daq receives data and the ticks 
+    of the asic when it received the ask
     """
     inDir     = queueItem.dir
     inHit     = queueItem.pixelHit
@@ -228,10 +231,11 @@ class QPixAsic:
           self.pixelData[pixel] = []
         self.pixelData[pixel].append((self.relTicksNow, inHit.data))
         # print(f"received data! from asic {pixel}", inHit.data)
-        print(f'the pixelData for asic {pixel} is {self.pixelData[pixel]}')
-        # print(f'the (daq?) tick counter is {self.relTicksNow}')
-        # print(f'the (asic?) tick counter is {inHit.data}')
-        # print("the new pixelData for the Daq is: ", self.pixelData)
+        print(f"the pixelData for asic {pixel} is {self.pixelData[pixel]}")
+        
+        # print(f'the time is {self._absTimeNow}')
+        # print(f'the asic ticks are {self.relTicksNow} and sees time {self.relTimeNow}')
+        
       return []
 
     fromAsic = self.connections[inDir]
@@ -363,14 +367,14 @@ class QPixAsic:
       self.state = 1 #transmit local state
       self._localQueues[(self._curLocalQueue+1)%2].append(PixelHit(self._measuredTime, [], self.row, self.col, data=self.relTicksNow)) #relTicks now is the total number of ticks of the ASIC
 
-    if self.state == AsicStates.Measure:
+    if self.state == AsicStates.Measure.value:
       return self._processMeasuringState(targetTime)
 
-    if self.state == AsicStates.TransmitLocal:
+    if self.state == AsicStates.TransmitLocal.value:
       # print(f'processing transmission from local state for asic ({self.row}, {self.col})')
       return self._processTransmitLocalState(targetTime)
 
-    if self.state == AsicStates.TransmitRemote:
+    if self.state == AsicStates.TransmitRemote.value:
       # print(f'processing transmission from remote state for asic ({self.row}, {self.col})')
       return self._processTransmitRemoteState(targetTime)
 

@@ -36,10 +36,10 @@ class QpixAsicArray():
 
         # the array also manages all of the processing queue times to use
         self._queue = qpa.ProcQueue()
-        self._tickNow = 50e6
+        self._tickNow = 0 #was initially 50e6
         self._timeEpsilon = 1e-6
         self._deltaT = deltaT
-        self._deltaTick = 50e6 * self._deltaT
+        self._deltaTick = self.fNominal * self._deltaT
         self._timeNow = 0
     
     def __iter__(self):
@@ -78,7 +78,7 @@ class QpixAsicArray():
                 if j > 0:
                     matrix[i][j].connections[3] = matrix[i][j-1]
                 if j < self._ncols-1:
-                    matrix[i][j].connections[1] = matrix[i][j+1]    
+                    matrix[i][j].connections[1] = matrix[i][j+1]  
 
         return matrix
 
@@ -101,7 +101,7 @@ class QpixAsicArray():
 
         return data
 
-    def Calibrate(self, interval=1.0):
+    def Calibrate(self, interval):
         """
         function used to calibrate timing interval of all underlying asics, assuiming
         no current knowledge of underlying times / frequencies
@@ -110,23 +110,25 @@ class QpixAsicArray():
         """
 
         print("performing calibration..")
-        timeEnd = self._timeNow + interval
+        timeEnd1 = self._timeNow + self._deltaT
+        timeEnd2 = self._timeNow + interval
+        for timeEnd in (timeEnd1, timeEnd2):
 
-        # hard reset asic time values
-        for asic in self:
-            asic._measurements = 0
-            asic._hitReceptions = 0
-            asic._remoteTransmissions = 0
-            asic._localTransmissions = 0
-            asic._measuredTime = 0
+            # hard reset asic time values
+            for asic in self:
+                asic._measurements = 0
+                asic._hitReceptions = 0
+                asic._remoteTransmissions = 0
+                asic._localTransmissions = 0
+                asic._measuredTime = 0
 
-        calibrateSteps = self._Command(timeEnd, command="Calibrate")
-        print(f"calibration complete in {calibrateSteps} steps!")
-        print(f"current time is {self._timeNow}")
+            calibrateStepsStart = self._Command(timeEnd, command="Calibrate")
+            print(f'the initial calibration is complete in {calibrateStepsStart} steps')
+            print(f"current time is {self._timeNow}")
 
     def timeStamp(self, interval=1.0):
         """
-        Function for issueing command to base node from daq node, and beginning
+        Function for issuing command to base node from daq node, and beginning
         a full readout sequence of timestamp data
         VARS:
             interval - seconds of time for how long the array will process data
@@ -138,7 +140,7 @@ class QpixAsicArray():
 
     def _Command(self, timeEnd, command=None):
         """
-        Function for issueing command to base node from daq node, and beginning
+        Function for issuing command to base node from daq node, and beginning
         a full readout sequence
         VARS:
             timeEnd - how long the array should be processed until
@@ -150,23 +152,31 @@ class QpixAsicArray():
             for asic in self:
                 newProcessItems = asic.Process(self._timeNow - self._timeEpsilon)
                 if newProcessItems:
-                    print("WARNING: ASIC had things left to do at next maor time step")
+                    print("WARNING: ASIC had things left to do at next major time step")
 
-            self._queue.AddQueueItem(self[0][0], 3, qpa.PixelHit(self._tickNow, [], None, None), self._timeNow, command=command)
+            self._queue.AddQueueItem(self._asics[0][0], 3, qpa.PixelHit(self._tickNow, [], None, None), self._timeNow, command=command) 
+            #add a queue item to the 0,0 asic from the DAQ (3 indicates west)
 
-            while(self._queue.Length() > 0):
+            while(self._queue._entries > 0): #Length() > 0):
 
                 steps += 1
                 nextItem = self._queue.PopQueue()
-                self.ProcessArray(self._queue, nextItem.inTime)
+                self.ProcessArray(self._queue, nextItem.inTime) #transmit local data 
 
                 newProcessItems = nextItem.asic.ReceiveData(nextItem)
+                if hasattr(nextItem.pixelHit, "data") and nextItem.asic.isDaqNode:
+                    print('recording pixel data')
+                # if not asic.isDaqNode:
+                #     print('this is not the daq')
+                #did any of the asics get new data?
+                # print(f'the new process items are {newProcessItems} and the queue length is {self._queue.Length()}')
                 if newProcessItems:
                     for item in newProcessItems:
                         self._queue.AddQueueItem(*item)
 
-                self.ProcessArray(self._queue, nextItem.inTime)
+                self.ProcessArray(self._queue, nextItem.inTime) #transmit remote data 
 
+            # print(f'the time now is {self._timeNow}')
             self._timeNow += self._deltaT
             self._tickNow += self._deltaTick
         return steps
@@ -174,6 +184,8 @@ class QpixAsicArray():
     def ProcessArray(self, procQueue, nextTime):
         """
         move all processing of the array up to absTime
+
+        process... but everything
         """
         processed = 0
         somethingToDo = True
@@ -260,6 +272,6 @@ class QpixAsicArray():
 
 if __name__ == "__main__":
     array = QpixAsicArray(2,2)
-    array.Calibrate()
+    array.Calibrate(0.1)
     data = array.readData()
     print("read the following data:\n", data)
