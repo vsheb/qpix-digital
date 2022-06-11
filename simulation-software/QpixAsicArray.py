@@ -15,11 +15,10 @@ class QpixAsicArray():
       pctSpread=0.05 - std distribution of clocks within array
       deltaT=1.0     -
       timeEpsilon=1e-6 - stepping time interval for simulation
-      timeEnd=2.5 - stop time for simulation
       debug=0.0 - debug level, values >= 5 produce text output
     """
     def __init__(self, nrows, ncols, nPixs=16, fNominal=50e6, pctSpread=0.05, deltaT=1.0, timeEpsilon=1e-6,
-                timeEnd=2.5, debug=0.0):
+                debug=0.0):
 
         # array parameters
         self._nrows = nrows
@@ -65,7 +64,7 @@ class QpixAsicArray():
             for j in range(self._ncols):
                 frq = random.gauss(self.fNominal,self.fNominal*self.pctSpread)
                 matrix[i].append(qpa.QPixAsic(frq, self._nPixs, row = i, col = j, debugLevel=self._debugLevel))
-                if self._debugLevel >= 5:
+                if self._debugLevel >= 0:
                     print(f"Created ASIC at row {i} col {j} with frq: {frq:.2f}")
 
         # connect the asics within the array
@@ -110,6 +109,8 @@ class QpixAsicArray():
         """
 
         print("performing calibration..")
+        calibrateSteps = self._Command(self._timeNow, command="Calibrate")
+
         timeEnd = self._timeNow + interval
 
         # hard reset asic time values
@@ -120,9 +121,9 @@ class QpixAsicArray():
             asic._localTransmissions = 0
             asic._measuredTime = 0
 
-        calibrateSteps = self._Command(timeEnd, command="Calibrate")
-        print(f"calibration complete in {calibrateSteps} steps!")
         print(f"current time is {self._timeNow}")
+        calibrateSteps = self._Command(timeEnd, command="Calibrate")
+        print(f"calibration complete time is:", self._timeNow)
 
     def timeStamp(self, interval=1.0):
         """
@@ -152,7 +153,7 @@ class QpixAsicArray():
                 if newProcessItems:
                     print("WARNING: ASIC had things left to do at next maor time step")
 
-            self._queue.AddQueueItem(self[0][0], 3, qpa.PixelHit(self._tickNow, [], None, None), self._timeNow, command=command)
+            self._queue.AddQueueItem(self[0][0], 3, qpa.QPByte(self._tickNow, [], None, None), self._timeNow, command=command)
 
             while(self._queue.Length() > 0):
 
@@ -169,6 +170,7 @@ class QpixAsicArray():
 
             self._timeNow += self._deltaT
             self._tickNow += self._deltaTick
+
         return steps
 
     def ProcessArray(self, procQueue, nextTime):
