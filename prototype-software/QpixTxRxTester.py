@@ -6,22 +6,6 @@ class QpixTxRxTester(QPInterface):
     super().__init__()
     self.verify()
 
-  def verify(self):
-    """
-    send information to the blank scratch register and make sure you can read
-    and write back a random word
-    """
-    verification = 0x10101010
-    self.regWrite(0x0, verification);
-    check = self.regRead(0x0);
-    if check != verification:
-      print("WARNING verification check failed!")
-      print(f"0x{verification:08x} != 0x{check:08x}")
-    else:
-      print("verification passed. communication with registers established..")
-    status = self.regRead(0x1);
-    print("current status:", status)
-
   def sendTrg(self) :
     """
     Send interrogation (trigger) command
