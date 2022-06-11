@@ -166,7 +166,7 @@ class QPixAsic:
     # additional
     self._debugLevel = debugLevel
     self._measurements = 0 # number of measurements made
-    self._measuredTime = 0
+    self._measuredTime = []
     self._localTransmissions = 0
     self._remoteTransmissions = 0
     self._hitReceptions = 0
@@ -209,13 +209,14 @@ class QPixAsic:
     pixelData records the ticks from when the Daq receives data and the ticks 
     of the asic when it received the ask
     """
-    inDir     = queueItem.dir
-    inHit     = queueItem.pixelHit
-    inTime    = queueItem.inTime
+    inDir     = queueItem.dir # direction the signal came from
+    inHit     = queueItem.pixelHit # the time the asic was asked
+    inTime    = queueItem.inTime # the time the information will be received
     inCommand = queueItem.command
 
     # how a DAQNode records and stores data
     if self.isDaqNode:
+      print(f'compare {queueItem.inTime} with {self._absTimeNow}')
       self.UpdateTime(queueItem.inTime)
       self.daqHits += 1
       if self._debugLevel > 0:
@@ -226,12 +227,13 @@ class QPixAsic:
         print(f"tDiff (ns): {(self.relTimeNow-inTime)*1e9:2.2f}")
       # store relevant data from the hit if necessary
       if hasattr(inHit, "data"):
+        print(f'hit time of this data is {inHit.hitTime} with ticks {inHit.hitTime * self.fOsc}')
         pixel = f"({inHit.originRow},{inHit.originCol})"
         if pixel not in self.pixelData:
           self.pixelData[pixel] = []
         self.pixelData[pixel].append((self.relTicksNow, inHit.data))
         # print(f"received data! from asic {pixel}", inHit.data)
-        print(f"the pixelData for asic {pixel} is {self.pixelData[pixel]}")
+        print(f"the pixelData for asic {pixel} is {self.pixelData[pixel]} at lab time {self._absTimeNow} \n")
         
         # print(f'the time is {self._absTimeNow}')
         # print(f'the asic ticks are {self.relTicksNow} and sees time {self.relTimeNow}')
@@ -256,7 +258,7 @@ class QPixAsic:
         self._measurements += 1
         transactionCompleteTime = inTime + self.transferTime
         self.UpdateTime(transactionCompleteTime)
-        self._measuredTime = self.relTimeNow
+        self._measuredTime.append(self.relTimeNow)
         
         # Broadcast
         for i in range(4):
@@ -365,7 +367,7 @@ class QPixAsic:
       self._command = None
       # all commands build local queues, and the command should build up any 'hit' of interest
       self.state = 1 #transmit local state
-      self._localQueues[(self._curLocalQueue+1)%2].append(PixelHit(self._measuredTime, [], self.row, self.col, data=self.relTicksNow)) #relTicks now is the total number of ticks of the ASIC
+      self._localQueues[(self._curLocalQueue+1)%2].append(PixelHit(self._measuredTime[-1], [], self.row, self.col, data=self.relTicksNow)) #relTicks now is the total number of ticks of the ASIC
 
     if self.state == AsicStates.Measure.value:
       return self._processMeasuringState(targetTime)
@@ -468,7 +470,6 @@ class QPixAsic:
     Direct assignments should not be made to absTime
     """
     self._absTimeNow = absTime
-    # print(f'the absolute time is now {self._absTimeNow} and the relative time of asic ({self.row}, {self.col}) is {self.relTimeNow}')
 
     # only update the relTime if the asic needs to
     if self._absTimeNow > self.relTimeNow:

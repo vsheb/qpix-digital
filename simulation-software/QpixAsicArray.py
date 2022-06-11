@@ -110,21 +110,19 @@ class QpixAsicArray():
         """
 
         print("performing calibration..")
-        timeEnd1 = self._timeNow + self._deltaT
-        timeEnd2 = self._timeNow + interval
-        for timeEnd in (timeEnd1, timeEnd2):
+        timeEnd = self._timeNow + interval 
 
-            # hard reset asic time values
-            for asic in self:
-                asic._measurements = 0
-                asic._hitReceptions = 0
-                asic._remoteTransmissions = 0
-                asic._localTransmissions = 0
-                asic._measuredTime = 0
+        # hard reset asic time values
+        for asic in self:
+            asic._measurements = 0
+            asic._hitReceptions = 0
+            asic._remoteTransmissions = 0
+            asic._localTransmissions = 0
+            asic._measuredTime = []
 
-            calibrateStepsStart = self._Command(timeEnd, command="Calibrate")
-            print(f'the initial calibration is complete in {calibrateStepsStart} steps')
-            print(f"current time is {self._timeNow}")
+        calibrateStepsStart = self._Command(timeEnd, command="Calibrate")
+        print(f'the initial calibration is complete in {calibrateStepsStart} steps')
+        print(f"current time is {self._timeNow}")
 
     def timeStamp(self, interval=1.0):
         """
@@ -163,9 +161,10 @@ class QpixAsicArray():
                 nextItem = self._queue.PopQueue()
                 self.ProcessArray(self._queue, nextItem.inTime) #transmit local data 
 
-                newProcessItems = nextItem.asic.ReceiveData(nextItem)
                 if hasattr(nextItem.pixelHit, "data") and nextItem.asic.isDaqNode:
                     print('recording pixel data')
+                    print(f'the lab time now is {self._timeNow}s')
+                newProcessItems = nextItem.asic.ReceiveData(nextItem)
                 # if not asic.isDaqNode:
                 #     print('this is not the daq')
                 #did any of the asics get new data?
@@ -179,6 +178,8 @@ class QpixAsicArray():
             # print(f'the time now is {self._timeNow}')
             self._timeNow += self._deltaT
             self._tickNow += self._deltaTick
+            if steps%10000 == 0:
+                print(f'the time now is {self._timeNow}')
         return steps
 
     def ProcessArray(self, procQueue, nextTime):
