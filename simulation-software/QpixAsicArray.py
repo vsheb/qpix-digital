@@ -1,4 +1,4 @@
-import QpixAsic as qpa
+from QpixAsic import QPByte, QPixAsic, ProcQueue
 import random
 import math
 import time
@@ -30,11 +30,11 @@ class QpixAsicArray():
 
         # Make the array and connections
         self._asics = self._makeArray()
-        self._daqNode = qpa.QPixAsic(self.fNominal, 0, isDaqNode=True, debugLevel=self._debugLevel)
+        self._daqNode = QPixAsic(self.fNominal, 0, isDaqNode=True, debugLevel=self._debugLevel)
         self._asics[0][0].connections[3] = self._daqNode
 
         # the array also manages all of the processing queue times to use
-        self._queue = qpa.ProcQueue()
+        self._queue = ProcQueue()
         self._tickNow = 50e6
         self._timeEpsilon = 1e-6
         self._deltaT = deltaT
@@ -63,7 +63,7 @@ class QpixAsicArray():
         for i in range(self._nrows):
             for j in range(self._ncols):
                 frq = random.gauss(self.fNominal,self.fNominal*self.pctSpread)
-                matrix[i].append(qpa.QPixAsic(frq, self._nPixs, row = i, col = j, debugLevel=self._debugLevel))
+                matrix[i].append(QPixAsic(frq, self._nPixs, row = i, col = j, debugLevel=self._debugLevel))
                 if self._debugLevel >= 0:
                     print(f"Created ASIC at row {i} col {j} with frq: {frq:.2f}")
 
@@ -88,9 +88,8 @@ class QpixAsicArray():
         data = []
         readTime = time.perf_counter()
 
-        for i in range(self._nrows):
-            for j in range(self._ncols):
-                data += self._asics[i][j].Process(readTime)
+        for asic in self:
+            data += asic.Process(readTime)
 
         stopTime = time.perf_counter()
         self._processTime = stopTime - readTime
@@ -145,7 +144,11 @@ class QpixAsicArray():
             timeEnd - how long the array should be processed until
             command - string argument that the asics receive to tell them what readout is coming in from DAQnode
         """
+
+        # add the initial broadcast to the queue
         steps = 0
+        self._queue.AddQueueItem(self[0][0], 3, QPByte(self._tickNow, [], None, None), self._timeNow, command=command)
+
         while(self._timeNow < timeEnd):
 
             for asic in self:
@@ -153,27 +156,27 @@ class QpixAsicArray():
                 if newProcessItems:
                     print("WARNING: ASIC had things left to do at next maor time step")
 
-            self._queue.AddQueueItem(self[0][0], 3, qpa.QPByte(self._tickNow, [], None, None), self._timeNow, command=command)
-
             while(self._queue.Length() > 0):
 
+                # ASICs to catch up to this time, and to send data
                 steps += 1
                 nextItem = self._queue.PopQueue()
-                self.ProcessArray(self._queue, nextItem.inTime)
+                self.ProcessArray(nextItem.inTime)
 
+                # ASIC to receive data
                 newProcessItems = nextItem.asic.ReceiveData(nextItem)
                 if newProcessItems:
                     for item in newProcessItems:
                         self._queue.AddQueueItem(*item)
 
-                self.ProcessArray(self._queue, nextItem.inTime)
+                self.ProcessArray(nextItem.inTime)
 
             self._timeNow += self._deltaT
             self._tickNow += self._deltaTick
 
         return steps
 
-    def ProcessArray(self, procQueue, nextTime):
+    def ProcessArray(self, nextTime):
         """
         move all processing of the array up to absTime
         """
@@ -187,7 +190,7 @@ class QpixAsicArray():
                     processed += 1
                     somethingToDo = True
                     for item in newProcessItems:
-                        procQueue.AddQueueItem(*item)
+                        self._queue.AddQueueItem(*item)
         return processed
 
     def PrintTsMap(self):
