@@ -228,13 +228,6 @@ class QPixAsic:
 
     # additional / debug
     self._debugLevel = debugLevel
-<<<<<<< HEAD
-    self._measurements = 0 # number of measurements made
-    self._measuredTime = []
-    self._localTransmissions = 0
-    self._remoteTransmissions = 0
-=======
->>>>>>> upstream/master
     self._hitReceptions = 0
 
 
@@ -268,22 +261,11 @@ class QPixAsic:
   def ReceiveData(self, queueItem:ProcItem):
     """
     Receive data from a neighbor
-<<<<<<< HEAD
-    queueItem - tuple of (asic, dir, hit, inTime)
-
-    pixelData records the ticks from when the Daq receives data and the ticks 
-    of the asic when it received the ask
-    """
-    inDir     = queueItem.dir # direction the signal came from
-    inHit     = queueItem.pixelHit # the time the asic was asked
-    inTime    = queueItem.inTime # the time the information will be received
-=======
     queueItem - tuple of (asic, dir, byte, inTime)
     """
     inDir     = queueItem.dir
     inByte    = queueItem.QPByte
     inTime    = queueItem.inTime
->>>>>>> upstream/master
     inCommand = queueItem.command
 
     # how a DAQNode records and stores data
@@ -301,27 +283,12 @@ class QPixAsic:
         print(inByte)
 
       # store relevant data from the hit if necessary
-<<<<<<< HEAD
-      if hasattr(inHit, "data"):
-        print(f'hit time of this data is {inHit.hitTime} with ticks {inHit.hitTime * self.fOsc}')
-        pixel = f"({inHit.originRow},{inHit.originCol})"
-        if pixel not in self.pixelData:
-          self.pixelData[pixel] = []
-        self.pixelData[pixel].append((self.relTicksNow, inHit.data))
-        # print(f"received data! from asic {pixel}", inHit.data)
-        print(f"the pixelData for asic {pixel} is {self.pixelData[pixel]} at lab time {self._absTimeNow} \n")
-        
-        # print(f'the time is {self._absTimeNow}')
-        # print(f'the asic ticks are {self.relTicksNow} and sees time {self.relTimeNow}')
-        
-=======
       if hasattr(inByte, "data"):
         pixel = f"({inByte.originRow},{inByte.originCol})"
         if pixel not in self.pixelData:
           self.pixelData[pixel] = []
         self.pixelData[pixel].append((self.relTicksNow, inByte.data))
 
->>>>>>> upstream/master
       return []
 
     if self.connections[inDir] is None:
@@ -430,20 +397,6 @@ class QPixAsic:
     if hasattr(self, "_command") and self._command is not None:
       self._command = None
       # all commands build local queues, and the command should build up any 'hit' of interest
-<<<<<<< HEAD
-      self.state = 1 #transmit local state
-      self._localQueues[(self._curLocalQueue+1)%2].append(PixelHit(self._measuredTime[-1], [], self.row, self.col, data=self.relTicksNow)) #relTicks now is the total number of ticks of the ASIC
-
-    if self.state == AsicStates.Measure.value:
-      return self._processMeasuringState(targetTime)
-
-    if self.state == AsicStates.TransmitLocal.value:
-      # print(f'processing transmission from local state for asic ({self.row}, {self.col})')
-      return self._processTransmitLocalState(targetTime)
-
-    if self.state == AsicStates.TransmitRemote.value:
-      # print(f'processing transmission from remote state for asic ({self.row}, {self.col})')
-=======
       self.state = AsicState.TransmitLocal
       self._localFifo.Write(QPByte(self._measuredTime, [], self.row, self.col, data=self.relTicksNow)) #relTicks now is the total number of ticks of the ASIC
 
@@ -454,7 +407,6 @@ class QPixAsic:
       return self._processTransmitLocalState(targetTime)
 
     if self.state == AsicState.TransmitRemote:
->>>>>>> upstream/master
       return self._processTransmitRemoteState(targetTime)
 
     else:
