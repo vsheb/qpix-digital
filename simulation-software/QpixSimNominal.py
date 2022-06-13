@@ -131,7 +131,7 @@ while(timeNow < timeEnd):
           asicMatrix[i][j].PrintStatus()
 
   # Add a first timestamp at 1 second
-  timestamp = PixelHit(tickNow, [], None, None)
+  timestamp = QPByte(tickNow, [], None, None)
   procQueue.AddQueueItem(asicMatrix[0][0], 3, timestamp, timeNow)
 
   while(procQueue.Length() > 0):
@@ -213,7 +213,7 @@ for i in range(0,nRows):
   for j in range(0,nCols):
     print(str(i)+" "+str(j)+" "+str(asicMatrix[i][j]._maxLocalDepth)+" ",end='')
     for d in range(0,4):
-      print(str(asicMatrix[i][j].maxConnDepths[d])+" ",end='')
+      print(str(asicMatrix[i][j].maxFifoDepths[d])+" ",end='')
     print()
 
 print("PROCESSING TIMES")
