@@ -185,10 +185,9 @@ class QPixAsic:
   fOsc       - Oscillator Frequency in Hz
   lastTsDir  - Last direction timestamp was accepted from
   state      - IDLE/MEASURING, - REPORT_LOCAL, - REPORT_REMOTE
-  _localFifo   - Queue 0/1 are a ping/pong buffer mechanism
-                   You switch from one to another upon receipt of a timestamp
-  _curLocalQueue - Tells us whether we're in ping or pong state
-  _remoteFifos  - A list of lists, one for each side, N E S W, which stores hits
+  _localFifo - Queue 0/1 are a ping/pong buffer mechanism
+               You switch from one to another upon receipt of a timestamp
+  _remoteFifos - A list of lists, one for each side, N E S W, which stores hits
   connections  - list of pointers to adjacent asics
   """
   def __init__(self, fOsc = 50e6, nPixels = 16, randomRate = 1.0/9.0, timeout = 0.5, row = None, col = None,
@@ -197,7 +196,6 @@ class QPixAsic:
     self.nPixels        = 16
     self.fOsc           = fOsc
     self.tOsc           = 1.0/fOsc
-    self._curLocalQueue = 0
     self.lastTsDir      = None
     self._maxLocalDepth = 0
     self.state          = AsicState.Measure
@@ -210,7 +208,7 @@ class QPixAsic:
     self.timeoutStart   = 0
     self.timeout        = timeout
     self.transferTicks  = transferTicks # why 264 transfer ticks?
-    self.transferTime = self.transferTicks * self.tOsc
+    self.transferTime   = self.transferTicks * self.tOsc
     self.lastAbsHitTime = [0] * self.nPixels
     self._absTimeNow    = 0
     self.relTimeNow     = (random.random()-0.5) * self.tOsc
@@ -237,13 +235,13 @@ class QPixAsic:
 
   def PrintStatus(self):
     print("ASIC ("+str(self.row)+","+str(self.col)+") ", end="")
-    print("STATE "+str(self.state),end='')
-    # print("N_LOCAL(A,B) "+str(len(self._localFifo[0])) + "," + str(len(self._localFifo[1])),end='')
-    print("N_REMOTE(N,E,S,W) ",end='')
+    print("STATE:"+str(self.state),end=' ')
+    print(f"locFifoSize: {self._localFifo._curSize}")
+    print("Remote Sizes (N,E,S,W):",end=' ')
     for d in range(4):
-      print(str(len(self._remoteFifos[d])) + ",",end='')
-    print("t = "+str(self._absTimeNow), ", trel ="+str(self.relTimeNow))
-    print("ticks = "+str(self.relTicksNow))
+      print(str(self._remoteFifos[d]._curSize) + ",",end=' ')
+    print(f"absTime = {self._absTimeNow:0.2e}, trel = {self.relTimeNow:0.2e}")
+    print(f"ticks = {self.relTicksNow}")
 
   def CountConnections(self):
     nConnected = 0
@@ -273,7 +271,7 @@ class QPixAsic:
       self.UpdateTime(queueItem.inTime)
       self.daqHits += 1
       self._localFifo.Write(inByte)
-      if self._debugLevel > 0:
+      if self._debugLevel > 3:
         print(f"DAQ-{self.relTicksNow} ",end=' ')
         print(f"from: ({inByte.originRow},{inByte.originCol})",end='\n\t')
         print(f"Hit Time: {inByte.hitTime} "+format(inByte.channelMask,'016b'),end='\n\t')
@@ -296,35 +294,30 @@ class QPixAsic:
     outList = [] 
     isFromDaq = bool(inByte.originCol is None and inByte.originRow is None)
 
-    # 0: MEASURING STATE
-    if self.state == AsicState.Measure:
+    # if you receive an item from the DaqNode, there needs to be a broadcast
+    if isFromDaq:
+      self.lastTsDir = inDir
+      self.state = AsicState.TransmitLocal
+      transactionCompleteTime = inTime + self.transferTime
+      self.UpdateTime(transactionCompleteTime)
+      self._measuredTime = self.relTimeNow
 
-      if isFromDaq:
-        self.lastTsDir = inDir
-        self.state = AsicState.TransmitLocal
-        transactionCompleteTime = inTime + self.transferTime
-        self.UpdateTime(transactionCompleteTime)
-        self._measuredTime = self.relTimeNow
-        
-        # Broadcast everything you receive from the DaqNode
-        for i in range(4):
-          if i != inDir and self.connections[i]:
-            outList.append((self.connections[i] , (i+2)%4, inByte, transactionCompleteTime, inCommand))
+      # Broadcast everything you receive from the DaqNode
+      for i in range(4):
+        if i != inDir and self.connections[i]:
+          outList.append((self.connections[i] , (i+2)%4, inByte, transactionCompleteTime, inCommand))
 
-        # Build hits on local queues for default inCommand
-        if inCommand is None:
-          self._GeneratePoissonHits(inTime)
-        # alternative responses to incoming daq nodes here
-        else:
-          self._command = inCommand
+      # Build hits on local queues for default inCommand
+      if inCommand is None:
+        self._GeneratePoissonHits(inTime)
+      # alternative responses to incoming daq nodes here
       else:
-        print("WARNING lost data! Can't send data while measuring!")
+        self._command = inCommand
 
-    # Receive in other states, means queue up hits
+    # any data received elsewhere is stored in a remote FIFO
     else:
-      # Don't forward source timestamps
-      if inByte.originRow is not None and inByte.originCol is not None:
-        self._remoteFifos[inDir].Write(inByte)
+      self.state = AsicState.TransmitRemote
+      self._remoteFifos[inDir].Write(inByte)
 
     return outList
 
@@ -480,21 +473,22 @@ class QPixAsic:
 
   def UpdateTime(self, absTime):
     """
-    absTime - the time an asic is asked for data
+    How an ASIC keep track of its relative times.
+    ARGS:
+        absTime - absolute time of the simulation, that an ASIC is asked to process up to
 
-    function keeps track of updating absTime and performs necessary updates to
-    relTime and relTicksNow any time that absTime is updated. 
-    
-    Direct assignments should not be made to absTime
+    NOTE:
+    should only move forward in time and update if the ASIC is not already this
+    far forward in time.
     """
-    self._absTimeNow = absTime
-    # print(f'the absolute time is now {self._absTimeNow} and the relative time of asic ({self.row}, {self.col}) is {self.relTimeNow}')
+    if absTime > self._absTimeNow:
+      self._absTimeNow = absTime
 
-    # only update the relTime if the asic needs to
-    if self._absTimeNow > self.relTimeNow:
-      t_diff =  self._absTimeNow - self.relTimeNow 
-      cycles = int(t_diff/self.tOsc) + 1
+      # only update the relTime if the asic needs to
+      if self._absTimeNow > self.relTimeNow:
+        t_diff =  self._absTimeNow - self.relTimeNow
+        cycles = int(t_diff/self.tOsc) + 1
 
-      # update the local clock cycles
-      self.relTimeNow += cycles * self.tOsc
-      self.relTicksNow += cycles
+        # update the local clock cycles
+        self.relTimeNow += cycles * self.tOsc
+        self.relTicksNow += cycles
