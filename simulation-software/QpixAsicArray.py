@@ -63,7 +63,7 @@ class QpixAsicArray():
         for i in range(self._nrows):
             for j in range(self._ncols):
                 frq = random.gauss(self.fNominal,self.fNominal*self.pctSpread)
-                matrix[i].append(QPixAsic(frq, self._nPixs, row = i, col = j, debugLevel=self._debugLevel))
+                matrix[i].append(QPixAsic(frq, self._nPixs, row=i, col=j, debugLevel=self._debugLevel))
                 if self._debugLevel >= 0:
                     print(f"Created ASIC at row {i} col {j} with frq: {frq:.2f}")
 
@@ -109,7 +109,6 @@ class QpixAsicArray():
 
         print("performing calibration..")
         calibrateSteps = self._Command(self._timeNow, command="Calibrate")
-
         timeEnd = self._timeNow + interval
 
         # hard reset asic time values
@@ -147,6 +146,7 @@ class QpixAsicArray():
 
         # add the initial broadcast to the queue
         steps = 0
+        self._queue = ProcQueue()
         self._queue.AddQueueItem(self[0][0], 3, QPByte(self._tickNow, [], None, None), self._timeNow, command=command)
 
         while(self._timeNow < timeEnd):
@@ -158,19 +158,32 @@ class QpixAsicArray():
 
             while(self._queue.Length() > 0):
 
+                nextItem = self._queue.PopQueue()
+                asic = nextItem.asic
+                direction = nextItem.dir
+                hitTime = nextItem.inTime
+                data = nextItem.QPByte
+                command = nextItem.command
+                print(f"ASIC ({asic.row},{asic.col}) recv {direction}, comm={command}, items={self._queue.Length()}")
+
                 # ASICs to catch up to this time, and to send data
                 steps += 1
-                nextItem = self._queue.PopQueue()
-                self.ProcessArray(nextItem.inTime)
+                p1 = self.ProcessArray(hitTime)
 
                 # ASIC to receive data
-                newProcessItems = nextItem.asic.ReceiveData(nextItem)
+                newProcessItems = asic.ReceiveData(nextItem)
+                recv = 0
                 if newProcessItems:
                     for item in newProcessItems:
+                        recv += 1
                         self._queue.AddQueueItem(*item)
 
-                self.ProcessArray(nextItem.inTime)
+                p2 = self.ProcessArray(hitTime)
+                print("adding:", p1, recv, p2, f"sum={p1+recv+p2}, items={self._queue.Length()}",end=" ")
+                print("..\n")
+                # input("..\n")
 
+            print("asic time:", self._timeNow, self._tickNow)
             self._timeNow += self._deltaT
             self._tickNow += self._deltaTick
 
@@ -187,9 +200,9 @@ class QpixAsicArray():
             for asic in self:
                 newProcessItems = asic.Process(nextTime)
                 if newProcessItems:
-                    processed += 1
                     somethingToDo = True
                     for item in newProcessItems:
+                        processed += 1
                         self._queue.AddQueueItem(*item)
         return processed
 

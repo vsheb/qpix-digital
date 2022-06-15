@@ -303,9 +303,9 @@ class QPixAsic:
       self._measuredTime = self.relTimeNow
 
       # Broadcast everything you receive from the DaqNode
-      for i in range(4):
-        if i != inDir and self.connections[i]:
-          outList.append((self.connections[i] , (i+2)%4, inByte, transactionCompleteTime, inCommand))
+      for i, connection in enumerate(self.connections):
+        if i != inDir and connection is not None:
+          outList.append((connection, (i+2)%4, inByte, transactionCompleteTime, inCommand))
 
       # Build hits on local queues for default inCommand
       if inCommand is None:
@@ -380,9 +380,9 @@ class QPixAsic:
     Transmits local and remote data when asked 
     """
     # nothing to process if DAQ or if target time is in past
+    # print("proc:", self.row, self.col, end=" ")
     if self.isDaqNode or self._absTimeNow > targetTime:
-      self.UpdateTime(targetTime)
-      self.state = AsicState.Measure
+      # print(f"good time! {self.relTicksNow:0.2e}")
       return []
 
     # Process incoming commands first
@@ -411,6 +411,7 @@ class QPixAsic:
     """
     helper function when processing in Measuring state
     """
+    # print("transfer measure!")
     self.UpdateTime(targetTime)
     return []
 
@@ -420,26 +421,26 @@ class QPixAsic:
     sends a single local state queue item into the outlist
     """
 
-    outList = [] # list to send out
     transactionCompleteTime = self._absTimeNow + self.transferTime
-    # print(f'transaction of local data complete in {transactionCompleteTime} for asic ({self.row}, {self.col})')
+    # print("transfer local!")
 
     # read an event from our local FIFO, if there is something in it, transmit it
     hit = self._localFifo.Read()
     if hit is not None:
-      outList.append((self.connections[self.lastTsDir], (self.lastTsDir+2)%4, hit, transactionCompleteTime))
       self.UpdateTime(transactionCompleteTime)
+      return [(self.connections[self.lastTsDir], (self.lastTsDir+2)%4, hit, transactionCompleteTime)]
     else:
       self.state = AsicState.TransmitRemote
       self.timeoutStart = self._absTimeNow
+      return []
 
-    return outList
 
   def _processTransmitRemoteState(self, targetTime):
     """
     helper function for sending remote data where it needs to go
     sends a single remote queue item from one of the remote queues 
     """
+    # print("transfer remote!")
 
     # If we're timed out, just kill it
     if self._absTimeNow - self.timeoutStart > self.timeout:

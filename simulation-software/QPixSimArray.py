@@ -5,7 +5,7 @@ from QpixAsic import QPByte, ProcQueue
 import random
 import numpy as np
 random.seed(2)
-qpa = qparray.QpixAsicArray(2, 2, debug=5.0)
+qpa = qparray.QpixAsicArray(2, 2, debug=0.0)
 
 timeNow = 0.
 timeEnd = 4.0
@@ -15,7 +15,6 @@ deltaTick = 50e6
 timeEpsilon = 1e-6
 eventTimes = []
 hitsPerEvent, eventTimes = [], []
-procQueue = ProcQueue()
 
 qpa._timeNow = timeNow
 qpa._tickNow = tickNow
