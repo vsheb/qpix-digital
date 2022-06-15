@@ -32,7 +32,7 @@ class QPByte:
     self.originCol   = originCol
     self.channelMask = 0
     # extra data to lug around for commands send to ASICs
-    self.data = data
+    self.data = data 
     for ch in channelList: 
       self.channelMask |= 0x1 << ch
 
@@ -70,8 +70,8 @@ class QPFifo:
       current number of events stored in the FIFO
     """
 
-    if not isinstance(data, QPByte):
-      raise QPException("Can not add this data-type to a QPFifo!")
+    # if not isinstance(data, QPByte):
+    #   raise QPException("Can not add this data-type to a QPFifo!")
 
     self._data.append(data)
     self._curSize += 1
@@ -138,15 +138,9 @@ class ProcQueue:
 
   def AddQueueItem(self, asic, dir, QPByte, inTime, command=None):
     '''
-    refactor
-    '''
-    procItem = ProcItem(asic, dir, QPByte, inTime, command)
-    self._AddQueueItem(procItem)
-
-  def _AddQueueItem(self, procItem):
-    '''
     include a new process item, inserting into list at appropriate time
     '''
+    procItem = ProcItem(asic, dir, QPByte, inTime, command)
     newItem = procItem
     curItem = self._curItem
     self._entries += 1
@@ -183,6 +177,7 @@ class ProcQueue:
     return self._entries
 
 class QPixAsic:
+
   """
   A Q-Pix ASIC fundamentally consists of:
   An oscillator of nominal frequency (~50 MHz)
@@ -244,6 +239,7 @@ class QPixAsic:
 
   def PrintStatus(self):
     print("ASIC ("+str(self.row)+","+str(self.col)+") ", end="")
+<<<<<<< Updated upstream
     print("STATE:"+str(self.state),end=' ')
     print(f"locFifoSize: {self._localFifo._curSize}")
     print("Remote Sizes (N,E,S,W):",end=' ')
@@ -251,6 +247,16 @@ class QPixAsic:
       print(str(self._remoteFifos[d]._curSize) + ",",end=' ')
     print(f"absTime = {self._absTimeNow:0.2e}, trel = {self.relTimeNow:0.2e}")
     print(f"ticks = {self.relTicksNow}")
+=======
+    print("STATE "+str(self.state),end=' ')
+    # print("N_LOCAL(A,B) "+str(len(self._localFifo[0])) + "," + str(len(self._localFifo[1])),end='')
+    print("N_REMOTE(N,E,S,W) ",end='')
+    for d in range(4):
+      # print(str(len(self._remoteFifos[d])) + ",",end='') ## does this want current size?
+      print(str(self._remoteFifos[d]._curSize) + ",", end='')
+    print("t = "+str(self._absTimeNow), ", trel ="+str(self.relTimeNow))
+    print("ticks = "+str(self.relTicksNow))
+>>>>>>> Stashed changes
 
   def CountConnections(self):
     nConnected = 0
@@ -277,16 +283,28 @@ class QPixAsic:
 
     # how a DAQNode records and stores data to its local FIFO
     if self.isDaqNode:
-      print(f'compare {queueItem.inTime} with {self._absTimeNow}')
       self.UpdateTime(queueItem.inTime)
       self.daqHits += 1
       self._localFifo.Write(inByte)
       if self._debugLevel > 0:
         print(f"DAQ-{self.relTicksNow} ",end=' ')
         print(f"from: ({inByte.originRow},{inByte.originCol})",end='\n\t')
-        print(f"Hit Time: {inByte.hitTime} "+format(inByte.channelMask,'016b'),end='\n\t')
+        print(f"Hit Time: {inByte.hitTime} s", end='\n\t')
+        print(f"channel mask: {inByte.channelMask}")
         print(f"absT: {inTime}", end='\n\t')
         print(f"tDiff (ns): {(self.relTimeNow-inTime)*1e9:2.2f}")
+<<<<<<< Updated upstream
+=======
+        print(inByte)
+
+      # store relevant data from the hit if necessary
+      if hasattr(inByte, "data") and not inByte.data == None:
+        pixel = f"({inByte.originRow},{inByte.originCol})"
+        if pixel not in self.pixelData:
+          self.pixelData[pixel] = []
+        self.pixelData[pixel].append((self.relTicksNow, inByte.data))
+        # print(self.pixelData[pixel])
+>>>>>>> Stashed changes
 
       return []
 
@@ -296,6 +314,7 @@ class QPixAsic:
     # if you receive an item from the DaqNode, there needs to be a broadcast
     outList = [] 
     isFromDaq = bool(inByte.originCol is None and inByte.originRow is None)
+    # was the interrogation from the DAQ
 
     if self.state == AsicState.Measure:
       if isFromDaq:
@@ -320,7 +339,13 @@ class QPixAsic:
 
       else:
         print("WARNING lost data! Can't send data while measuring!")
+<<<<<<< Updated upstream
     # any data received elsewhere is stored in a remote FIFO
+=======
+        print(f"its not from daq its from ({inByte.originCol}, {inByte.originRow})")
+
+    # Receive in other states, means queue up hits
+>>>>>>> Stashed changes
     else:
       # Don't forward source timestamps
       if inByte.originRow is not None and inByte.originCol is not None:
@@ -398,7 +423,9 @@ class QPixAsic:
       self._command = None
       # all commands build local queues, and the command should build up any 'hit' of interest
       self.state = AsicState.TransmitLocal
-      self._localFifo.Write(QPByte(self._measuredTime, [], self.row, self.col, data=self.relTicksNow)) #relTicks now is the total number of ticks of the ASIC
+      asicbyte = QPByte(self._measuredTime, [], self.row, self.col, data=self.relTicksNow)
+      # print(asicbyte.data)
+      self._localFifo.Write(asicbyte) #relTicks now is the total number of ticks of the ASIC
 
     if self.state == AsicState.Measure:
       return self._processMeasuringState(targetTime)
