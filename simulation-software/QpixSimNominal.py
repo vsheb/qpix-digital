@@ -141,7 +141,7 @@ while(timeNow < timeEnd):
     # Now iterate through ASICs and keep doing processing on them until
     # they're caught up to the latest time.
     somethingToDo = True
-    nextTime = nextItem.absTime
+    nextTime = nextItem.inTime
     while somethingToDo:
       somethingToDo = False
       for i in range(0,nRows):
@@ -171,7 +171,7 @@ while(timeNow < timeEnd):
     # Now iterate through ASICs and keep doing processing on them until
     # they're caught up to the latest time.
     somethingToDo = True
-    nextTime = nextItem.absTime
+    nextTime = nextItem.inTime
     while somethingToDo:
       somethingToDo = False
       for i in range(0,nRows):
@@ -198,7 +198,7 @@ while(timeNow < timeEnd):
 
     stepNum += 1
 
-  eventTimes.append(daqNode.absTimeNow-timeNow)
+  eventTimes.append(daqNode._absTimeNow-timeNow)
   hitsPerEvent.append(daqNode.daqHits)
   daqNode.daqHits = 0
   timeNow += deltaT
@@ -213,7 +213,7 @@ for i in range(0,nRows):
   for j in range(0,nCols):
     print(str(i)+" "+str(j)+" "+str(asicMatrix[i][j]._maxLocalDepth)+" ",end='')
     for d in range(0,4):
-      print(str(asicMatrix[i][j].maxFifoDepths[d])+" ",end='')
+      print(str(asicMatrix[i][j]._remoteFifos[d]._maxSize)+" ",end='')
     print()
 
 print("PROCESSING TIMES")

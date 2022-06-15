@@ -8,7 +8,7 @@ import numpy as np
 random.seed(2)
 qpa = qparray.QpixAsicArray(2, 2, debug=0.0)
 
-qpa.Calibrate(20e-5)
+qpa.Calibrate(20e-4)
 
 print("\ndaq hits:", qpa._daqNode.daqHits)
 data = qpa._daqNode.daqHits > 0

@@ -171,6 +171,8 @@ class QPIX_GUI(QMainWindow):
             self._data["asicT"][0] = asicTime
             self._data["asicX"][0] = x
             self._data["asicY"][0] = y
+            # TODO
+            # self._data["channelMask"][0] = chanMask
             self._data["wordType"][0] = wordType
             self._tt.Fill()
 
