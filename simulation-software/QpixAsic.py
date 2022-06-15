@@ -8,12 +8,17 @@ from enum import Enum
 #Enum-like things
 DIRECTIONS = ("North", "East", "South", "West")
 
-
 class QPExcpetion(Exception):
   pass
 
+class AsicDirections(Enum):
+  North = 0
+  East = 1
+  South = 2
+  West = 3
+
 class AsicState(Enum):
-  Measure = 0
+  Idle = 0
   TransmitLocal = 1
   TransmitRemote = 2
 
@@ -26,10 +31,12 @@ class QPByte:
   This struct-style class stores no more than the 64 bit information transfered
   on a 64 bit Tx/Rx Endeavor protocol.
   """
-  def __init__(self, hitTime, channelList, originRow, originCol, data=None):
+  def __init__(self, hitTime, channelList, originRow, originCol, data=None, wordType=None):
     self.hitTime     = hitTime
     self.originRow   = originRow
     self.originCol   = originCol
+    # TODO
+    # self.wordType = wordType
     self.channelMask = 0
     # extra data to lug around for commands send to ASICs
     self.data = data
@@ -192,14 +199,14 @@ class QPixAsic:
   Each has its own queue
 
   fOsc       - Oscillator Frequency in Hz
+  nPixels    - number of analog channels
   lastTsDir  - Last direction timestamp was accepted from
   state      - IDLE/MEASURING, - REPORT_LOCAL, - REPORT_REMOTE
-  _localFifo - Queue 0/1 are a ping/pong buffer mechanism
-               You switch from one to another upon receipt of a timestamp
-  _remoteFifos - A list of lists, one for each side, N E S W, which stores hits
+  _localFifo - QPFifo class to manage Read and Write of local data
+  _remoteFifos - list of ofur QPFifo class' to manage write of remote ASIC data / transactions
   connections  - list of pointers to adjacent asics
   """
-  def __init__(self, fOsc=50e6, nPixels=16, randomRate=1.0/9.0, timeout=5000, row=None, col=None,
+  def __init__(self, fOsc=50e6, nPixels=16, randomRate=1.0/9.0, timeout=1000, row=None, col=None,
                isDaqNode=False, transferTicks=4*66, debugLevel=0):
     # basic asic parameters
     self.nPixels        = 16
@@ -207,11 +214,12 @@ class QPixAsic:
     self.tOsc           = 1.0/fOsc
     self.lastTsDir      = None
     self._maxLocalDepth = 0
-    self.state          = AsicState.Measure
+    self.state          = AsicState.Idle
     self.randomRate     = randomRate
     self.row            = row
     self.col            = col
     self.connections    = [None] * 4 
+    self._command       = None
 
     # timing, absolute and relative with random starting phase
     self.timeoutStart   = 0
@@ -236,7 +244,7 @@ class QPixAsic:
     # additional / debug
     self._debugLevel = debugLevel
     self._hitReceptions = 0
-    self._measuredTime = 0
+    self._IdledTime = 0
 
   def __repr__(self):
     self.PrintStatus()
@@ -265,7 +273,7 @@ class QPixAsic:
     else:
       return 0
 
-  def ReceiveData(self, queueItem:ProcItem):
+  def ReceiveByte(self, queueItem:ProcItem):
     """
     Receive data from a neighbor
     queueItem - tuple of (asic, dir, byte, inTime)
@@ -296,7 +304,7 @@ class QPixAsic:
     outList = [] 
     isFromDaq = bool(inByte.originCol is None and inByte.originRow is None)
 
-    if self.state == AsicState.Measure:
+    if self.state == AsicState.Idle:
       if isFromDaq:
 
         self.lastTsDir = inDir
@@ -304,6 +312,7 @@ class QPixAsic:
         transactionCompleteTime = inTime + self.transferTime
         self.UpdateTime(transactionCompleteTime)
         self._measuredTime = self.relTimeNow
+        self._command = inCommand
 
         # Broadcast everything you receive from the DaqNode
         for i, connection in enumerate(self.connections):
@@ -314,16 +323,14 @@ class QPixAsic:
         if inCommand is None:
           self._GeneratePoissonHits(inTime)
         # alternative responses to incoming daq nodes here
-        else:
-          self._command = inCommand
 
       else:
         print("WARNING lost data! Can't send data while measuring!")
+        # self._remoteFifos[inDir].Write(inByte)
     # any data received elsewhere is stored in a remote FIFO
     else:
       # Don't forward source timestamps
-      if inByte.originRow is not None and inByte.originCol is not None:
-        # self.state = AsicState.TransmitRemoe
+      if not isFromDaq:
         self._remoteFifos[inDir].Write(inByte)
 
     return outList
@@ -393,13 +400,13 @@ class QPixAsic:
       return []
 
     # Process incoming commands first
-    if hasattr(self, "_command") and self._command is not None:
+    if self._command == "Calibrate":
       self._command = None
       # all commands build local queues, and the command should build up any 'hit' of interest
       self.state = AsicState.TransmitLocal
       self._localFifo.Write(QPByte(self._measuredTime, [], self.row, self.col, data=self.relTicksNow)) #relTicks now is the total number of ticks of the ASIC
 
-    if self.state == AsicState.Measure:
+    if self.state == AsicState.Idle:
       return self._processMeasuringState(targetTime)
 
     if self.state == AsicState.TransmitLocal:
@@ -411,14 +418,14 @@ class QPixAsic:
     else:
       # undefined state
       print("WARNING! ASIC in undefined state")
-      self.state = AsicState.Measure
+      self.state = AsicState.Idle
       return []
 
   def _processMeasuringState(self, targetTime):
     """
     helper function when processing in Measuring state
     """
-    # print("transfer measure!")
+    # print("transfer Idle!")
     self.UpdateTime(targetTime)
     return []
 
@@ -446,11 +453,10 @@ class QPixAsic:
     helper function for sending remote data where it needs to go
     sends a single remote queue item from one of the remote queues 
     """
-    # print("transfer remote!")
 
     # If we're timed out, just kill it
     if self._absTimeNow - self.timeoutStart > self.timeout:
-      self.state = AsicState.Measure
+      self.state = AsicState.Idle
       if self._localFifo._curSize > 0:
           print("Lost "+str(len(self._localFifo._curSize))+" hits that were left to forward!")
       return []
@@ -464,7 +470,7 @@ class QPixAsic:
     if not(hitsToForward):
       self.UpdateTime(targetTime)
       if self._absTimeNow - self.timeoutStart > self.timeout:
-        self.state = AsicState.Measure
+        self.state = AsicState.Idle
       return []
 
     else:

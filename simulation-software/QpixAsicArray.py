@@ -157,6 +157,10 @@ class QpixAsicArray():
 
             while(self._queue.Length() > 0):
 
+                if self._debugLevel > 0:
+                    for asic in self:
+                        print(asic.state, asic.row, asic.col, asic.fOsc)
+
                 steps += 1
                 # pop the next simulation unit
                 nextItem = self._queue.PopQueue()
@@ -170,7 +174,7 @@ class QpixAsicArray():
                 p1 = self.ProcessArray(hitTime)
 
                 # ASIC to receive data
-                newProcessItems = asic.ReceiveData(nextItem)
+                newProcessItems = asic.ReceiveByte(nextItem)
                 recv = 0
                 if newProcessItems:
                     for item in newProcessItems:
@@ -178,6 +182,10 @@ class QpixAsicArray():
                         self._queue.AddQueueItem(*item)
 
                 p2 = self.ProcessArray(hitTime)
+
+                if self._debugLevel > 0:
+                    print(f"({asic.row},{asic.col}) from {direction} processed:", p1, recv, p2, f"items={self._queue.Length()}")
+                    input("")
 
             self._timeNow += self._deltaT
             self._tickNow += self._deltaTick
