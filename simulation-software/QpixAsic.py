@@ -36,6 +36,13 @@ class QPByte:
     for ch in channelList: 
       self.channelMask |= 0x1 << ch
 
+  def __repr__(self):
+    """
+    how to represent a Byte when print out
+    """
+    msg = f"({self.originRow},{self.originCol}): {self.channelMask:04x} @ {self.hitTime} - {self.data}"
+    return msg
+
   def AddChannel(self, channel):
     self.channelMask |= 0x1 << channel
 
@@ -52,6 +59,7 @@ class QPFifo:
     self._curSize = 0
     self._maxDepth = maxDepth
     self._full = False
+    self._totalWrites = 0
 
   def Write(self, data=QPByte) -> int:
     """
@@ -67,6 +75,7 @@ class QPFifo:
 
     self._data.append(data)
     self._curSize += 1
+    self._totalWrites += 1
 
     if self._curSize > self._maxSize:
       self._maxSize = self._curSize
@@ -190,8 +199,8 @@ class QPixAsic:
   _remoteFifos - A list of lists, one for each side, N E S W, which stores hits
   connections  - list of pointers to adjacent asics
   """
-  def __init__(self, fOsc = 50e6, nPixels = 16, randomRate = 1.0/9.0, timeout = 0.5, row = None, col = None,
-               isDaqNode = False, transferTicks = 4*66, debugLevel=0):
+  def __init__(self, fOsc=50e6, nPixels=16, randomRate=1.0/9.0, timeout=5000, row=None, col=None,
+               isDaqNode=False, transferTicks=4*66, debugLevel=0):
     # basic asic parameters
     self.nPixels        = 16
     self.fOsc           = fOsc
@@ -206,7 +215,7 @@ class QPixAsic:
 
     # timing, absolute and relative with random starting phase
     self.timeoutStart   = 0
-    self.timeout        = timeout
+    self.timeout        = timeout / fOsc
     self.transferTicks  = transferTicks # why 264 transfer ticks?
     self.transferTime   = self.transferTicks * self.tOsc
     self.lastAbsHitTime = [0] * self.nPixels
@@ -266,58 +275,56 @@ class QPixAsic:
     inTime    = queueItem.inTime
     inCommand = queueItem.command
 
-    # how a DAQNode records and stores data
+    # how a DAQNode records and stores data to its local FIFO
     if self.isDaqNode:
       self.UpdateTime(queueItem.inTime)
       self.daqHits += 1
       self._localFifo.Write(inByte)
-      if self._debugLevel > 3:
+      if self._debugLevel > 0:
         print(f"DAQ-{self.relTicksNow} ",end=' ')
         print(f"from: ({inByte.originRow},{inByte.originCol})",end='\n\t')
         print(f"Hit Time: {inByte.hitTime} "+format(inByte.channelMask,'016b'),end='\n\t')
         print(f"absT: {inTime}", end='\n\t')
         print(f"tDiff (ns): {(self.relTimeNow-inTime)*1e9:2.2f}")
-        print(inByte)
-
-      # store relevant data from the hit if necessary
-      if hasattr(inByte, "data"):
-        pixel = f"({inByte.originRow},{inByte.originCol})"
-        if pixel not in self.pixelData:
-          self.pixelData[pixel] = []
-        self.pixelData[pixel].append((self.relTicksNow, inByte.data))
 
       return []
 
     if self.connections[inDir] is None:
       print("WARNING receiving data from non-existent connection!")
     
+    # if you receive an item from the DaqNode, there needs to be a broadcast
     outList = [] 
     isFromDaq = bool(inByte.originCol is None and inByte.originRow is None)
 
-    # if you receive an item from the DaqNode, there needs to be a broadcast
-    if isFromDaq:
-      self.lastTsDir = inDir
-      self.state = AsicState.TransmitLocal
-      transactionCompleteTime = inTime + self.transferTime
-      self.UpdateTime(transactionCompleteTime)
-      self._measuredTime = self.relTimeNow
+    if self.state == AsicState.Measure:
+      if isFromDaq:
 
-      # Broadcast everything you receive from the DaqNode
-      for i, connection in enumerate(self.connections):
-        if i != inDir and connection is not None:
-          outList.append((connection, (i+2)%4, inByte, transactionCompleteTime, inCommand))
+        self.lastTsDir = inDir
+        self.state = AsicState.TransmitLocal
+        transactionCompleteTime = inTime + self.transferTime
+        self.UpdateTime(transactionCompleteTime)
+        self._measuredTime = self.relTimeNow
 
-      # Build hits on local queues for default inCommand
-      if inCommand is None:
-        self._GeneratePoissonHits(inTime)
-      # alternative responses to incoming daq nodes here
+        # Broadcast everything you receive from the DaqNode
+        for i, connection in enumerate(self.connections):
+          if i != inDir and connection is not None:
+            outList.append((connection, (i+2)%4, inByte, transactionCompleteTime, inCommand))
+
+        # Build hits on local queues for default inCommand
+        if inCommand is None:
+          self._GeneratePoissonHits(inTime)
+        # alternative responses to incoming daq nodes here
+        else:
+          self._command = inCommand
+
       else:
-        self._command = inCommand
-
+        print("WARNING lost data! Can't send data while measuring!")
     # any data received elsewhere is stored in a remote FIFO
     else:
-      self.state = AsicState.TransmitRemote
-      self._remoteFifos[inDir].Write(inByte)
+      # Don't forward source timestamps
+      if inByte.originRow is not None and inByte.originCol is not None:
+        # self.state = AsicState.TransmitRemoe
+        self._remoteFifos[inDir].Write(inByte)
 
     return outList
 
@@ -434,7 +441,6 @@ class QPixAsic:
       self.timeoutStart = self._absTimeNow
       return []
 
-
   def _processTransmitRemoteState(self, targetTime):
     """
     helper function for sending remote data where it needs to go
@@ -462,15 +468,14 @@ class QPixAsic:
       return []
 
     else:
-      outList = []
       completeTime = self._absTimeNow + self.transferTime
       for remote_fifo in self._remoteFifos:
         hit = remote_fifo.Read()
         if hit is not None:
-          outList.append((self.connections[self.lastTsDir], (self.lastTsDir+2)%4 , hit, completeTime))
           self.UpdateTime(completeTime)
+          return [(self.connections[self.lastTsDir], (self.lastTsDir+2)%4 , hit, completeTime)]
 
-      return outList
+      return []
 
   def UpdateTime(self, absTime):
     """
@@ -482,6 +487,7 @@ class QPixAsic:
     should only move forward in time and update if the ASIC is not already this
     far forward in time.
     """
+
     if absTime > self._absTimeNow:
       self._absTimeNow = absTime
 

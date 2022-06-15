@@ -8,19 +8,21 @@ class QpixAsicArray():
     Class purpose is to streamline creation of a digital asic array tile for the
     QPix project. Controls main sequencing of spread of asic clock cycles
     VARS:
-      nrows - rows within the array
-      ncols - columns within the array
-      nPixs=16 - number of channels
-      fNominal=50e6  - Default clock frequency
-      pctSpread=0.05 - std distribution of clocks within array
-      deltaT=1.0     -
-      timeEpsilon=1e-6 - stepping time interval for simulation
-      debug=0.0 - debug level, values >= 5 produce text output
+      nrows       - rows within the array
+      ncols       - columns within the array
+      nPixs=16    - number of channels for each ASIC
+      fNominal    - Default clock frequency (default ~50 MHz)
+      pctSpread   - std distribution of ASIC clocks (default 5%)
+      deltaT      - stepping interval for the simulation
+      timeEpsilon - stepping time interval for simulation (default 1e-6)
+      debug       - debug level, values >= 0 produce text output (default 0)
     """
-    def __init__(self, nrows, ncols, nPixs=16, fNominal=50e6, pctSpread=0.05, deltaT=1.0, timeEpsilon=1e-6,
+    def __init__(self, nrows, ncols, nPixs=16, fNominal=50e6, pctSpread=0.05, deltaT=1e-5, timeEpsilon=1e-6,
                 debug=0.0):
 
         # array parameters
+        self._tickNow = 0
+        self._timeNow = 0
         self._nrows = nrows
         self._ncols = ncols
         self._debugLevel = debug
@@ -28,19 +30,17 @@ class QpixAsicArray():
         self.fNominal = fNominal
         self.pctSpread = pctSpread
 
-        # Make the array and connections
+        # the array also manages all of the processing queue times to use
+        self._queue = ProcQueue()
+        self._timeEpsilon = timeEpsilon
+        self._deltaT = deltaT
+        self._deltaTick = self.fNominal * self._deltaT
+
+         # Make the array and connections
         self._asics = self._makeArray()
         self._daqNode = QPixAsic(self.fNominal, 0, isDaqNode=True, debugLevel=self._debugLevel)
         self._asics[0][0].connections[3] = self._daqNode
-
-        # the array also manages all of the processing queue times to use
-        self._queue = ProcQueue()
-        self._tickNow = 50e6
-        self._timeEpsilon = 1e-6
-        self._deltaT = deltaT
-        self._deltaTick = 50e6 * self._deltaT
-        self._timeNow = 0
-    
+   
     def __iter__(self):
         '''returns iterable through the asics within the array'''
         for asic_row in self._asics:
@@ -107,21 +107,12 @@ class QpixAsicArray():
             interval - time in seconds to issue two different commands and to read time value pairs back from asics
         """
 
-        print("performing calibration..")
-        calibrateSteps = self._Command(self._timeNow, command="Calibrate")
-        timeEnd = self._timeNow + interval
+        t1 = self._timeNow + interval
+        calibrateSteps = self._Command(t1, command="Calibrate")
 
-        # hard reset asic time values
-        for asic in self:
-            asic._measurements = 0
-            asic._hitReceptions = 0
-            asic._remoteTransmissions = 0
-            asic._localTransmissions = 0
-            asic._measuredTime = 0
-
-        print(f"current time is {self._timeNow}")
-        calibrateSteps = self._Command(timeEnd, command="Calibrate")
-        print(f"calibration complete time is:", self._timeNow)
+        t2 = self._timeNow + interval
+        calibrateSteps = self._Command(t2, command="Calibrate")
+        print(f"calibration complete time is: {self._timeNow}, steps: {calibrateSteps}")
 
     def timeStamp(self, interval=1.0):
         """
@@ -142,6 +133,14 @@ class QpixAsicArray():
         VARS:
             timeEnd - how long the array should be processed until
             command - string argument that the asics receive to tell them what readout is coming in from DAQnode
+
+        NOTE Basic Unit of simulation:
+            ASIC      - receiving data
+            Direction - source direction of incoming data
+            QPByte    - source data, 64 bit word
+            hitTime   - transaction complete time from source ASIC
+            Command   - optional argument passed to receive data to tell receiving
+                        ASIC to behave differently
         """
 
         # add the initial broadcast to the queue
@@ -158,16 +157,16 @@ class QpixAsicArray():
 
             while(self._queue.Length() > 0):
 
+                steps += 1
+                # pop the next simulation unit
                 nextItem = self._queue.PopQueue()
                 asic = nextItem.asic
                 direction = nextItem.dir
                 hitTime = nextItem.inTime
                 data = nextItem.QPByte
                 command = nextItem.command
-                print(f"ASIC ({asic.row},{asic.col}) recv {direction}, comm={command}, items={self._queue.Length()}")
 
                 # ASICs to catch up to this time, and to send data
-                steps += 1
                 p1 = self.ProcessArray(hitTime)
 
                 # ASIC to receive data
@@ -179,11 +178,7 @@ class QpixAsicArray():
                         self._queue.AddQueueItem(*item)
 
                 p2 = self.ProcessArray(hitTime)
-                print("adding:", p1, recv, p2, f"sum={p1+recv+p2}, items={self._queue.Length()}",end=" ")
-                print("..\n")
-                # input("..\n")
 
-            print("asic time:", self._timeNow, self._tickNow)
             self._timeNow += self._deltaT
             self._tickNow += self._deltaTick
 
