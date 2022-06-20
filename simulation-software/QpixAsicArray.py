@@ -1,4 +1,4 @@
-from QpixAsic import QPByte, QPixAsic, ProcQueue
+from QpixAsic import QPByte, QPixAsic, ProcQueue, DaqNode
 import random
 import math
 import time
@@ -38,7 +38,7 @@ class QpixAsicArray():
 
          # Make the array and connections
         self._asics = self._makeArray()
-        self._daqNode = QPixAsic(self.fNominal, 0, isDaqNode=True, debugLevel=self._debugLevel)
+        self._daqNode = DaqNode(self.fNominal, 0, isDaqNode=True, debugLevel=self._debugLevel)
         self._asics[0][0].connections[3] = self._daqNode
    
     def __iter__(self):
@@ -153,7 +153,7 @@ class QpixAsicArray():
             for asic in self:
                 newProcessItems = asic.Process(self._timeNow - self._timeEpsilon)
                 if newProcessItems:
-                    print("WARNING: ASIC had things left to do at next maor time step")
+                    print("WARNING: ASIC had things left to do at next major time step")
 
             while(self._queue.Length() > 0):
 
@@ -183,9 +183,8 @@ class QpixAsicArray():
 
                 p2 = self.ProcessArray(hitTime)
 
-                if self._debugLevel > 0:
-                    print(f"({asic.row},{asic.col}) from {direction} processed:", p1, recv, p2, f"items={self._queue.Length()}")
-                    input("")
+                # print(f"({asic.row},{asic.col}) from {direction} processed:", p1, recv, p2, f"items={self._queue.Length()}")
+                # input("")
 
             self._timeNow += self._deltaT
             self._tickNow += self._deltaTick
@@ -263,7 +262,7 @@ class QpixAsicArray():
                 print()
         print("Measured Time Values (us):")
         for i, asic in enumerate(self):
-            print(f"{(asic._measuredTime - self[0][0]._measuredTime)*1e6:3.2f}", end=" ")
+            print(f"{(asic._measuredTime[-1] - self[0][0]._measuredTime[-1])*1e6:3.2f}", end=" ")
             if (i+1)%self._nrows == 0:
                 print()
 
