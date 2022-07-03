@@ -39,6 +39,10 @@ class QpixAsicArray():
          # Make the array and connections
         self._asics = self._makeArray(timeout=timeout)
         self._daqNode = DaqNode(fOsc = self.fNominal, nPixels = 0, isDaqNode = True, debugLevel=self._debugLevel, timeout=timeout)
+        for asic in self:
+            self._daqNode.hitData[f'({asic.row}, {asic.col})'] = []
+            self._daqNode.askData[f'({asic.row}, {asic.col})'] = []
+
         self._asics[0][0].connections[3] = self._daqNode
 
         self._alert = 0
@@ -134,6 +138,7 @@ class QpixAsicArray():
         """
         
         time = self._timeNow
+        # self._Command(0.001, command="Interrogate")
         while time < duration:
             print("performing timestamp..")
             time = self._timeNow + interval
@@ -162,7 +167,7 @@ class QpixAsicArray():
         # add the initial broadcast to the queue
         steps = 0
         self._queue = ProcQueue()
-        self._queue.AddQueueItem(self[0][0], 3, QPByte(self._tickNow, [], None, None), self._timeNow, command=command)
+        self._queue.AddQueueItem(self[0][0], 3, QPByte(self._tickNow, [], None, None, wordType="ask"), self._timeNow, command=command)
 
         while(self._timeNow < timeEnd):
 
@@ -171,7 +176,6 @@ class QpixAsicArray():
                 if newProcessItems:
                     self._alert = 1
                     print("WARNING: ASIC had things left to do at next major time step")
-                    # print(f'at asic ({asic.row}, {asic.col}) with frequency {asic.fOsc} and state {asic.state}')
                     for item in newProcessItems:
                         recv += 1
                         self._queue.AddQueueItem(*item)

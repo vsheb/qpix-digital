@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from io import IncrementalNewlineDecoder
 import random
 import math
 import time
@@ -35,8 +36,7 @@ class QPByte:
     self.hitTime     = hitTime
     self.originRow   = originRow
     self.originCol   = originCol
-    # TODO
-    # self.wordType = wordType
+    self.wordType = wordType
     self.channelMask = 0
     # extra data to lug around for commands send to ASICs
     self.data = data
@@ -346,12 +346,7 @@ class QPixAsic:
     else:
       # Don't forward source timestamps
       if not isFromDaq:
-        # for d in range(4):
-          # print(f'asic ({self.row}, {self.col})s {DIRECTIONS[d]} remote fifo size = {self._remoteFifos[d]._curSize}')
         self._remoteFifos[inDir].Write(inByte)
-        # print(f'writing byte to remote fifo from asic ({self.row}, {self.col}) with direction {DIRECTIONS[inDir]}')
-        # for d in range(4):
-          # print(f'after writing: asic ({self.row}, {self.col})s {DIRECTIONS[d]} remote fifo size = {self._remoteFifos[d]._curSize}')
 
 
 
@@ -375,7 +370,7 @@ class QPixAsic:
       foreach unique entry in the timestamp list, create a hit with proper parameters,
       add it to the queue (A or B)
     """
-    print(f'Generating Poisson Hits for ({self.row}, {self.col}) at target time {targetTime}')
+    # print(f'Generating Poisson Hits for ({self.row}, {self.col}) at target time {targetTime}')
     newHits = []
 
     for ch in range(self.nPixels):
@@ -385,9 +380,7 @@ class QPixAsic:
         # generate a posion distribution of absolute / reletive times
         p = random.random() #prints random real between 0 and 1
         nextAbsHitTime = currentTime + (-math.log(1.0 - p) / self.randomRate) # math.log is the natural log
-        # print(f'the current time is {currentTime} and the next hit time is {nextAbsHitTime}')
         nextRelHitTime = int(math.floor(nextAbsHitTime / self.tOsc))
-        # print(f'the next absolute hit time for ch{ch} is {nextAbsHitTime}')
 
         # if hit happens before target time, add a new hit to the list
         if nextAbsHitTime < targetTime:
@@ -399,19 +392,26 @@ class QPixAsic:
           self.lastAbsHitTime[ch] = targetTime
 
     if not newHits:
-      print('there are no new hits')
       return 0
 
     # sort the new hits by time, group the channels with the same hit time, then add
     # them into the FIFO
     newHits.sort(key=lambda x : x[1], reverse=False)
-    prevByte = QPByte(newHits[0][1], [newHits[0][0]], self.row, self.col)
+    prevByte = QPByte(newHits[0][1], [newHits[0][0]], self.row, self.col, wordType="hit")
+
+    #check to see if the hit time of the every new hit after the first is 
+    #the same as the first hit time, then check with second hit, then third ...
     for ch, hitTime in newHits[1:]:
-      if hitTime == prevByte.hitTime:
+      if hitTime == prevByte.hitTime: #this is almost never met
         prevByte.AddChannel(ch)
+        print(f'a byte was added to ({self.row}, {self.col}), newhits len = {len(newHits)}')
       else:
         self._localFifo.Write(prevByte)
-        prevByte = QPByte(hitTime, [ch], self.row, self.col)
+        prevByte = QPByte(hitTime, [ch], self.row, self.col, wordType="hit")
+
+    #write in the last byte
+    self._localFifo.Write(prevByte)
+
     print(f'giving asic ({self.row}, {self.col}) {len(newHits)} hits')
     return len(newHits)
 
@@ -427,10 +427,11 @@ class QPixAsic:
 
     # Process incoming commands first
     if self._command == "Calibrate" or self._command == "Interrogate":
+
       self._command = None
       # all commands build local queues, and the command should build up any 'hit' of interest
       self.state = AsicState.TransmitLocal
-      self._localFifo.Write(QPByte(self._measuredTime[-1], [], self.row, self.col, data=self.relTicksNow)) #relTicks now is the total number of ticks of the ASIC
+      self._localFifo.Write(QPByte(self._measuredTime[-1], [], self.row, self.col, data=self.relTicksNow, wordType="ask")) #relTicks now is the total number of ticks of the ASIC
 
     if self.state == AsicState.Idle:
       return self._processMeasuringState(targetTime)
@@ -506,16 +507,12 @@ class QPixAsic:
         if hit is not None:
           completeTime = self._absTimeNow + self.transferTime
           if self._absTimeNow - self.timeoutStart > self.timeout:
-            # print(f'the time is {self._absTimeNow}')
             self.state = AsicState.Idle
             self.UpdateTime(completeTime)
             return hitlist
           else:
-            # print(f'appending {(self.connections[self.lastTsDir], (self.lastTsDir+2)%4 , hit, completeTime)} to hitlist')
             hitlist.append((self.connections[self.lastTsDir], (self.lastTsDir+2)%4 , hit, completeTime))
             self.UpdateTime(completeTime)
-
-      # print(len(hitlist))
       return hitlist
 
     return []
@@ -551,7 +548,8 @@ class DaqNode(QPixAsic):
                     transferTicks, debugLevel)
     # new members here
     # self.isDaqNode = True
-    self.daqData = {}
+    self.askData = {}
+    self.hitData = {}
     self.daqHits = 0
 
   def ReceiveByte(self, queueItem:ProcItem):
@@ -562,11 +560,10 @@ class DaqNode(QPixAsic):
     inByte    = queueItem.QPByte
     inTime    = queueItem.inTime
     inCommand = queueItem.command
+    inWord    = inByte.wordType
 
     # how a DAQNode records and stores data to its local FIFO
     AsicKey = f"({inByte.originRow}, {inByte.originCol})"
-    # print(f'the daq is receiving data from asic {AsicKey}')
-
     if AsicKey not in self.daqData:
       self.daqData[AsicKey] = []
 
@@ -576,10 +573,15 @@ class DaqNode(QPixAsic):
 
     # Put all of the attributes of the QPByte into a list 
     # (hitTime, channelList, originRow, originCol, data=None, wordType=None)
-    ByteList = list(vars(inByte).values())
+    # ByteList = list(vars(inByte).values())
+    # self.daqData[AsicKey].append((self.relTicksNow, ByteList))
 
-    # self.daqData[AsicKey].append((self.relTicksNow, inByte)) #ByteList or inByte
-    self.daqData[AsicKey].append((self.relTicksNow, ByteList))
+    if inWord == "hit":
+      self.hitData[AsicKey].append((self.relTicksNow, inByte)) #ByteList or inByte
+    elif inWord == "ask":
+      self.askData[AsicKey].append((self.relTicksNow, inByte))
+    else:
+      print('there is no associated wordType with this byte')
 
     if self._debugLevel > 0:
       print(f"DAQ-{self.relTicksNow} ",end=' ')
