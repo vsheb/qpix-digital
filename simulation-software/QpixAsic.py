@@ -25,6 +25,8 @@ class QPByte:
 
   This struct-style class stores no more than the 64 bit information transfered
   on a 64 bit Tx/Rx Endeavor protocol.
+
+  This struct should be directly derived from QpixDataFormatType in QpixPkg.vhd
   """
   def __init__(self, hitTime, channelList, originRow, originCol, data=None):
     self.hitTime     = hitTime
@@ -297,10 +299,9 @@ class QPixAsic:
     # if you receive an item from the DaqNode, there needs to be a broadcast
     if isFromDaq:
       self.lastTsDir = inDir
-      self.state = AsicState.TransmitLocal
       transactionCompleteTime = inTime + self.transferTime
       self.UpdateTime(transactionCompleteTime)
-      self._measuredTime = self.relTimeNow
+      self.state = AsicState.TransmitLocal
 
       # Broadcast everything you receive from the DaqNode
       for i in range(4):
@@ -456,8 +457,7 @@ class QPixAsic:
     # If there's nothing to forward, just bring us up to requested time
     if not(hitsToForward):
       self.UpdateTime(targetTime)
-      if self._absTimeNow - self.timeoutStart > self.timeout:
-        self.state = AsicState.Measure
+      self.state = AsicState.Measure
       return []
 
     else:

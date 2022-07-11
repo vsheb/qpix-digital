@@ -93,11 +93,11 @@ class QPIX_GUI(QMainWindow):
         btn_stimeout.move(160,0)
         btn_stimeout.clicked.connect(self.setAsicTimeout)
 
-        chk_enable = QCheckBox(self.main_wid)
-        chk_enable.setText('asic enable')
-        chk_enable.setCheckState(0)
-        chk_enable.move(160, 40)
-        chk_enable.stateChanged.connect(self.enableAsic)
+        self.chk_enable = QCheckBox(self.main_wid)
+        self.chk_enable.setText('asic enable')
+        self.chk_enable.setCheckState(0)
+        self.chk_enable.move(160, 40)
+        self.chk_enable.stateChanged.connect(self.enableAsic)
 
         # show the main window
         self.show()
@@ -241,7 +241,10 @@ class QPIX_GUI(QMainWindow):
         Default is all on.
         """
         addr = REG.ASIC(xpos, ypos, AsicREG.ENA)
-        val = AsicEnable.ALL
+        if self.chk_enable.isChecked():
+            val = AsicEnable.ALL
+        else:
+            val = AsicEnable.OFF
         self.qpi.regWrite(addr, val)
 
 
