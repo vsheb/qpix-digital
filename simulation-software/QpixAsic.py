@@ -5,6 +5,7 @@ import random
 import math
 import time
 from enum import Enum
+import numpy as np
 
 #Enum-like things
 DIRECTIONS = ("North", "East", "South", "West")
@@ -224,7 +225,7 @@ class QPixAsic:
     # timing, absolute and relative with random starting phase
     self.timeoutStart   = 0
     self.timeout        = timeout / fOsc
-    self.transferTicks  = transferTicks # why 264 transfer ticks?
+    self.transferTicks  = transferTicks
     self.transferTime   = self.transferTicks * self.tOsc
     self.lastAbsHitTime = [0] * self.nPixels
     self._absTimeNow    = 0
@@ -235,9 +236,6 @@ class QPixAsic:
 
     # daq node Configuration
     self.isDaqNode      = isDaqNode
-    # if self.isDaqNode:
-    #   self.daqHits        = 0
-    #   self.pixelData = {}
 
     # Queues / FIFOs
     self._localFifo   = QPFifo(maxDepth=256)
@@ -247,6 +245,11 @@ class QPixAsic:
     self._debugLevel = debugLevel
     self._hitReceptions = 0
     self._measuredTime = []
+
+    # useful things for _InjectHits
+    self._times = []
+    self._channels = []
+    self._lastAsicHitTime = 0
 
   def __repr__(self):
     self.PrintStatus()
@@ -334,6 +337,7 @@ class QPixAsic:
         # Build hits on local queues for default inCommand
         if inCommand == "Interrogate":
           self._GeneratePoissonHits(inTime)
+          # self._InjectHits(inTime, times=self._times, channels=self._channels)
         # alternative responses to incoming daq nodes here
         
       #TODO - check that this makes sense
@@ -347,8 +351,6 @@ class QPixAsic:
       # Don't forward source timestamps
       if not isFromDaq:
         self._remoteFifos[inDir].Write(inByte)
-
-
 
     return outList
 
@@ -402,9 +404,8 @@ class QPixAsic:
     #check to see if the hit time of the every new hit after the first is 
     #the same as the first hit time, then check with second hit, then third ...
     for ch, hitTime in newHits[1:]:
-      if hitTime == prevByte.hitTime: #this is almost never met
+      if hitTime == prevByte.hitTime:
         prevByte.AddChannel(ch)
-        print(f'a byte was added to ({self.row}, {self.col}), newhits len = {len(newHits)}')
       else:
         self._localFifo.Write(prevByte)
         prevByte = QPByte(hitTime, [ch], self.row, self.col, wordType="hit")
@@ -412,8 +413,76 @@ class QPixAsic:
     #write in the last byte
     self._localFifo.Write(prevByte)
 
-    print(f'giving asic ({self.row}, {self.col}) {len(newHits)} hits')
+    # print(f'giving asic ({self.row}, {self.col}) {len(newHits)} hits')
     return len(newHits)
+
+  def _InjectHits(self, targetTime, times = None, channels = None):
+    """
+    if there are no time or channel arrays, create them and set them 
+    as self._times and self._channels
+
+    if there are time or channel inputs, index them so they are within 
+    the last asic hit time and the target time
+
+    place all the time and channel hits into QPBytes
+    """
+    print(f'injecting hits for ({self.row}, {self.col})')
+    print(f'the target time is {targetTime} and the last asic hit time is {self._lastAsicHitTime}')
+
+    if times is None:
+      times = np.linspace(0.01, 0.1, 10)
+      self._times = times
+      times = self._times[self._times <= targetTime]
+      TimesIndex = np.logical_and(self._times > self._lastAsicHitTime, self._times <= targetTime)
+
+    else:
+      self._time
+      TimesIndex = np.logical_and(self._times > self._lastAsicHitTime, self._times <= targetTime)
+      times = self._times[TimesIndex]
+      print(f'the indexed times are {times}')
+
+
+    # append a number of empty lists to pixel list to match size of times array
+    # then assign a random number of random channels to the lists
+    if channels is None:
+      channels = []
+      [channels.append([]) for i in range(len(self._times))]
+      for i in range(len(channels)):
+          NumOfChan = int(np.absolute(np.ceil(random.gauss(2.5, 2))))
+          for pixels in range(NumOfChan):
+            newChan = random.randint(0, 16)
+            if newChan not in channels[i]:
+              channels[i].append(newChan)
+      self._channels = channels
+      channels = [self._channels for (self._channels, TimesIndex) in zip(self._channels, TimesIndex) if TimesIndex]
+    
+    else:
+      channels = [self._channels for (self._channels, TimesIndex) in zip(self._channels, TimesIndex) if TimesIndex]
+      print(f'the indexed channels are {channels}')
+      print(f'the whole channel list is {self._channels}')
+
+    if len(channels) > 0:
+      times, channels = zip(*sorted(zip(times, channels)))
+
+      newHits = []
+      for ch, inTime in zip(channels, times):
+        # print(f'the channels are {ch}')
+        # if type(ch) == int():
+        prevByte = QPByte(inTime, ch, self.row, self.col, wordType="hit")
+        # else:
+        #   prevByte = QPByte(inTime, ch[0], self.row, self.col, wordType="hit")
+        #   for NewChan in ch[1:]:
+        #     prevByte.AddChannel(NewChan)
+        self._localFifo.Write(prevByte)
+    
+    else:
+      print(f'there are no hits at {self._absTimeNow}s')
+      return 0
+    
+    self._lastAsicHitTime = targetTime
+    
+    return len(newHits)
+    
 
   def Process(self, targetTime):
     """
@@ -550,6 +619,7 @@ class DaqNode(QPixAsic):
     # self.isDaqNode = True
     self.askData = {}
     self.hitData = {}
+    self.daqData = {}
     self.daqHits = 0
 
   def ReceiveByte(self, queueItem:ProcItem):
@@ -582,6 +652,7 @@ class DaqNode(QPixAsic):
       self.askData[AsicKey].append((self.relTicksNow, inByte))
     else:
       print('there is no associated wordType with this byte')
+    self.daqData[AsicKey].append((self.relTicksNow, inByte))
 
     if self._debugLevel > 0:
       print(f"DAQ-{self.relTicksNow} ",end=' ')

@@ -18,7 +18,7 @@ class QpixAsicArray():
       debug       - debug level, values >= 0 produce text output (default 0)
     """
     def __init__(self, nrows, ncols, nPixs=16, fNominal=50e6, pctSpread=0.05, deltaT=1e-5, timeEpsilon=1e-6,
-                timeout=1000, debug=0.0):
+                timeout=1000, hitsPerSec = 20./1., debug=0.0):
 
         # array parameters
         self._tickNow = 0
@@ -37,8 +37,8 @@ class QpixAsicArray():
         self._deltaTick = self.fNominal * self._deltaT
 
          # Make the array and connections
-        self._asics = self._makeArray(timeout=timeout)
-        self._daqNode = DaqNode(fOsc = self.fNominal, nPixels = 0, isDaqNode = True, debugLevel=self._debugLevel, timeout=timeout)
+        self._asics = self._makeArray(timeout=timeout, randomRate=hitsPerSec)
+        self._daqNode = DaqNode(fOsc = self.fNominal, nPixels = 0, isDaqNode = True, debugLevel=self._debugLevel, timeout=timeout, randomRate=hitsPerSec)
         for asic in self:
             self._daqNode.hitData[f'({asic.row}, {asic.col})'] = []
             self._daqNode.askData[f'({asic.row}, {asic.col})'] = []
@@ -60,7 +60,7 @@ class QpixAsicArray():
         assert row <= self._nrows - 1, "not enough rows in that array" 
         return self._asics[int(row)]
 
-    def _makeArray(self, timeout):
+    def _makeArray(self, timeout, randomRate):
         """
         helper function designed to construct QPix asic values within array type
         """
@@ -73,7 +73,7 @@ class QpixAsicArray():
                 # frq = [48141619.19, 50670982.15, 47863841.62, 50478983.94]
 
                 # matrix[i].append(QPixAsic(frq[i+2*j], self._nPixs, row=i, col=j, debugLevel=self._debugLevel, timeout=timeout))
-                matrix[i].append(QPixAsic(frq, self._nPixs, row=i, col=j, debugLevel=self._debugLevel, timeout=timeout))
+                matrix[i].append(QPixAsic(frq, self._nPixs, row=i, col=j, debugLevel=self._debugLevel, timeout=timeout, randomRate=randomRate))
                 
                 if self._debugLevel > 0:
                     print(f"Created ASIC at row {i} col {j} with frq: {frq:.2f}")
@@ -127,7 +127,7 @@ class QpixAsicArray():
         # print(f"calibration complete time is: {self._timeNow}, steps: {calibrateSteps}")
 
 
-    def Interrogate(self, interval=0.1, duration=1.): # tell daq to send an interrogation to all asics
+    def Interrogate(self, interval=0.1, duration=1., times = [], channels = []): # tell daq to send an interrogation to all asics
         """
         Function for issueing command to base node from daq node, and beginning
         a full readout sequence of timestamp data.
@@ -136,16 +136,22 @@ class QpixAsicArray():
             interval - how often the daq interrogates the asics
             duration - how long the simulation will run for
         """
+        for asic in self:
+            asic._times = times
+            asic._channels = channels
         
         time = self._timeNow
-        # self._Command(0.001, command="Interrogate")
-        while time < duration:
-            print("performing timestamp..")
+
+        while time <= duration:
+            self._alert=0
             time = self._timeNow + interval
+
+            # print("performing timestamp..")
             readoutSteps = self._Command(time, command="Interrogate")
-            print(f"timestamp complete in {readoutSteps} steps")
+            # print(f"timestamp complete in {readoutSteps} steps")
             self._timeNow = time
-            print(f'time is now {time}s \n')
+
+            print(f'time is now {self._timeNow}s \n')
 
     def _Command(self, timeEnd, command=None):
         """
@@ -175,7 +181,7 @@ class QpixAsicArray():
                 newProcessItems = asic.Process(self._timeNow - self._timeEpsilon)
                 if newProcessItems:
                     self._alert = 1
-                    print("WARNING: ASIC had things left to do at next major time step")
+                    # print("WARNING: ASIC had things left to do at next major time step")
                     for item in newProcessItems:
                         recv += 1
                         self._queue.AddQueueItem(*item)
