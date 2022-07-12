@@ -18,7 +18,7 @@ class QpixAsicArray():
       debug       - debug level, values >= 0 produce text output (default 0)
     """
     def __init__(self, nrows, ncols, nPixs=16, fNominal=50e6, pctSpread=0.05, deltaT=1e-5, timeEpsilon=1e-6,
-                debug=0.0):
+                timeout=1000, hitsPerSec = 20./1., debug=0.0):
 
         # array parameters
         self._tickNow = 0
@@ -37,9 +37,15 @@ class QpixAsicArray():
         self._deltaTick = self.fNominal * self._deltaT
 
          # Make the array and connections
-        self._asics = self._makeArray()
-        self._daqNode = DaqNode(self.fNominal, 0, isDaqNode=True, debugLevel=self._debugLevel)
+        self._asics = self._makeArray(timeout=timeout, randomRate=hitsPerSec)
+        self._daqNode = DaqNode(fOsc = self.fNominal, nPixels = 0, isDaqNode = True, debugLevel=self._debugLevel, timeout=timeout, randomRate=hitsPerSec)
+        for asic in self:
+            self._daqNode.hitData[f'({asic.row}, {asic.col})'] = []
+            self._daqNode.askData[f'({asic.row}, {asic.col})'] = []
+
         self._asics[0][0].connections[3] = self._daqNode
+
+        self._alert = 0
    
     def __iter__(self):
         '''returns iterable through the asics within the array'''
@@ -54,7 +60,7 @@ class QpixAsicArray():
         assert row <= self._nrows - 1, "not enough rows in that array" 
         return self._asics[int(row)]
 
-    def _makeArray(self):
+    def _makeArray(self, timeout, randomRate):
         """
         helper function designed to construct QPix asic values within array type
         """
@@ -63,8 +69,13 @@ class QpixAsicArray():
         for i in range(self._nrows):
             for j in range(self._ncols):
                 frq = random.gauss(self.fNominal,self.fNominal*self.pctSpread)
-                matrix[i].append(QPixAsic(frq, self._nPixs, row=i, col=j, debugLevel=self._debugLevel))
-                if self._debugLevel >= 0:
+                # frq = [48141619.19, 49670982.15, 49863841.62, 50478983.94]
+                # frq = [48141619.19, 50670982.15, 47863841.62, 50478983.94]
+
+                # matrix[i].append(QPixAsic(frq[i+2*j], self._nPixs, row=i, col=j, debugLevel=self._debugLevel, timeout=timeout))
+                matrix[i].append(QPixAsic(frq, self._nPixs, row=i, col=j, debugLevel=self._debugLevel, timeout=timeout, randomRate=randomRate))
+                
+                if self._debugLevel > 0:
                     print(f"Created ASIC at row {i} col {j} with frq: {frq:.2f}")
 
         # connect the asics within the array
@@ -107,24 +118,40 @@ class QpixAsicArray():
             interval - time in seconds to issue two different commands and to read time value pairs back from asics
         """
 
+        self._alert = 0
         t1 = self._timeNow + interval
         calibrateSteps = self._Command(t1, command="Calibrate")
 
         t2 = self._timeNow + interval
         calibrateSteps = self._Command(t2, command="Calibrate")
-        print(f"calibration complete time is: {self._timeNow}, steps: {calibrateSteps}")
+        # print(f"calibration complete time is: {self._timeNow}, steps: {calibrateSteps}")
 
-    def timeStamp(self, interval=1.0):
+
+    def Interrogate(self, interval=0.1, duration=1., times = [], channels = []): # tell daq to send an interrogation to all asics
         """
         Function for issueing command to base node from daq node, and beginning
-        a full readout sequence of timestamp data
+        a full readout sequence of timestamp data.
+        The ratio duration/interval gives the number of interrogations
         VARS:
-            interval - seconds of time for how long the array will process data
+            interval - how often the daq interrogates the asics
+            duration - how long the simulation will run for
         """
-        print("performing timestamp..")
-        timeEnd = self._timeNow + interval
-        readoutSteps = self._Command(timeEnd)
-        print(f"timestamp complete in {readoutSteps} steps!")
+        for asic in self:
+            asic._times = times
+            asic._channels = channels
+        
+        time = self._timeNow
+
+        while time <= duration:
+            self._alert=0
+            time = self._timeNow + interval
+
+            # print("performing timestamp..")
+            readoutSteps = self._Command(time, command="Interrogate")
+            # print(f"timestamp complete in {readoutSteps} steps")
+            self._timeNow = time
+
+            print(f'time is now {self._timeNow}s \n')
 
     def _Command(self, timeEnd, command=None):
         """
@@ -146,14 +173,18 @@ class QpixAsicArray():
         # add the initial broadcast to the queue
         steps = 0
         self._queue = ProcQueue()
-        self._queue.AddQueueItem(self[0][0], 3, QPByte(self._tickNow, [], None, None), self._timeNow, command=command)
+        self._queue.AddQueueItem(self[0][0], 3, QPByte(self._tickNow, [], None, None, wordType="ask"), self._timeNow, command=command)
 
         while(self._timeNow < timeEnd):
 
             for asic in self:
                 newProcessItems = asic.Process(self._timeNow - self._timeEpsilon)
                 if newProcessItems:
-                    print("WARNING: ASIC had things left to do at next major time step")
+                    self._alert = 1
+                    # print("WARNING: ASIC had things left to do at next major time step")
+                    for item in newProcessItems:
+                        recv += 1
+                        self._queue.AddQueueItem(*item)
 
             while(self._queue.Length() > 0):
 
