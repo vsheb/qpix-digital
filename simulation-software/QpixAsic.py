@@ -507,7 +507,10 @@ class QPixAsic:
       self._command = None
       # all commands build local queues, and the command should build up any 'hit' of interest
       self.state = AsicState.TransmitLocal
-      self._localFifo.Write(QPByte(self._measuredTime[-1], [], self.row, self.col, data=self.relTicksNow, wordType="ask")) #relTicks now is the total number of ticks of the ASIC
+      #relTicks now is the total number of ticks of the ASIC
+      relTicks = self.relTicksNow
+      b = QPByte(self._measuredTime[-1], [], self.row, self.col, data=relTicks, wordType="ask")
+      self._localFifo.Write(b) 
 
     if self.state == AsicState.Idle:
       return self._processMeasuringState(targetTime)
@@ -645,20 +648,8 @@ class DaqNode(QPixAsic):
 
     self.UpdateTime(queueItem.inTime)
     self.daqHits += 1
+    # this is the only write necessary for the daqNode
     self._localFifo.Write(inByte)
-
-    # Put all of the attributes of the QPByte into a list 
-    # (hitTime, channelList, originRow, originCol, data=None, wordType=None)
-    # ByteList = list(vars(inByte).values())
-    # self.daqData[AsicKey].append((self.relTicksNow, ByteList))
-
-    if inWord == "hit":
-      self.hitData[AsicKey].append((self.relTicksNow, inByte)) #ByteList or inByte
-    elif inWord == "ask":
-      self.askData[AsicKey].append((self.relTicksNow, inByte))
-    else:
-      print('there is no associated wordType with this byte')
-    self.daqData[AsicKey].append((self.relTicksNow, inByte))
 
     if self._debugLevel > 0:
       print(f"DAQ-{self.relTicksNow} ",end=' ')
