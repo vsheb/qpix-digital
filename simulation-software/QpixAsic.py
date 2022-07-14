@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from audioop import add
 from io import IncrementalNewlineDecoder
 import random
 import math
@@ -347,15 +348,14 @@ class QPixAsic:
 
         # Build hits on local queues for default inCommand
         if inCommand == "Interrogate":
-          self._GeneratePoissonHits(inTime)
-          # self._InjectHits(inTime, times=self._times, channels=self._channels)
+          # self._GeneratePoissonHits(inTime)
+          self._ReadHits(inTime)
         # alternative responses to incoming daq nodes here
         
       #TODO - check that this makes sense
       else:
         # print("WARNING lost data! Can't send data while measuring!")
         self._remoteFifos[inDir].Write(inByte)
-        # print(f'writing byte to remote fifo from asic ({self.row}, {self.col}) with direction {DIRECTIONS[inDir]}')
 
     # any data received elsewhere is stored in a remote FIFO
     else:
@@ -427,73 +427,69 @@ class QPixAsic:
     # print(f'giving asic ({self.row}, {self.col}) {len(newHits)} hits')
     return len(newHits)
 
-  def _InjectHits(self, targetTime, times = None, channels = None):
+  def _InjectHits(self, times = None, channels = None):
     """
-    if there are no time or channel arrays, create them and set them 
-    as self._times and self._channels
+    user function to place all injected times and channels into asic specific 
+    time and channel arrays
 
-    if there are time or channel inputs, index them so they are within 
-    the last asic hit time and the target time
-
-    place all the time and channel hits into QPBytes
+    then sort each according to time
     """
     print(f'injecting hits for ({self.row}, {self.col})')
-    print(f'the target time is {targetTime} and the last asic hit time is {self._lastAsicHitTime}')
 
-    if times is None:
-      times = np.linspace(0.01, 0.1, 10)
-      self._times = times
-      times = self._times[self._times <= targetTime]
-      TimesIndex = np.logical_and(self._times > self._lastAsicHitTime, self._times <= targetTime)
+    # place all of the injected times and channels into self._times and self._channels
+    for i in times:
+      self._times.append(i)
+    for j in channels:
+      if j is None:
+        print('there are no channels in this hit')
+      self._channels.append(j)
 
-    else:
-      self._time
+    #sort the times and channels
+    self._times, self._channels = zip(*sorted(zip(self._times, self._channels)))
+    
+    print(f'injected hits are at times {self._times} and ch {self._channels}')
+
+  def _ReadHits(self, targetTime):
+    """
+    make times and channels arrays to contain all hits 
+    within the last asic hit time and the target time
+
+    read all of the hits in the times/channels arrays
+    
+    then write hits to local fifos
+    """
+    if not(len(self._times) ==  len(self._channels)):
+      print('times and channels not the same length - something has gone horribly wrong')
+    
+    if len(self._times):
+      self._times = np.array(self._times)
+      #index times and channels such that they are within last asic hit time and target time
       TimesIndex = np.logical_and(self._times > self._lastAsicHitTime, self._times <= targetTime)
       times = self._times[TimesIndex]
-      print(f'the indexed times are {times}')
-
-
-    # append a number of empty lists to pixel list to match size of times array
-    # then assign a random number of random channels to the lists
-    if channels is None:
       channels = []
-      [channels.append([]) for i in range(len(self._times))]
-      for i in range(len(channels)):
-          NumOfChan = int(np.absolute(np.ceil(random.gauss(2.5, 2))))
-          for pixels in range(NumOfChan):
-            newChan = random.randint(0, 16)
-            if newChan not in channels[i]:
-              channels[i].append(newChan)
-      self._channels = channels
-      channels = [self._channels for (self._channels, TimesIndex) in zip(self._channels, TimesIndex) if TimesIndex]
-    
-    else:
-      channels = [self._channels for (self._channels, TimesIndex) in zip(self._channels, TimesIndex) if TimesIndex]
-      print(f'the indexed channels are {channels}')
-      print(f'the whole channel list is {self._channels}')
-
-    if len(channels) > 0:
-      times, channels = zip(*sorted(zip(times, channels)))
-
-      newHits = []
-      for ch, inTime in zip(channels, times):
-        # print(f'the channels are {ch}')
-        # if type(ch) == int():
-        prevByte = QPByte(inTime, ch, self.row, self.col, wordType="hit")
-        # else:
-        #   prevByte = QPByte(inTime, ch[0], self.row, self.col, wordType="hit")
-        #   for NewChan in ch[1:]:
-        #     prevByte.AddChannel(NewChan)
+      for i in range(len(self._channels)):
+        if TimesIndex[i]:
+          channels.append(self._channels[i])
+      # channels = [self._channels for (self._channels, TimesIndex) in zip(self._channels, TimesIndex) if TimesIndex]
+      
+      newhitcount = 0
+      for inTime, ch in zip(times, channels):
+        if type(ch) is list:
+          prevByte = QPByte(inTime, [ch[0]], self.row, self.col, wordType="hit")
+          for addCh in ch[1:]:
+            prevByte.AddChannel(addCh)
+        else:
+          prevByte = QPByte(inTime, [ch], self.row, self.col, wordType="hit")
         self._localFifo.Write(prevByte)
+        newhitcount+=1
+      
+      self._lastAsicHitTime = targetTime
+
+      return newhitcount
     
     else:
-      print(f'there are no hits at {self._absTimeNow}s')
+      # print(f'there are no hits for asic ({self.row}, {self.col})')
       return 0
-    
-    self._lastAsicHitTime = targetTime
-    
-    return len(newHits)
-    
 
   def Process(self, targetTime):
     """

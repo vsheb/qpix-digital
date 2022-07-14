@@ -127,7 +127,7 @@ class QpixAsicArray():
         # print(f"calibration complete time is: {self._timeNow}, steps: {calibrateSteps}")
 
 
-    def Interrogate(self, interval=0.1, duration=1., times = [], channels = []): # tell daq to send an interrogation to all asics
+    def Interrogate(self, interval=0.1): # tell daq to send an interrogation to all asics
         """
         Function for issueing command to base node from daq node, and beginning
         a full readout sequence of timestamp data.
@@ -136,22 +136,14 @@ class QpixAsicArray():
             interval - how often the daq interrogates the asics
             duration - how long the simulation will run for
         """
-        for asic in self:
-            asic._times = times
-            asic._channels = channels
         
-        time = self._timeNow
-
-        while time <= duration:
-            self._alert=0
-            time = self._timeNow + interval
-
-            # print("performing timestamp..")
-            readoutSteps = self._Command(time, command="Interrogate")
-            # print(f"timestamp complete in {readoutSteps} steps")
-            self._timeNow = time
-
-            print(f'time is now {self._timeNow}s \n')
+        self._alert=0
+        time = self._timeNow + interval
+        print("performing interrogation..")
+        readoutSteps = self._Command(time, command="Interrogate")
+        print(f"interrogation complete in {readoutSteps} steps")
+        print(f'interrogates at {self._timeNow - interval}s \n')
+        # print(f'time is now {self._timeNow}s \n')
 
     def _Command(self, timeEnd, command=None):
         """
