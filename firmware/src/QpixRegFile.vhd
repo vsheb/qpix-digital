@@ -47,7 +47,7 @@ begin
    process (clk)
    begin
       if rising_edge (clk) then
-         if rst then
+         if rst = '1' then
             clkCnt <= (others => '0');
          else
             clkCnt <= clkCnt + 1;
@@ -59,7 +59,7 @@ begin
    --------------------------------------------------
    -- check if the register data should be accepted by this specific ASIC
    --------------------------------------------------
-   process (all)
+   process (regData)
    begin
       if regData.Dest = '1' then 
          if (regData.XDest = std_logic_vector(to_unsigned((X_POS_G),regData.XDest'length)) 

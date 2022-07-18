@@ -9,7 +9,7 @@ use work.QpixPkg.all;
 
 entity QpixAsicArray is
    generic (
-      TXRX_TYPE      : string  := "UART"; -- "DUMMY"/"UART"/"ENDEAVOR"
+      TXRX_TYPE      : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
       X_NUM_G        : natural := 3;
       Y_NUM_G        : natural := 3
       

@@ -183,7 +183,7 @@ begin
             M_AXI_0_rresp             => axi_rresp,  
             M_AXI_0_rvalid            => axi_rvalid, 
             M_AXI_0_rready            => axi_rready, 
-            aresetn                   => axi_resetn,
+            --aresetn                   => axi_resetn,
             fclk                      => fclk, 
 
             -- CLK Wizard
@@ -240,7 +240,7 @@ begin
             M_AXI_0_rresp             => axi_rresp,  
             M_AXI_0_rvalid            => axi_rvalid, 
             M_AXI_0_rready            => axi_rready, 
-            aresetn                   => axi_resetn,
+            --aresetn                   => axi_resetn,
             fclk                      => fclk ,
 
             -- CLK Wizard

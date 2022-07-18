@@ -46,17 +46,17 @@ begin
    ----------------------------------------------------------------------------------
    -- Test pattern generator
    ----------------------------------------------------------------------------------
-   QpixTestPatGen_U : entity work.QpixTestPatGen 
-   generic map(
-      X_POS_G => X_POS_G,
-      Y_POS_G => Y_POS_G
-   )
-   port map (
-      clk => clk,
-      rst => rst,
+   --QpixTestPatGen_U : entity work.QpixTestPatGen 
+   --generic map(
+      --X_POS_G => X_POS_G,
+      --Y_POS_G => Y_POS_G
+   --)
+   --port map (
+      --clk => clk,
+      --rst => rst,
 
-      outData => testData
-   );  --- NOT USED FOR NOW
+      --outData => testData
+   --);  --- NOT USED FOR NOW
    ----------------------------------------------------------------------------------
 
    ----------------------------------------------------------------------------------

@@ -29,7 +29,6 @@ entity QpixAsicTop is
 end entity QpixAsicTop;
 
 architecture behav of QpixAsicTop is
-
    
    ---------------------------------------------------
    -- Signals

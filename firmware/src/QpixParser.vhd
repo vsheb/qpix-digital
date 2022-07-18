@@ -4,16 +4,13 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 
-library work;
 use work.QpixPkg.all;
 
 
 entity QpixParser is
    generic (
-      NUM_BITS_G      : natural := 64;
-      GATE_DELAY_G    : time    := 1 ns;
       X_POS_G         : natural := 0;
       Y_POS_G         : natural := 0
    );
@@ -94,7 +91,7 @@ begin
          inBytesMuxValid <= '0';
          fifoRen         <= (others => '0');
          txReadyR        <= txReady;
-         fifoRenOrR      <= or fifoRen;
+         fifoRenOrR      <= OR_REDUCE(fifoRen);
          fifoRenOrRR     <= fifoRenOrR;
          for i in 0 to 3 loop
             --fifoRen(i)   <= '0';

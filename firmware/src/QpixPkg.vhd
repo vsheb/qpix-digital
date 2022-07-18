@@ -51,8 +51,8 @@ package QpixPkg is
 
    type QpixByteArrType is array(0 to 3) of std_logic_vector(G_DATA_BITS-1 downto 0);
    type Sl2DArray is array(natural range <>, natural range <>) of std_logic;
-   type SlvArray is array(natural range <>) of std_logic_vector;
-   type Slv2DArray is array(natural range <>, natural range <>) of std_logic_vector;
+   --type SlvArray is array(natural range <>) of std_logic_vector;
+   --type Slv2DArray is array(natural range <>, natural range <>) of std_logic_vector;
    type Slv4b2DArray is array(natural range <>, natural range <>) of std_logic_vector(31 downto 0);
    type TimeArray2DType is array(natural range<>, natural range<>) of time;
 
@@ -322,8 +322,9 @@ package body QpixPkg is
    function fQpixGetWordType(x : std_logic_vector) 
          return QpixWordType is
       variable q : QpixWordType := UNKNOWN_W;
+      variable x0 : std_logic_vector(3 downto 0) := x(59 downto 56);
    begin
-      case x(59 downto 56) is
+      case x0 is
          when x"0"   => q := TS_CAST_W;
          when x"1"   => q := TS_REPLY_W;
          when x"2"   => q := DATA_W;

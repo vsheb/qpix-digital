@@ -1,17 +1,25 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
 
+library work;
+use work.QpixPkg.all;
+use work.QpixProtoPkg.all;
 
 entity QpixTxRxTestTop is
    generic (
-      BOARD_G : string  := "ZYBO"; -- ZYBO, MINIZED
-      X_NUM_G : natural := 1;
-      Y_NUM_G : natural := 1
+      BOARD_G : string  := "ZYBO"; -- ZYBO, MINIZED, PYNQ
+      TXRX_TYPE : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
+      X_NUM_G : natural := 3;
+      Y_NUM_G : natural := 3 
+      
    );
    port (
       sysClk    : in std_logic;
-      --led       : out std_logic_vector(3 downto 0);
+      led       : out std_logic_vector(3 downto 0);
+      daqtx        : out std_logic;
+      daqrx        : in  std_logic;
 
       -- PS ports
       DDR_addr : inout STD_LOGIC_VECTOR ( 14 downto 0 );
@@ -74,13 +82,15 @@ architecture behav of QpixTxRxTestTop is
    signal reg_wen     : std_logic := '0';
    signal reg_ack     : std_logic := '0';
 
-   signal inPortsArr  : QpixInPortsArrType(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
+   --signal daqTx       : QpixTxRxPortType := QpixTxRxPortZero_C;
+   --signal daqRx       : QpixTxRxPortType := QpixTxRxPortZero_C;
 
-   signal daqTx       : QpixTxRxPortType := QpixTxRxPortZero_C;
-   signal daqRx       : QpixTxRxPortType := QpixTxRxPortZero_C;
+   signal TxPortsArr  : QpixTxRxPortsArrType;
+   signal RxPortsArr  : QpixTxRxPortsArrType;
 
    signal hitMask     : Sl2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1) := (others => (others => '0')) ;
 
+   signal swRst       : std_logic := '0';
    signal trg         : std_logic := '0';
    signal asicAddr    : std_logic_vector(31 downto 0) := (others => '0');
    signal asicOpWrite : std_logic := '0';
@@ -112,12 +122,33 @@ architecture behav of QpixTxRxTestTop is
 
    signal qClk        : std_logic := '0';
 
+   signal daqFrameErrCnt : std_logic_vector (31 downto 0) := (others => '0');
+   signal daqBreakErrCnt : std_logic_vector (31 downto 0) := (others => '0');
+
+   signal daqTestWordOut : std_logic_vector(G_DATA_BITS-1 downto 0);
+   signal daqTestWordIn  : std_logic_vector(G_DATA_BITS-1 downto 0);
+
+   signal ledCnt         : std_logic_vector(31 downto 0) := (others => '0');
 
 begin
+
+   process (fclk)
+   begin
+      if rising_edge(fclk) then
+         ledCnt <= ledCnt + 1;
+         if ledCnt >= x"1DCD_6500" then
+            ledCnt <= (others => '0');
+            leds(0) <= not leds(0);
+         end if;
+      end if;
+   end process;
+   leds(2) <= '1';
+   led <= leds;
+
+
    ---------------------------------------------------
    -- Processing system
    ---------------------------------------------------
-   GEN_ZYBO : if BOARD_G = "ZYBO" generate
       design_1_U : entity work.design_1_wrapper
          port map (
             -- PS ports
@@ -164,68 +195,15 @@ begin
             M_AXI_0_rresp             => axi_rresp,  
             M_AXI_0_rvalid            => axi_rvalid, 
             M_AXI_0_rready            => axi_rready, 
-            aresetn                   => axi_resetn,
-            fclk                      => fclk, 
+            --aresetn                   => axi_resetn,
+            fclk                      => fclk
 
             -- CLK Wizard
-            reset_rtl_0               => '0',
-            sys_clock                 => sysClk,
-            clk_out1_0                => clk,
-            locked_0                  => open
+            --reset_rtl_0               => '0',
+            --sys_clock                 => sysClk,
+            --clk_out1_0                => clk,
+            --locked_0                  => open
          );
-      end generate GEN_ZYBO;
-   GEN_MINIZED : if BOARD_G = "MINIZED" generate
-      design_1_U : entity work.design_1_wrapper
-         port map (
-            DDR_addr(14 downto 0)     => DDR_addr(14 downto 0),
-            DDR_ba(2 downto 0)        => DDR_ba(2 downto 0),
-            DDR_cas_n                 => DDR_cas_n,
-            DDR_ck_n                  => DDR_ck_n,
-            DDR_ck_p                  => DDR_ck_p,
-            DDR_cke                   => DDR_cke,
-            DDR_cs_n                  => DDR_cs_n,
-            DDR_dm(1 downto 0)        => DDR_dm(1 downto 0),
-            DDR_dq(15 downto 0)       => DDR_dq(15 downto 0),
-            DDR_dqs_n(1 downto 0)     => DDR_dqs_n(1 downto 0),
-            DDR_dqs_p(1 downto 0)     => DDR_dqs_p(1 downto 0),
-            DDR_odt                   => DDR_odt,
-            DDR_ras_n                 => DDR_ras_n,
-            DDR_reset_n               => DDR_reset_n,
-            DDR_we_n                  => DDR_we_n,
-            FIXED_IO_ddr_vrn          => FIXED_IO_ddr_vrn,
-            FIXED_IO_ddr_vrp          => FIXED_IO_ddr_vrp,
-            FIXED_IO_mio(31 downto 0) => FIXED_IO_mio(31 downto 0),
-            FIXED_IO_ps_clk           => FIXED_IO_ps_clk,
-            FIXED_IO_ps_porb          => FIXED_IO_ps_porb,
-            FIXED_IO_ps_srstb         => FIXED_IO_ps_srstb,
-
-            reset_rtl                 => '0',
-
-            -- axi interface to PL
-            M_AXI_0_awaddr            => axi_awaddr,
-            M_AXI_0_awprot            => axi_awprot, 
-            M_AXI_0_awvalid           => axi_awvalid,
-            M_AXI_0_awready           => axi_awready,
-            M_AXI_0_wdata             => axi_wdata,  
-            M_AXI_0_wstrb             => axi_wstrb,  
-            M_AXI_0_wvalid            => axi_wvalid, 
-            M_AXI_0_wready            => axi_wready, 
-            M_AXI_0_bresp             => axi_bresp,  
-            M_AXI_0_bvalid            => axi_bvalid, 
-            M_AXI_0_bready            => axi_bready, 
-            M_AXI_0_araddr            => axi_araddr, 
-            M_AXI_0_arprot            => axi_arprot, 
-            M_AXI_0_arvalid           => axi_arvalid,
-            M_AXI_0_arready           => axi_arready,
-            M_AXI_0_rdata             => axi_rdata,  
-            M_AXI_0_rresp             => axi_rresp,  
-            M_AXI_0_rvalid            => axi_rvalid, 
-            M_AXI_0_rready            => axi_rready, 
-            aresetn                   => axi_resetn,
-            fclk                      => fclk 
-         );
-      end generate GEN_MINIZED;
-   ---------------------------------------------------
 
    ---------------------------------------------------
    -- AXI Lite interface
@@ -288,10 +266,14 @@ begin
       status       => status,
       extFifoMax   => extFifoMaxArr,
 
+      daqFrameErrCnt => daqFrameErrCnt,
+      daqBreakErrCnt => daqBreakErrCnt,
+
       trgTime      => trgTime,
       timestamp    => timestamp,
       hitMask      => hitMask,
       chanMask     => chanMask,
+      swRst        => swRst,
                   
       trg          => trg,
       asicAddr     => asicAddr,
@@ -302,105 +284,44 @@ begin
       memRdReq     => memRdReq,
       memRdAck     => memRdAck,
       memData      => memDataOut,
-      memAddr      => memRdAddr
+      memAddr      => memRdAddr,
+
+      daqTestWordOut => daqTestWordOut,
+      daqTestWordIn  => daqTestWordIn
    );
    ---------------------------------------------------
 
-   ---------------------------------------------------
-   -- DAQ node
-   ---------------------------------------------------
-   QpixDaqCtrl_U : entity work.QpixDaqCtrl
-   generic map(
-      MEM_DEPTH  => G_QPIX_PROTO_MEM_DEPTH
-   )
+   -----------------------------------------------------
+   ---- DAQ node
+   -----------------------------------------------------
+   QpixDaqCtrl_U : entity work.QpixDaqCtrlDummy
    port map(
       clk         => fclk,
-      rst         => rst,
+      rst         => swRst,
                   
       daqTx       => daqTx,
       daqRx       => daqRx,
 
+      sndWord     => daqTestWordOut,
+      recWord     => daqTestWordIn,
+
       trg         => trg,
-      asicReq     => asicReq,
-      asicOpWrite => asicOpWrite,
-      asicData    => asicData,
-      asicAddr    => asicAddr,
-
-      trgTime     => trgTime,
-      evt_fin     => status(0),
-
-      -- event memory ports
-      memAddrRst  => memAddrRst,
-      memRdAddr   => memRdAddr,
-      memDataOut  => memDataOut, 
-      memRdReq    => memRdReq,
-      memRdAck    => memRdAck,
-      memEvtSize  => evtSize,
-      memFullErr  => open
-
+      busy        => status(0)
    );
    memAddrRst <= trg or asicReq;
    ---------------------------------------------------
 
-   ---------------------------------------------------
-   ---------------------------------------------------
-   QpixHitsGen_U : entity work.QpixHitsGen
-      generic map (
-         X_NUM_G => X_NUM_G,
-         Y_NUM_G => Y_NUM_G
-      )
-      port map (
-         clk      => fclk,
-         rst      => rst,
+   --RxPortsArr(0) <= daqTx;
+   --daqRx <= TxPortsArr(0);
 
-         hitMask    => hitMask, -- in
-         timestamp  => timestamp,
-         chanMask   => chanMask,
-         inPortsArr => inPortsArr
-      );
-   ---------------------------------------------------
-
-   ---------------------------------------------------
-   -- ASICs array
-   ---------------------------------------------------
-   QpixAsicArray_U : entity work.QpixAsicArray
-      generic map(
-         X_NUM_G => X_NUM_G,
-         Y_NUM_G => Y_NUM_G
-      )
-      port map (
-         clk        => clk,
-         rst        => rst,
-
-         led        => leds,
-
-         daqTx      => daqTx,
-         daqRx      => daqRx,
-         
-         inPortsArr => inPortsArr,
-         debug      => qpixDebugArr
-         
-      );
-   ---------------------------------------------------
-
-   -------------------------------------------------
-   GEN_DBG_X : for i in 0 to X_NUM_G-1 generate
-      GEN_DBG_Y : for j in 0 to Y_NUM_G-1 generate
-         process (fclk)
-         begin
-            if rising_edge (fclk) then
-               if trg = '1' then
-                  extFifoMaxArr(i,j) <= (others => '0');
-               else
-                  if qpixDebugArr(i,j).extFifoCnt > extFifoMaxArr(i,j) then
-                     extFifoMaxArr(i,j) <= qpixDebugArr(i,j).extFifoCnt;
-                  end if;
-               end if;
-            end if;
-         end process;
-      end generate GEN_DBG_Y;
-   end generate GEN_DBG_X;
-   -------------------------------------------------
-
-
+   --QpixAsicDummyTop_u1 : entity work.QpixAsicDummyTop
+   --port map (
+      --clk             => fclk,
+      --rst             => '0',
+      ---- TX ports to neighbour ASICs
+      --Tx      => TxPortsArr(0),
+      ---- RX ports to neighbour ASICs
+      --Rx      => RxPortsArr(0)
+   --);
+   
 end behav;

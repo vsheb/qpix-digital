@@ -118,7 +118,8 @@ begin
          wait until clkTx = '1';
 
          --txByte      <=  std_logic_vector(to_unsigned(x"1111_2222_3333_4444",NUM_BITS_G));
-         txByte      <=  x"1111_1111_1111_1111";
+         txByte      <=  x"0000_0000_0000_0001";
+         --txByte      <=  x"1111_1111_1111_1111";
          txByteValid <= '1';
          wait for 500 ns;
          wait until clkTx = '1';

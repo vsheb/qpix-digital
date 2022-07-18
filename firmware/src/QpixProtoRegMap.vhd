@@ -40,6 +40,7 @@ entity QpixProtoRegMap is
       hitMask     : out Sl2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
       timestamp   : out std_logic_vector(31 downto 0);
       chanMask    : out std_logic_vector(G_N_ANALOG_CHAN-1 downto 0);
+      swRst       : out std_logic;
    
       -- asics interfaces
       trg         : out std_logic;
@@ -53,7 +54,11 @@ entity QpixProtoRegMap is
       memRdReq    : out std_logic;
       memRdAck    : in  std_logic;
       memData     : in  std_logic_vector(31 downto 0);
-      memAddr     : out std_logic_vector(G_QPIX_PROTO_MEM_DEPTH-1+2 downto 0)
+      memAddr     : out std_logic_vector(G_QPIX_PROTO_MEM_DEPTH-1+2 downto 0);
+
+      daqTestWordIn  : in std_logic_vector(G_DATA_BITS-1 downto 0) := (others => '0');
+      daqTestWordOut : out  std_logic_vector(G_DATA_BITS-1 downto 0)
+
 
    );
 end entity QpixProtoRegMap;
@@ -69,6 +74,7 @@ architecture behav of QpixProtoRegMap is
    signal s_timestamp  : std_logic_vector (G_TIMESTAMP_BITS-1 downto 0) := (others => '0');
    signal s_chanMask   : std_logic_vector (G_N_ANALOG_CHAN-1 downto 0)  := (others => '0');
    signal s_asic_mask  : std_logic_vector (15 downto 0) := (others => '1');
+   signal test_word_out : std_logic_vector(63 downto 0);
 
 begin
 
@@ -82,6 +88,7 @@ begin
       if rising_edge (clk) then
          -- defaults
          trg     <= '0';
+         swRst   <= '0';
          --hitXY  <= (others => '0');
          hitMask <= (others => (others => '0'));
          rdata   <= (others => '0');
@@ -99,6 +106,7 @@ begin
                when REGMAP_CMD     =>
                   if wen = '1' and req = '1' and ack = '0' then
                      trg <= wdata(0);
+                     swRst <= wdata(1);
                   end if;
                
                when REGMAP_STATUS    =>
@@ -134,6 +142,28 @@ begin
                      rdata <= (others => '0');
                      rdata(15 downto 0) <= s_asic_mask;
                   end if;
+
+               when REGMAP_TESTOUT_H    =>
+                  if req and wen  then
+                     test_word_out(63 downto 32) <= wdata(31 downto 0);
+                  else 
+                     rdata <= (others => '0');
+                     rdata(31 downto 0) <= test_word_out(63 downto 32);
+                  end if;
+
+               when REGMAP_TESTOUT_L    =>
+                  if req and wen  then
+                     test_word_out(31 downto 0) <= wdata(31 downto 0);
+                  else 
+                     rdata <= (others => '0');
+                     rdata(31 downto 0) <= test_word_out(31 downto 0);
+                  end if;
+
+               when REGMAP_TESTIN_H     =>
+                  rdata <= daqTestWordIn(63 downto 32);
+
+               when REGMAP_TESTIN_L     =>
+                  rdata <= daqTestWordIn(31 downto 0);
 
                when REGMAP_FRAMEERR    =>
                      rdata <= daqFrameErrCnt;
@@ -184,6 +214,8 @@ begin
          
       end if;
    end process;
+
+   daqTestWordOut <= test_word_out;
 
    timestamp <= s_timestamp;
    chanMask  <= s_chanMask;

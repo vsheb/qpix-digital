@@ -206,27 +206,28 @@ begin
 
    --memDataOut <= memData(31 downto 0) when memRdAddr(0) = '0' else memData(G_DATA_BITS-1 downto 32);
    with memRdAddr(1 downto 0) select memDataOut <=
-      memData(31 downto 0)  when b"00",
-      memData(63 downto 32) when b"01",
-      memData(95 downto 64) when b"10",
-      memData(127 downto 96) when b"11";
+      memData(31 downto 0)   when b"00",
+      memData(63 downto 32)  when b"01",
+      memData(95 downto 64)  when b"10",
+      memData(127 downto 96) when b"11",
+      (others => '0')        when others;
    
 
    process (clk)
    begin
       if rising_edge (clk) then
          memRdReq_r <= memRdReq;
-         memRdAck <= memRdReq_r;
+         memRdAck   <= memRdReq_r;
       end if;
    end process;
    
    process (clk)
    begin
       if rising_edge (clk) then
-         if rst or memAddrRst then
+         if rst = '1' or memAddrRst = '1' then
             wrAddr     <= (others => '0');
          else
-            if daqRxByteValid then
+            if daqRxByteValid = '1' then
                wrAddr <= wrAddr + 1;
             end if;
          end if;
