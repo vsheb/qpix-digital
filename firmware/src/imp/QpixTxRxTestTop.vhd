@@ -17,7 +17,7 @@ entity QpixTxRxTestTop is
    );
    port (
       sysClk    : in std_logic;
-      --led       : out std_logic_vector(3 downto 0);
+      led       : out std_logic_vector(3 downto 0);
       daqtx        : out std_logic;
       daqrx        : in  std_logic;
 
@@ -90,6 +90,7 @@ architecture behav of QpixTxRxTestTop is
 
    signal hitMask     : Sl2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1) := (others => (others => '0')) ;
 
+   signal swRst       : std_logic := '0';
    signal trg         : std_logic := '0';
    signal asicAddr    : std_logic_vector(31 downto 0) := (others => '0');
    signal asicOpWrite : std_logic := '0';
@@ -127,7 +128,24 @@ architecture behav of QpixTxRxTestTop is
    signal daqTestWordOut : std_logic_vector(G_DATA_BITS-1 downto 0);
    signal daqTestWordIn  : std_logic_vector(G_DATA_BITS-1 downto 0);
 
+   signal ledCnt         : std_logic_vector(31 downto 0) := (others => '0');
+
 begin
+
+   process (fclk)
+   begin
+      if rising_edge(fclk) then
+         ledCnt <= ledCnt + 1;
+         if ledCnt >= x"1DCD_6500" then
+            ledCnt <= (others => '0');
+            leds(0) <= not leds(0);
+         end if;
+      end if;
+   end process;
+   leds(2) <= '1';
+   led <= leds;
+
+
    ---------------------------------------------------
    -- Processing system
    ---------------------------------------------------
@@ -177,14 +195,14 @@ begin
             M_AXI_0_rresp             => axi_rresp,  
             M_AXI_0_rvalid            => axi_rvalid, 
             M_AXI_0_rready            => axi_rready, 
-            aresetn                   => axi_resetn,
-            fclk                      => fclk, 
+            --aresetn                   => axi_resetn,
+            fclk                      => fclk
 
             -- CLK Wizard
-            reset_rtl_0               => '0',
-            sys_clock                 => sysClk,
-            clk_out1_0                => clk,
-            locked_0                  => open
+            --reset_rtl_0               => '0',
+            --sys_clock                 => sysClk,
+            --clk_out1_0                => clk,
+            --locked_0                  => open
          );
 
    ---------------------------------------------------
@@ -255,6 +273,7 @@ begin
       timestamp    => timestamp,
       hitMask      => hitMask,
       chanMask     => chanMask,
+      swRst        => swRst,
                   
       trg          => trg,
       asicAddr     => asicAddr,
@@ -278,7 +297,7 @@ begin
    QpixDaqCtrl_U : entity work.QpixDaqCtrlDummy
    port map(
       clk         => fclk,
-      rst         => rst,
+      rst         => swRst,
                   
       daqTx       => daqTx,
       daqRx       => daqRx,

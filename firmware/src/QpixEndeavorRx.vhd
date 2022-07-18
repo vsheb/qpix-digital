@@ -93,7 +93,7 @@ begin
    rx_r <= rx_q(3);
 
    -- Asynchronous state logic
-   process(all) 
+   process(curReg, rx_r) 
    begin
       -- Set defaults
       nxtReg <= curReg;
@@ -101,8 +101,8 @@ begin
       -- Default strobe signals are '0'
       nxtReg.byteValid <= '0';
       nxtReg.bitError  <= '0';
-      nxtReg.gapError  <= '0';
-      nxtReg.lenError  <= '0';
+      --nxtReg.gapError  <= '0';
+      --nxtReg.lenError  <= '0';
 
       if rx_r = '1' then
          nxtReg.highCnt <= curReg.highCnt + 1;
@@ -161,6 +161,8 @@ begin
          when FINISH_S  =>
             if to_integer(curReg.byteCount) = NUM_BITS_G then
                nxtReg.byteValid <= '1';
+               nxtReg.lenError  <= '0';
+               nxtReg.gapError  <= '0';
             else 
                nxtReg.lenError  <= '1';
             end if;

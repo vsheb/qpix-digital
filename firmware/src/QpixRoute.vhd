@@ -204,7 +204,9 @@ begin
    ---------------------------------------------------
    -- Combinational logic
    ---------------------------------------------------
-   process(all) begin
+   process (curReg, inData, rxData, qpixReq, qpixConf, extFifoEmpty, 
+            locFifoDout, txReady, extFifoDout, locFifoEmpty)
+   begin
       nxtReg <= curReg;
       nxtReg.txData.DataValid <= '0';
       nxtReg.clkCnt <= curReg.clkCnt + 1;
@@ -257,7 +259,7 @@ begin
                      nxtReg.txData.DataValid <= '1';
                      nxtReg.txData.WordType <= G_WORD_TYPE_REGRSP;
                      nxtReg.txData.Data <= extFifoDout;
-                     nxtReg.txData.DirMask   <= nxtReg.respDir;
+                     nxtReg.txData.DirMask   <= curReg.respDir;
                      nxtReg.extFifoRen <= '1';
                   end if;
                end if;
@@ -277,7 +279,7 @@ begin
                      nxtReg.txData.YPos      <= std_logic_vector(to_unsigned(Y_POS_G, G_POS_BITS));
                      nxtReg.txData.Timestamp <= locFifoDout(G_TIMESTAMP_BITS - 1 downto 0);
                      nxtReg.txData.ChanMask  <= locFifoDout(G_N_ANALOG_CHAN + G_TIMESTAMP_BITS - 1 downto G_TIMESTAMP_BITS);
-                     nxtReg.txData.DirMask   <= nxtReg.respDir;
+                     nxtReg.txData.DirMask   <= curReg.respDir;
                      nxtReg.txData.WordType  <= G_WORD_TYPE_DATA;
                   else
                      nxtReg.locFifoRen <= '0';
@@ -297,7 +299,7 @@ begin
                   nxtReg.txData.XPos      <= std_logic_vector(to_unsigned(X_POS_G, G_POS_BITS));
                   nxtReg.txData.YPos      <= std_logic_vector(to_unsigned(Y_POS_G, G_POS_BITS));
                   nxtReg.txData.Timestamp <= curReg.clkCnt(15 downto 0) & curReg.clkCnt(15 downto 0); -- FIXME
-                  nxtReg.txData.DirMask   <= nxtReg.respDir;
+                  nxtReg.txData.DirMask   <= curReg.respDir;
                   nxtReg.txData.WordType  <= G_WORD_TYPE_EVTEND;
                   nxtReg.state            <= REP_REMOTE_S;
                   nxtReg.stateCnt         <= (others => '0');
@@ -315,7 +317,7 @@ begin
                   --nxtReg.txData.Data <= extFifoDout;
                   nxtReg.txData <= fQpixByteToRecord(extFifoDout);
                   nxtReg.txData.DataValid <= '1';
-                  nxtReg.txData.DirMask   <= nxtReg.respDir;
+                  nxtReg.txData.DirMask   <= curReg.respDir;
                   -- replace some data FIXME : temporary
                   if extFifoDout(59 downto 56) = G_WORD_TYPE_EVTEND then
                      nxtReg.txData.Timestamp <= curReg.clkCnt(15 downto 0) & extFifoDout(15 downto 0);
@@ -367,7 +369,7 @@ begin
    debug      <= curReg.debug;
 
 
-   process(all)
+   process(stateInt, extFifoEmpty)
    begin
       if stateInt /= 2 then
          routeStateInt <= stateInt;

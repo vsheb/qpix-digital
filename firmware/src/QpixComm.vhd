@@ -4,6 +4,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std_unsigned.all;
+use ieee.std_logic_misc.all;
 
 library work;
 use work.QpixPkg.all;
@@ -142,7 +143,8 @@ begin
    end generate GEN_TXRX;
    ------------------------------------------------------------
 
-   TxReadyOr <= and TxByteReadyArr;
+   TxReadyOr <= AND_REDUCE(TxByteReadyArr);
+   --TxReadyOr <= '1' when TxByteReadyArr = (TxByteReadyArr'range => '1') else '0';
    TxReady   <= TxReadyOr;
 
    ------------------------------------------------------------
@@ -172,7 +174,7 @@ begin
       outData           => outData_i,
       outBytesArr       => TxByteArr,
       outBytesValidArr  => TxByteValidArr,
-      txReady           => TxReady,
+      txReady           => TxReadyor,
 
       qpixConf          => qpixConf,
       qpixReq           => qpixReq,

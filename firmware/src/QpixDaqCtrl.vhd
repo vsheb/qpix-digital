@@ -224,10 +224,10 @@ begin
    process (clk)
    begin
       if rising_edge (clk) then
-         if rst or memAddrRst then
+         if rst = '1' or memAddrRst = '1' then
             wrAddr     <= (others => '0');
          else
-            if daqRxByteValid then
+            if daqRxByteValid = '1' then
                wrAddr <= wrAddr + 1;
             end if;
          end if;

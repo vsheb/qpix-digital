@@ -12,7 +12,7 @@ class QpixTxRxTester:
     self.s.regWrite(0xa,1) 
   
   def getWord(self) : 
-    if self.s.regRead(0x1) == 0 :
+    if self.s.regRead(0x1) != 1000 :
       h = self.s.regRead(0xd)
       l = self.s.regRead(0xe)
       return l,h
