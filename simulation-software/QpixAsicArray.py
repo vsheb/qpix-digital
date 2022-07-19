@@ -139,11 +139,11 @@ class QpixAsicArray():
         
         self._alert=0
         time = self._timeNow + interval
-        print("performing interrogation..")
+        # print("performing interrogation..")
         readoutSteps = self._Command(time, command="Interrogate")
-        print(f"interrogation complete in {readoutSteps} steps")
-        print(f'interrogates at {self._timeNow - interval}s \n')
-        # print(f'time is now {self._timeNow}s \n')
+        # print(f"interrogation complete in {readoutSteps} steps")
+        # print(f'interrogates at {self._timeNow - interval}s \n')
+        # print(f'time is now {self._timeNow}s')
 
     def _Command(self, timeEnd, command=None):
         """
@@ -300,6 +300,50 @@ class QpixAsicArray():
             print(asic._remoteTransmissions, end=" ")
             if (i+1)%self._nrows == 0:
                 print()
+
+    def MakeFifoBars(self):
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as mpatches
+        import numpy as np
+        
+        ColorWheelOfFun = ["#"+''.join([random.choice('0123456789ABCDEF') for i in range(6)])
+            for j in range(self._nrows * self._ncols)]
+
+        LocalFifoMax = np.zeros((self._nrows * self._ncols))
+        Names = []
+        for i, asic in enumerate(self):
+            LocalFifoMax[i] = asic._localFifo._maxSize
+            Names.append(f'({asic.row}, {asic.col})')
+            if asic._localFifo._full:
+                print(f'asic ({asic.row}, {asic.col}) local fifo was full')
+
+        plt.bar(Names, LocalFifoMax, color=ColorWheelOfFun)
+        plt.title('Local Fifo Maximum Sizes')
+        plt.ylabel('Max Sizes')
+        plt.show()
+
+        fig, ax = plt.subplots(figsize = (8,8))
+        DIRECTIONS = ("N", "E", "S", "W")
+
+        RemoteFifoMax = np.zeros((self._nrows * self._ncols, 4))
+        patches = []
+
+        plt.xticks(
+            rotation=45, 
+            horizontalalignment='right',
+            fontweight='light',
+        )
+        for i, asic in enumerate(self):
+            locals() [f'patch{i}'] = mpatches.Patch(color=ColorWheelOfFun[i], label=f'Asic ({asic.row}, {asic.col})')
+            patches.append(locals() [f'patch{i}'])
+            for d in range(4):
+                RemoteFifoMax[i, d] = asic._remoteFifos[d]._maxSize
+                if asic._remoteFifos[d]._full:
+                    print(f'asic ({asic.row}, {asic.col}) {DIRECTIONS[d]} remote fifo full')
+                Nem = f'({asic.row}, {asic.col}) {DIRECTIONS[d]}'        
+                ax.bar(Nem, RemoteFifoMax[i, d], color=ColorWheelOfFun[i])
+        ax.set(ylabel='Max Sizes', title='Remote Fifo Maximum Sizes')
+        ax.legend(handles=[*patches])
 
 if __name__ == "__main__":
     array = QpixAsicArray(2,2)
