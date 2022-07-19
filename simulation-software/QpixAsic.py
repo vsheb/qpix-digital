@@ -437,17 +437,17 @@ class QPixAsic:
     print(f'injecting hits for ({self.row}, {self.col})')
 
     # place all of the injected times and channels into self._times and self._channels
-    for i in times:
-      self._times.append(i)
-    for j in channels:
-      if j is None:
-        print('there are no channels in this hit')
-      self._channels.append(j)
+    self._times.extend(times)
+    
+    if channels is None:
+      print('there are no channels in this hit')
+    else:
+      self._channels.extend(channels)
 
     #sort the times and channels
     self._times, self._channels = zip(*sorted(zip(self._times, self._channels)))
     
-    print(f'injected hits are at times {self._times} and ch {self._channels}')
+    # print(f'injected hits are at times {self._times} and ch {self._channels}')
 
   def _ReadHits(self, targetTime):
     """
@@ -455,14 +455,14 @@ class QPixAsic:
     within the last asic hit time and the target time
 
     read all of the hits in the times/channels arrays
-    
+
     then write hits to local fifos
     """
     if not(len(self._times) ==  len(self._channels)):
       print('times and channels not the same length - something has gone horribly wrong')
     
     if len(self._times):
-      self._times = np.array(self._times)
+      self._times = np.asarray(self._times)
       #index times and channels such that they are within last asic hit time and target time
       TimesIndex = np.logical_and(self._times > self._lastAsicHitTime, self._times <= targetTime)
       times = self._times[TimesIndex]
