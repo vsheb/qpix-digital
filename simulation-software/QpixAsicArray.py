@@ -1,7 +1,124 @@
-from QpixAsic import QPByte, QPixAsic, ProcQueue, DaqNode
+from QpixAsic import QPByte, QPixAsic, ProcQueue, DaqNode, AsicWord
 import random
 import math
 import time
+
+## helper functions
+def MakeFifoBars(qparray):
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    import numpy as np
+    
+    ColorWheelOfFun = ["#"+''.join([random.choice('0123456789ABCDEF') for i in range(6)])
+        for j in range(qparray._nrows * qparray._ncols)]
+
+    LocalFifoMax = np.zeros((qparray._nrows * qparray._ncols))
+    Names = []
+    for i, asic in enumerate(qparray):
+        LocalFifoMax[i] = asic._localFifo._maxSize
+        Names.append(f'({asic.row}, {asic.col})')
+        if asic._localFifo._full:
+            print(f'asic ({asic.row}, {asic.col}) local fifo was full')
+
+    plt.bar(Names, LocalFifoMax, color=ColorWheelOfFun)
+    plt.title('Local Fifo Maximum Sizes')
+    plt.ylabel('Max Sizes')
+    plt.show()
+
+    fig, ax = plt.subplots(figsize = (8,8))
+    DIRECTIONS = ("N", "E", "S", "W")
+
+    RemoteFifoMax = np.zeros((qparray._nrows * qparray._ncols, 4))
+    patches = []
+
+    plt.xticks(
+        rotation=45, 
+        horizontalalignment='right',
+        fontweight='light',
+    )
+    for i, asic in enumerate(qparray):
+        locals() [f'patch{i}'] = mpatches.Patch(color=ColorWheelOfFun[i], label=f'Asic ({asic.row}, {asic.col})')
+        patches.append(locals() [f'patch{i}'])
+        for d in range(4):
+            RemoteFifoMax[i, d] = asic._remoteFifos[d]._maxSize
+            if asic._remoteFifos[d]._full:
+                print(f'asic ({asic.row}, {asic.col}) {DIRECTIONS[d]} remote fifo full')
+            Nem = f'({asic.row}, {asic.col}) {DIRECTIONS[d]}'        
+            ax.bar(Nem, RemoteFifoMax[i, d], color=ColorWheelOfFun[i])
+    ax.set(ylabel='Max Sizes', title='Remote Fifo Maximum Sizes')
+    ax.legend(handles=[*patches])
+
+def PrintTsMap(qparray):
+    """
+    boiler plate code for printing interesting data about each asic
+    """
+    for i, asic in enumerate(qparray):
+        print(asic.lastTsDir, end=" ")
+        if (i+1)%qparray._nrows == 0:
+            print()
+
+def PrintTimeMap(qparray):
+    for i, asic in enumerate(qparray):
+        print(asic.relTimeNow, end=" ")
+        if (i+1)%qparray._nrows == 0:
+            print()
+
+def PrintTicksMap(qparray):
+    print("Total Ticks")
+    for i, asic in enumerate(qparray):
+        print(asic.relTicksNow, end=" ")
+        if (i+1)%qparray._nrows == 0:
+            print()
+
+def PrintMeasureMap(qparray):
+    print("Measured Transmissions:")
+    for i, asic in enumerate(qparray):
+        print(asic._measurements, end=" ")
+        if (i+1)%qparray._nrows == 0:
+            print()
+
+def PrintReceiveMap(qparray):
+    print("Received Transmissions:")
+    for i, asic in enumerate(qparray):
+        print(asic._hitReceptions, end=" ")
+        if (i+1)%qparray._nrows == 0:
+            print()
+
+def PrintTimes(qparray):
+    print("Tick Values :")
+    for i, asic in enumerate(qparray):
+        print(f"{asic.relTicksNow:1.2E}", end=" ")
+        if (i+1)%qparray._nrows == 0:
+            print()
+    print("Rel Time Values (us):")
+    for i, asic in enumerate(qparray):
+        print(f"{(asic.relTimeNow)*1e6:1.2E}", end=" ")
+        if (i+1)%qparray._nrows == 0:
+            print()
+    print("Abs Time Values (us):")
+    for i, asic in enumerate(qparray):
+        print(f"{(asic._absTimeNow - qparray[0][0]._absTimeNow)*1e6:1.2E}", end=" ")
+        if (i+1)%qparray._nrows == 0:
+            print()
+    print("Measured Time Values (us):")
+    for i, asic in enumerate(qparray):
+        print(f"{(asic._measuredTime[-1] - qparray[0][0]._measuredTime[-1])*1e6:3.2f}", end=" ")
+        if (i+1)%qparray._nrows == 0:
+            print()
+
+def PrintTransactMap(qparray):
+    print("Local Transmissions:")
+    for i, asic in enumerate(qparray):
+        print(asic._localTransmissions, end=" ")
+        if (i+1)%qparray._nrows == 0:
+            print()
+    print("Remote Transmissions:")
+    for i, asic in enumerate(qparray):
+        print(asic._remoteTransmissions, end=" ")
+        if (i+1)%qparray._nrows == 0:
+            print()
+
+## end helper functions
 
 class QpixAsicArray():
     """
@@ -18,7 +135,7 @@ class QpixAsicArray():
       debug       - debug level, values >= 0 produce text output (default 0)
     """
     def __init__(self, nrows, ncols, nPixs=16, fNominal=50e6, pctSpread=0.05, deltaT=1e-5, timeEpsilon=1e-6,
-                timeout=1000, hitsPerSec = 20./1., debug=0.0):
+                timeout=1.5e4, hitsPerSec = 20./1., debug=0.0):
 
         # array parameters
         self._tickNow = 0
@@ -38,10 +155,10 @@ class QpixAsicArray():
 
          # Make the array and connections
         self._asics = self._makeArray(timeout=timeout, randomRate=hitsPerSec)
-        self._daqNode = DaqNode(fOsc = self.fNominal, nPixels = 0, isDaqNode = True, debugLevel=self._debugLevel, timeout=timeout, randomRate=hitsPerSec)
+        self._daqNode = DaqNode(fOsc = self.fNominal, nPixels = 0, debugLevel=self._debugLevel, timeout=timeout, randomRate=hitsPerSec)
         for asic in self:
             self._daqNode.hitData[f'({asic.row}, {asic.col})'] = []
-            self._daqNode.askData[f'({asic.row}, {asic.col})'] = []
+            self._daqNode.regData[f'({asic.row}, {asic.col})'] = []
 
         self._asics[0][0].connections[3] = self._daqNode
 
@@ -117,17 +234,15 @@ class QpixAsicArray():
         VARS:
             interval - time in seconds to issue two different commands and to read time value pairs back from asics
         """
-
+        print("performing array calibration..")
         self._alert = 0
         t1 = self._timeNow + interval
         calibrateSteps = self._Command(t1, command="Calibrate")
 
         t2 = self._timeNow + interval
         calibrateSteps = self._Command(t2, command="Calibrate")
-        # print(f"calibration complete time is: {self._timeNow}, steps: {calibrateSteps}")
 
-
-    def Interrogate(self, interval=0.1): # tell daq to send an interrogation to all asics
+    def Interrogate(self, interval=0.1):
         """
         Function for issueing command to base node from daq node, and beginning
         a full readout sequence of timestamp data.
@@ -139,11 +254,9 @@ class QpixAsicArray():
         
         self._alert=0
         time = self._timeNow + interval
-        # print("performing interrogation..")
+        print("performing interrogation..")
         readoutSteps = self._Command(time, command="Interrogate")
-        # print(f"interrogation complete in {readoutSteps} steps")
-        # print(f'interrogates at {self._timeNow - interval}s \n')
-        # print(f'time is now {self._timeNow}s')
+        print(f"interrogation complete in {readoutSteps} steps")
 
     def _Command(self, timeEnd, command=None):
         """
@@ -165,7 +278,8 @@ class QpixAsicArray():
         # add the initial broadcast to the queue
         steps = 0
         self._queue = ProcQueue()
-        self._queue.AddQueueItem(self[0][0], 3, QPByte(self._tickNow, [], None, None, wordType="ask"), self._timeNow, command=command)
+        request = QPByte(self._tickNow, [], None, None, wordType=AsicWord.REGREQ)
+        self._queue.AddQueueItem(self[0][0], 3, request, self._timeNow, command=command)
 
         while(self._timeNow < timeEnd):
 
@@ -181,8 +295,9 @@ class QpixAsicArray():
             while(self._queue.Length() > 0):
 
                 if self._debugLevel > 0:
+                    print(f"step-{steps} | time-{self._timeNow} | process size-{self._queue.Length()}")
                     for asic in self:
-                        print(asic.state, asic.row, asic.col, asic.fOsc)
+                        print(f"\t({asic.row}, {asic.col}): {asic.state} - {asic.relTicksNow}")
 
                 steps += 1
                 # pop the next simulation unit
@@ -194,7 +309,7 @@ class QpixAsicArray():
                 command = nextItem.command
 
                 # ASICs to catch up to this time, and to send data
-                p1 = self.ProcessArray(hitTime)
+                p1 = self._ProcessArray(hitTime)
 
                 # ASIC to receive data
                 newProcessItems = asic.ReceiveByte(nextItem)
@@ -204,7 +319,7 @@ class QpixAsicArray():
                         recv += 1
                         self._queue.AddQueueItem(*item)
 
-                p2 = self.ProcessArray(hitTime)
+                p2 = self._ProcessArray(hitTime)
 
                 # print(f"({asic.row},{asic.col}) from {direction} processed:", p1, recv, p2, f"items={self._queue.Length()}")
                 # input("")
@@ -214,7 +329,7 @@ class QpixAsicArray():
 
         return steps
 
-    def ProcessArray(self, nextTime):
+    def _ProcessArray(self, nextTime):
         """
         move all processing of the array up to absTime
         """
@@ -230,120 +345,6 @@ class QpixAsicArray():
                         processed += 1
                         self._queue.AddQueueItem(*item)
         return processed
-
-    def PrintTsMap(self):
-        """
-        boiler plate code for printing interesting data about each asic
-        """
-        for i, asic in enumerate(self):
-            print(asic.lastTsDir, end=" ")
-            if (i+1)%self._nrows == 0:
-                print()
-
-    def PrintTimeMap(self):
-        for i, asic in enumerate(self):
-            print(asic.relTimeNow, end=" ")
-            if (i+1)%self._nrows == 0:
-                print()
-
-    def PrintTicksMap(self):
-        print("Total Ticks")
-        for i, asic in enumerate(self):
-            print(asic.relTicksNow, end=" ")
-            if (i+1)%self._nrows == 0:
-                print()
-
-    def PrintMeasureMap(self):
-        print("Measured Transmissions:")
-        for i, asic in enumerate(self):
-            print(asic._measurements, end=" ")
-            if (i+1)%self._nrows == 0:
-                print()
-
-    def PrintReceiveMap(self):
-        print("Received Transmissions:")
-        for i, asic in enumerate(self):
-            print(asic._hitReceptions, end=" ")
-            if (i+1)%self._nrows == 0:
-                print()
-
-    def PrintTimes(self):
-        print("Tick Values :")
-        for i, asic in enumerate(self):
-            print(f"{asic.relTicksNow:1.2E}", end=" ")
-            if (i+1)%self._nrows == 0:
-                print()
-        print("Rel Time Values (us):")
-        for i, asic in enumerate(self):
-            print(f"{(asic.relTimeNow)*1e6:1.2E}", end=" ")
-            if (i+1)%self._nrows == 0:
-                print()
-        print("Abs Time Values (us):")
-        for i, asic in enumerate(self):
-            print(f"{(asic._absTimeNow - self[0][0]._absTimeNow)*1e6:1.2E}", end=" ")
-            if (i+1)%self._nrows == 0:
-                print()
-        print("Measured Time Values (us):")
-        for i, asic in enumerate(self):
-            print(f"{(asic._measuredTime[-1] - self[0][0]._measuredTime[-1])*1e6:3.2f}", end=" ")
-            if (i+1)%self._nrows == 0:
-                print()
-
-    def PrintTransactMap(self):
-        print("Local Transmissions:")
-        for i, asic in enumerate(self):
-            print(asic._localTransmissions, end=" ")
-            if (i+1)%self._nrows == 0:
-                print()
-        print("Remote Transmissions:")
-        for i, asic in enumerate(self):
-            print(asic._remoteTransmissions, end=" ")
-            if (i+1)%self._nrows == 0:
-                print()
-
-    def MakeFifoBars(self):
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as mpatches
-        import numpy as np
-        
-        ColorWheelOfFun = ["#"+''.join([random.choice('0123456789ABCDEF') for i in range(6)])
-            for j in range(self._nrows * self._ncols)]
-
-        LocalFifoMax = np.zeros((self._nrows * self._ncols))
-        Names = []
-        for i, asic in enumerate(self):
-            LocalFifoMax[i] = asic._localFifo._maxSize
-            Names.append(f'({asic.row}, {asic.col})')
-            if asic._localFifo._full:
-                print(f'asic ({asic.row}, {asic.col}) local fifo was full')
-
-        plt.bar(Names, LocalFifoMax, color=ColorWheelOfFun)
-        plt.title('Local Fifo Maximum Sizes')
-        plt.ylabel('Max Sizes')
-        plt.show()
-
-        fig, ax = plt.subplots(figsize = (8,8))
-        DIRECTIONS = ("N", "E", "S", "W")
-
-        RemoteFifoMax = np.zeros((self._nrows * self._ncols, 4))
-        patches = []
-
-        plt.xticks(
-            rotation=45, 
-            horizontalalignment='right',
-            fontweight='light',
-        )
-        for i, asic in enumerate(self):
-            locals() [f'patch{i}'] = mpatches.Patch(color=ColorWheelOfFun[i], label=f'Asic ({asic.row}, {asic.col})')
-            patches.append(locals() [f'patch{i}'])
-            for d in range(4):
-                RemoteFifoMax[i, d] = asic._remoteFifos[d]._maxSize
-                if asic._remoteFifos[d]._full:
-                    print(f'asic ({asic.row}, {asic.col}) {DIRECTIONS[d]} remote fifo full')
-                Nem = f'({asic.row}, {asic.col}) {DIRECTIONS[d]}'        
-                ax.bar(Nem, RemoteFifoMax[i, d], color=ColorWheelOfFun[i])
-        ax.set(ylabel='Max Sizes', title='Remote Fifo Maximum Sizes')
-        ax.legend(handles=[*patches])
 
 if __name__ == "__main__":
     array = QpixAsicArray(2,2)
