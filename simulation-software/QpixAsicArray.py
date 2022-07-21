@@ -1,4 +1,5 @@
-from QpixAsic import QPByte, QPixAsic, ProcQueue, DaqNode, AsicWord
+from QpixAsic import QPByte, QPixAsic, ProcQueue, DaqNode, AsicWord, AsicState
+import matplotlib.pyplot as plt
 import random
 import math
 import time
@@ -47,6 +48,63 @@ def MakeFifoBars(qparray):
             ax.bar(Nem, RemoteFifoMax[i, d], color=ColorWheelOfFun[i])
     ax.set(ylabel='Max Sizes', title='Remote Fifo Maximum Sizes')
     ax.legend(handles=[*patches])
+
+def viewAsicState(qparray, time_begin=-100e-9, time_end=300e-6):
+    """
+    viewing function to take in a processed QpixArray class.
+
+    This function will plot all of the ASIC states in a broken_barh graph
+    with different colors based on AsicState enum class.
+
+    The inspection range of times are controlled with time_begin and time_end.
+    """
+
+    color_mapping = {}
+    for state in AsicState:
+        color_mapping[state] = f"C{state.value}"
+
+    asics = []
+    for asic in qparray:
+        asics.append(asic)
+
+    # unpack the data into arrays of states and times
+    states = [[] for i in range(len(asics))]
+    relTimes = [[] for i in range(len(asics))]
+    for i, asic in enumerate(asics):
+        for (state, relTime, _) in asic.state_times:
+            states[i].append(state)
+            relTimes[i].append(relTime)
+
+    # make the graph 
+    fig, ax = plt.subplots()
+    ax.set_ylim(0.5, len(asics)+3)
+
+    # repack the data into a viewable format for barh
+    i = 1
+    for asic_states, asic_relTimes in zip(states[:], relTimes[:]):
+        asic_state_widths = []
+        state_colors = []
+        cur_state = asic_states[0]
+        cur_time = asic_relTimes[0]
+        for state, time in zip(asic_states, asic_relTimes):
+            # we've moved to a new state at this time
+            if state != cur_state:
+                asic_state_widths.append((cur_time, time-cur_time))
+                state_colors.append(color_mapping[cur_state])
+                cur_state = state
+                cur_time = time
+        ax.broken_barh(asic_state_widths, (i, 0.50),
+                        facecolors=state_colors)
+        i += 1
+
+    ax.grid(True)
+    ax.set_yticks([i+1.15 for i in range(len(asics))], labels=[f"({asic.row}, {asic.col})" for asic in asics])
+    ax.set_xlim(time_begin, time_end)
+
+    # fake legend points
+    markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='') for color in color_mapping.values()]
+    plt.legend(markers, color_mapping.keys(), numpoints=1)
+    plt.show()
 
 def PrintTsMap(qparray):
     """
@@ -231,10 +289,9 @@ class QpixAsicArray():
         """
         function used to calibrate timing interval of all underlying asics, assuiming
         no current knowledge of underlying times / frequencies
-        VARS:
+        ARGS:
             interval - time in seconds to issue two different commands and to read time value pairs back from asics
         """
-        print("performing array calibration..")
         self._alert = 0
         t1 = self._timeNow + interval
         calibrateSteps = self._Command(t1, command="Calibrate")
@@ -254,9 +311,20 @@ class QpixAsicArray():
         
         self._alert=0
         time = self._timeNow + interval
-        print("performing interrogation..")
         readoutSteps = self._Command(time, command="Interrogate")
-        print(f"interrogation complete in {readoutSteps} steps")
+
+
+    def WriteAsicRegister(self, row, col):
+        """
+        Function sends a destination register read or write to the located asic
+
+        ARGS:
+            row - XDest
+            col - YDest
+        """
+        byte = QPByte(AsicWord.REGREQ, None, None, dest=1, XDest=row, YDest=col, OpWrite=True)
+        self._queue.AddQueueItem(self[0][0], 3, byte, self._timeNow)
+
 
     def _Command(self, timeEnd, command=None):
         """
@@ -277,8 +345,7 @@ class QpixAsicArray():
 
         # add the initial broadcast to the queue
         steps = 0
-        self._queue = ProcQueue()
-        request = QPByte(self._tickNow, [], None, None, wordType=AsicWord.REGREQ)
+        request = QPByte(AsicWord.REGREQ, None, None, timeStamp=self._tickNow, channelList=[])
         self._queue.AddQueueItem(self[0][0], 3, request, self._timeNow, command=command)
 
         while(self._timeNow < timeEnd):
@@ -345,6 +412,7 @@ class QpixAsicArray():
                         processed += 1
                         self._queue.AddQueueItem(*item)
         return processed
+
 
 if __name__ == "__main__":
     array = QpixAsicArray(2,2)
