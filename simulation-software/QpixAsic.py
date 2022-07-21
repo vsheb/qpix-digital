@@ -438,8 +438,9 @@ class QPixAsic:
         return []
       else:
         self._reqID = inByte.ReqID
-        # dynamic routing
-        self.config.DirMask = AsicDirMask(inDir)
+        # dynamic routing if manual routing not enabled
+        if not self.config.ManRoute:
+          self.config.DirMask = AsicDirMask(inDir)
 
       isBroadcast = not inByte.Dest
       # currently ALL register requests are broadcast..
@@ -456,7 +457,6 @@ class QPixAsic:
         # if register write
         if inByte.OpWrite:
           self.config = inByte.config
-          return []
 
         # if register read
         elif inByte.OpRead:

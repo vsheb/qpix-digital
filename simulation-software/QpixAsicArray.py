@@ -1,4 +1,4 @@
-from QpixAsic import QPByte, QPixAsic, ProcQueue, DaqNode, AsicWord, AsicState
+from QpixAsic import QPByte, QPixAsic, ProcQueue, DaqNode, AsicWord, AsicState, AsicConfig
 import matplotlib.pyplot as plt
 import random
 import math
@@ -314,19 +314,30 @@ class QpixAsicArray():
         readoutSteps = self._Command(time, command="Interrogate")
 
 
-    def WriteAsicRegister(self, row, col):
+    def WriteAsicRegister(self, row, col, config, timeEnd=1e-3):
         """
         Function sends a destination register read or write to the located asic
 
         ARGS:
-            row - XDest
-            col - YDest
+            row    - XDest
+            col    - YDest
+            config - configuration type to be written to specific ASIC
+            timeEnd - how long to process the array forward till, default ~1 ms
         """
-        byte = QPByte(AsicWord.REGREQ, None, None, dest=1, XDest=row, YDest=col, OpWrite=True)
-        self._queue.AddQueueItem(self[0][0], 3, byte, self._timeNow)
+        assert isinstance(config, AsicConfig), "unsuitable configuration type to write to register"
+        assert row < self._nrows and row >= 0, f"row {row} unable for this array"
+        assert col < self._ncols and col >= 0, f"col {col} unable for this array"
 
+        # build the DaqNode request
+        ReqID = self._daqNode._reqID
+        byte = QPByte(AsicWord.REGREQ, None, None, Dest=1, XDest=row, YDest=col, ReqID=ReqID, OpWrite=True, config=config)
+        self._daqNode._reqID += 1
 
-    def _Command(self, timeEnd, command=None):
+        # issue the byte command, and move forward in time
+        timeProc = self._timeNow + timeEnd
+        self._Command(timeProc, byte=byte)
+
+    def _Command(self, timeEnd, command=None, byte=None):
         """
         Function for issueing command to base node from daq node, and beginning
         a full readout sequence
@@ -345,9 +356,12 @@ class QpixAsicArray():
 
         # add the initial broadcast to the queue
         steps = 0
-        ReqID = self._daqNode._reqID
-        request = QPByte(AsicWord.REGREQ, None, None, timeStamp=self._tickNow, ReqID=ReqID, channelList=[])
-        self._daqNode._reqID += 1
+        if byte is None:
+            ReqID = self._daqNode._reqID
+            request = QPByte(AsicWord.REGREQ, None, None, timeStamp=self._tickNow, ReqID=ReqID)
+            self._daqNode._reqID += 1
+        else:
+            request = byte
         self._queue.AddQueueItem(self[0][0], 3, request, self._timeNow, command=command)
 
         while(self._timeNow < timeEnd):
