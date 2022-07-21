@@ -84,7 +84,6 @@ class AsicConfig():
     EnableRcv - enable receive flag
     EnableReg - enagle register flag
   """
-  # def __init__(self, frq, timeout=1.5e4, dirMask=0, ManRoute=False, EnableSnd=True, EnableRcv=True, EnableReg=True):
   DirMask: AsicDirMask
   timeout: int 
   ManRoute = False
@@ -121,7 +120,7 @@ class QPByte:
   NOTE: 2 bits are currently reserved, and formating is defined in QpixPkg.vhd
   """
   def __init__(self, wordType, originRow, originCol, timeStamp=None, channelList=None, data=None,
-              XDest=None, YDest=None, Dest=False, OpRead=False, OpWrite=False,
+              XDest=None, YDest=None, Dest=False, ReqID=-1, OpRead=False, OpWrite=False,
               config=AsicConfig(AsicDirMask.North, 1.5e4)):
 
     if not isinstance(wordType, AsicWord):
@@ -140,7 +139,9 @@ class QPByte:
       self.OpRead = OpRead
       self.XDest = XDest
       self.YDest = YDest
-      self.ReqID = 42
+      self.ReqID = ReqID
+      self.config = config
+    elif self.wordType == AsicWord.REGRESP:
       self.config = config
     else:
       self.timeStamp = timeStamp
@@ -350,7 +351,7 @@ class QPixAsic:
 
     # daq node Configuration
     self.isDaqNode      = isDaqNode
-    self._reqID = 0
+    self._reqID = -1
 
     # Queues / FIFOs
     self._localFifo   = QPFifo(maxDepth=256)
@@ -428,54 +429,57 @@ class QPixAsic:
       print("WARNING receiving data from non-existent connection!")
     
     outList = [] 
-    isFromDaq = inByte.SrcDaq
 
-    # receiving a register request from the daqnode
-    if self.state == AsicState.Idle and isFromDaq:
-        
-      # dynamic routing
-      self.config.DirMask = inDir
+    # if the incomming word is a register request, it's from the DAQNODE
+    if inByte.wordType == AsicWord.REGREQ:
 
-      # if specific ASIC transaction, Read a register or write one
-      if inByte.Dest and inByte.XDest == self.row and inByte.YDest == self.col:
-        print("received destination!")
+      # received this request already?
+      if self._reqID == inByte.ReqID:
+        return []
+      else:
+        self._reqID = inByte.ReqID
+        # dynamic routing
+        self.config.DirMask = AsicDirMask(inDir)
+
+      isBroadcast = not inByte.Dest
+      # currently ALL register requests are broadcast..
+      transactionCompleteTime = inTime + self.transferTime
+      self.UpdateTime(transactionCompleteTime)
+      for i, connection in enumerate(self.connections):
+        if i != inDir and connection is not None:
+          outList.append((connection, (i+2)%4, inByte, transactionCompleteTime, inCommand))
+
+      # is this word relevant to this asic?
+      forThisAsic = (inByte.XDest == self.row and inByte.YDest == self.col) or isBroadcast
+      if forThisAsic: 
+
+        # if register write
         if inByte.OpWrite:
-          # assume that this packet updates the entire configuration, although
-          # this isn't actually possible in current HDL
           self.config = inByte.config
-        # send register response
+          return []
+
+        # if register read
         elif inByte.OpRead:
-          transactionCompleteTime = inTime + self.transferTime
-          self.UpdateTime(transactionCompleteTime)
-          outByte = QPByte(AsicWord.REGRESP, self.row, self.col, config=self.config)
+          finishTime = inTime + self.transferTime
+          self.UpdateTime(finishTime)
+          byteOut = QPByte(AsicWord.REGRESP, self.row, self.col, config=self.config)
+          destAsic = self.connections[self.config.DirMask.value]
           toDir = self.config.DirMask.value+2
           fromDir = (toDir)%4
-          destAsic = self.connections[toDir]
-          return [(destAsic, fromDir, outByte, transactionCompleteTime, inCommand)]
+          outlist.append((destAsic, fromDir, byteOut, finishTime))
+
+        # if it's not a read or a write, it's a command interrogation
         else:
-          print("WARNING received a daq byte that's neither a read or a write")
+          self._changeState(AsicState.TransmitLocal)
+          self._measuredTime.append(self.relTimeNow)
+          self._command = inCommand
+          if inCommand == "Interrogate":
+            # self._GeneratePoissonHits(inTime)
+            self._ReadHits(inTime)
 
-      # otherwise broadcast
-      else:
-        transactionCompleteTime = inTime + self.transferTime
-        self.UpdateTime(transactionCompleteTime)
-        self._changeState(AsicState.TransmitLocal)
-        self._measuredTime.append(self.relTimeNow)
-        self._command = inCommand
-
-        for i, connection in enumerate(self.connections):
-          if i != inDir and connection is not None:
-            outList.append((connection, (i+2)%4, inByte, transactionCompleteTime, inCommand))
-
-      if inCommand == "Interrogate":
-        # self._GeneratePoissonHits(inTime)
-        self._ReadHits(inTime)
-
-    # Data received elsewhere is stored in a remote FIFO
+    # all data that is not a register request gets stored on remote fifos
     else:
-      # Don't forward source timestamps
-      if not isFromDaq:
-        self._remoteFifos[inDir].Write(inByte)
+      self._remoteFifos[inDir].Write(inByte)
 
     return outList
 
@@ -623,7 +627,7 @@ class QPixAsic:
       self._command = None
       self._changeState(AsicState.TransmitLocal)
       curTicks = self.relTicksNow
-      self._localFifo.Write(QPByte(AsicWord.REGREQ, self.row, self.col, curTicks, [], data=self._measuredTime[-1])) 
+      self._localFifo.Write(QPByte(AsicWord.REGRESP, self.row, self.col, curTicks, [], data=self._measuredTime[-1])) 
 
     # an ASIC timestamp request
     elif self._command == "Interrogate":
@@ -668,7 +672,7 @@ class QPixAsic:
     self.UpdateTime(transactionCompleteTime)
     self._changeState(AsicState.Idle)
     respByte = QPByte(AsicWord.REGRESP, self.row, self.col, 0, [0])
-    return [(self.connections[self.config.DirMask], (self.config.DirMask+2)%4, respByte, transactionCompleteTime)]
+    return [(self.connections[self.config.DirMask.value], (self.config.DirMask.value+2)%4, respByte, transactionCompleteTime)]
 
   def _processTransmitLocalState(self, targetTime):
     """
@@ -682,7 +686,7 @@ class QPixAsic:
     hit = self._localFifo.Read()
     if hit is not None:
       self.UpdateTime(transactionCompleteTime)
-      return [(self.connections[self.config.DirMask], (self.config.DirMask+2)%4, hit, transactionCompleteTime)]
+      return [(self.connections[self.config.DirMask.value], (self.config.DirMask.value+2)%4, hit, transactionCompleteTime)]
     else:
       self._changeState(AsicState.Finish)
       return []
@@ -701,7 +705,7 @@ class QPixAsic:
     # after sending the word we go to the Transmit remote state
     self._changeState(AsicState.TransmitRemote)
 
-    return [(self.connections[self.config.DirMask], (self.config.DirMask+2)%4, finishByte, transactionCompleteTime)]
+    return [(self.connections[self.config.DirMask.value], (self.config.DirMask.value+2)%4, finishByte, transactionCompleteTime)]
 
   def _processTransmitRemoteState(self, targetTime):
     """
@@ -739,7 +743,7 @@ class QPixAsic:
             self._changeState(AsicState.Idle)
             return hitlist
           else:
-            hitlist.append((self.connections[self.config.DirMask], (self.config.DirMask+2)%4 , hit, completeTime))
+            hitlist.append((self.connections[self.config.DirMask.value], (self.config.DirMask.value+2)%4 , hit, completeTime))
             self.UpdateTime(completeTime)
       return hitlist
 
@@ -780,6 +784,8 @@ class DaqNode(QPixAsic):
     self.regData = {}
     self.daqData = {}
     self.daqHits = 0
+    # make sure that the starting daqNode ID is different from the ASIC default
+    self._reqID += 1
 
   def ReceiveByte(self, queueItem:ProcItem):
     """
@@ -803,7 +809,7 @@ class DaqNode(QPixAsic):
     # Put all of the attributes of the QPByte into a list 
     if inWord == AsicWord.DATA:
       self.hitData[AsicKey].append((self.relTicksNow, inByte)) 
-    elif inWord == AsicWord.REGREQ:
+    elif inWord == AsicWord.REGRESP:
       self.regData[AsicKey].append((self.relTicksNow, inByte))
     elif inWord == AsicWord.EVTEND:
       pass

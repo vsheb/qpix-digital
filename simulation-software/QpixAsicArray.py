@@ -345,7 +345,9 @@ class QpixAsicArray():
 
         # add the initial broadcast to the queue
         steps = 0
-        request = QPByte(AsicWord.REGREQ, None, None, timeStamp=self._tickNow, channelList=[])
+        ReqID = self._daqNode._reqID
+        request = QPByte(AsicWord.REGREQ, None, None, timeStamp=self._tickNow, ReqID=ReqID, channelList=[])
+        self._daqNode._reqID += 1
         self._queue.AddQueueItem(self[0][0], 3, request, self._timeNow, command=command)
 
         while(self._timeNow < timeEnd):
