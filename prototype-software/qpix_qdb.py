@@ -5,14 +5,15 @@ import time
 
 # GUI things
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox
-from PyQt5.QtCore import QProcess
+from PyQt5.QtWidgets import QWidget, QPushButton, QCheckBox, QSpinBox, QLabel, QDoubleSpinBox, QProgressBar
+from PyQt5.QtCore import QProcess, QTimer
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
 
 # for output data
 from array import array
 import ROOT
+import numpy as np
 
 class QPIX_GUI(QMainWindow):
     def __init__(self):
@@ -44,60 +45,124 @@ class QPIX_GUI(QMainWindow):
         # main window interactive items
         self.setCentralWidget(self.main_wid)
 
+        # passive triggering
+        self._clock = QTimer()
+        self._clock.timeout.connect(self.trigger)
+
+        # progress tracker
+        pbar = QProgressBar(self.main_wid)
+        pbar.setRange(0, 100)
+        pbar.move(320,320)
+        pbar.setValue(50)
+        self._progBar = pbar
+
         # initialize the sub menus
         self._make_menuBar()
 
         ###################
         ## Zybo commands ##
         ###################
+        btn_initialize = QPushButton(self.main_wid)
+        btn_initialize.setText('initialize')
+        btn_initialize.move(0,0)
+        btn_initialize.clicked.connect(self.initialize)
+
         btn = QPushButton(self.main_wid)
         btn.setText('trigger')
-        btn.move(0,80)
+        btn.move(0,40)
         btn.clicked.connect(self.trigger)
 
         btn_readEvents = QPushButton(self.main_wid)
         btn_readEvents.setText('get events')
-        btn_readEvents.move(0,120)
+        btn_readEvents.move(0,80)
         btn_readEvents.clicked.connect(self.readEvents)
 
         btn_trgTime = QPushButton(self.main_wid)
         btn_trgTime.setText('get trigger time')
-        btn_trgTime.move(0,160)
+        btn_trgTime.move(0,120)
         btn_trgTime.clicked.connect(self.getTrigTime)
 
         btn_getFrq = QPushButton(self.main_wid)
         btn_getFrq.setText('get frequency')
-        btn_getFrq.move(0,200)
+        btn_getFrq.move(0,160)
         btn_getFrq.clicked.connect(self.estimateFrequency)
+
+        btn_iter = QPushButton(self.main_wid)
+        btn_iter.setText('iter trg')
+        btn_iter.move(0,200)
+        btn_iter.clicked.connect(self.begin_trig_clock)
 
         ###################
         ## ASIC commands ##
         ###################
         btn_rst = QPushButton(self.main_wid)
         btn_rst.setText('reset')
-        btn_rst.move(0,0)
+        btn_rst.move(120,0)
         btn_rst.clicked.connect(self.resetAsic)
 
         btn_mask = QPushButton(self.main_wid)
         btn_mask.setText('mask')
-        btn_mask.move(0,40)
+        btn_mask.move(120,40)
         btn_mask.clicked.connect(self.setAsicDirMask)
 
         btn_gtimeout = QPushButton(self.main_wid)
         btn_gtimeout.setText('get timeout')
-        btn_gtimeout.move(80,0)
+        btn_gtimeout.move(120,80)
         btn_gtimeout.clicked.connect(self.getAsicTimeout)
 
         btn_stimeout = QPushButton(self.main_wid)
         btn_stimeout.setText('set timeout')
-        btn_stimeout.move(160,0)
+        btn_stimeout.move(120,120)
         btn_stimeout.clicked.connect(self.setAsicTimeout)
 
         self.chk_enable = QCheckBox(self.main_wid)
         self.chk_enable.setText('asic enable')
         self.chk_enable.setCheckState(0)
-        self.chk_enable.move(160, 40)
+        self.chk_enable.move(120,160)
         self.chk_enable.stateChanged.connect(self.enableAsic)
+
+        ###################
+        ##  Containers  ###
+        ###################
+        # nIntegrations
+        sBox = QSpinBox(self.main_wid)
+        sBox.move(240,0)
+        sBox.setValue(1)
+        sBox.setRange(1, 100)
+        lsBox = QLabel(self.main_wid)
+        lsBox.setText("N-Integrations")
+        lsBox.move(310, 5)
+        # lFrqs, like a np.arange
+        sBox_frqStart = QSpinBox(self.main_wid)
+        sBox_frqStart.move(240,40)
+        sBox_frqStart.setValue(1)
+        sBox_frqStart.setRange(1, 100)
+        lsBox = QLabel(self.main_wid)
+        lsBox.setText("Frq Start (Hz)")
+        lsBox.move(310, 45)
+        sBox_frqStop = QSpinBox(self.main_wid)
+        sBox_frqStop.move(240,80)
+        sBox_frqStop.setValue(5)
+        sBox_frqStop.setRange(1, 100)
+        lsBox = QLabel(self.main_wid)
+        lsBox.setText("Frq Stop (Hz)")
+        lsBox.move(310, 85)
+        sBox_frqIter = QDoubleSpinBox(self.main_wid)
+        sBox_frqIter.move(240,120)
+        sBox_frqIter.setValue(0.5)
+        sBox_frqIter.setRange(0.1, 100)
+        lsBox = QLabel(self.main_wid)
+        lsBox.setText("Frq Iteration")
+        lsBox.move(340, 125)
+        # button information for interrogation timer
+        sBox_timeIter = QDoubleSpinBox(self.main_wid)
+        sBox_timeIter.move(120,200)
+        sBox_timeIter.setValue(0.5)
+        sBox_timeIter.setRange(0.1, 100)
+        self._timeValue = sBox_timeIter
+        lsBox = QLabel(self.main_wid)
+        lsBox.setText("time Iteration")
+        lsBox.move(240, 205)
 
         # show the main window
         self.show()
@@ -105,6 +170,18 @@ class QPIX_GUI(QMainWindow):
     ############################
     ## Zybo specific Commands ##
     ############################
+    def initialize(self):
+        """
+        main working function which provides a one-click setup
+        
+        to initialze the array. Current implementation of the hdl
+        in the lattice chips require a reset, and non-default routing
+        """
+        # currently only one ASIC connected to the zybo which should be
+        # pointed downwards
+        self.resetAsic(0,0)
+        self.setAsicDirMask(0,0, AsicMask.DirDown)
+
     def trigger(self):
         """
         Send a basic trigger packet to the board.
@@ -116,7 +193,7 @@ class QPIX_GUI(QMainWindow):
         val = AsicCMD.Interrogation
         wrote = self.qpi.regWrite(addr, val)
 
-    def readEvents(self):
+    def readEvents(self) -> int:
         """
         Main Data Read function.
 
@@ -158,10 +235,14 @@ class QPIX_GUI(QMainWindow):
 
             return y, x, chanMask, wordType
 
+        # keep track of the readback progress..
+        self._progBar.setRange(0, evts)
+
         # read back all of the events now, and each event has 32*3 bits..
         for evt in range(evts):
             # read each word in the event
             asicTime = self.qpi.regRead(REG.MEM(evt, 0))
+            self._progBar.setValue(evt)
             d = self.qpi.regRead(REG.MEM(evt, 1))
             y, x, chanMask, wordType = getMeta(d)
             daqTime = self.qpi.regRead(REG.MEM(evt, 2))
@@ -177,6 +258,7 @@ class QPIX_GUI(QMainWindow):
             self._tt.Fill()
 
         self._tf.Write()
+        return evts
 
     def getTrigTime(self) -> int:
         """
@@ -218,12 +300,55 @@ class QPIX_GUI(QMainWindow):
         daq_cnt = daq_trig_end - daq_trig_start
         dt = time_e - time_s
         fdaq = (daq_cnt / dt)
-        print(f"Estimated Daq Frq: {fdaq/1e6:0.4f} MHz")
+        print(f"Daq Frq: {fdaq/1e6:0.4f} MHz")
 
         asic_cnt = asic_time_e - asic_time_s
         fasic = fdaq * (asic_cnt / daq_cnt)
-        print(f"Estimated ASIC Frq: {fasic/1e6:0.4f} MHz")
+        print(f"ASIC Frq: {fasic/1e6:0.4f} MHz")
 
+        # calculate running differences
+        # current test 7/25: Diff Frq: 0.0859 +/- 0.0038 MHz
+        if not hasattr(self, "_diffFrq"):
+            self._diffFrq = []
+        self._diffFrq.append((fasic-fdaq)/1e6)
+        print(f"Diff Frq: {np.mean(self._diffFrq):0.4f} +/- {np.std(self._diffFrq):0.4f} MHz")
+
+    def begin_trig_clock(self):
+        """
+        looping interrogation triggers based on value from adjacent spinbox
+        double
+        """
+        val = int(self._timeValue.value()*1000)
+        self._clock.setInterval(val)
+        print(f"setting value {val} ms")
+        if self._clock.isActive():
+            print("stopping clock..")
+            self._clock.stop()
+        else:
+            print("starting clock..")
+            self._clock.start()
+
+
+    def loopInterrogations(self, nInts: int, lFrqs: list):
+        """
+        function designed to loop through a interval set to test how quickly 
+        interrogations can happen and still retrieve all of the data from remote
+        ASICs
+        ARGS:
+            nInts - number of interrogations to perform at each rate
+            lFrqs - list of frequencies to perform these interrogations at
+        """
+
+        periods = [ 1/f for f in lFrqs]
+
+        for T in periods:
+            for int in range(nInts):
+                tStart = time.time()
+                while tStart - tFin < T:
+                    tStart = time.time()
+                self.trigger()
+                evts = self.readEvents()
+                tFin = time.time()
 
     ############################
     ## ASIC specific Commands ##
@@ -248,7 +373,6 @@ class QPIX_GUI(QMainWindow):
         else:
             val = AsicEnable.OFF
         self.qpi.regWrite(addr, val)
-
 
     def setAsicDirMask(self, xpos=0, ypos=0, mask=AsicMask.DirDown):
         """
@@ -340,7 +464,6 @@ class QPIX_GUI(QMainWindow):
         wordType = (word2 >> 24) & 0xf
 
         return x, y, wordType, timestamp
-
 
     ###########################
     ## GUI specific Commands ##
