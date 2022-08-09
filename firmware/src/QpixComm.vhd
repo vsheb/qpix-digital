@@ -3,7 +3,7 @@
 ----------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std_unsigned.all;
+use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 
 use work.QpixPkg.all;
@@ -24,18 +24,15 @@ entity QpixComm is
       outData_i      : in  QpixDataFormatType;
       inData         : out QpixDataFormatType;
 
-      regData             : out QpixRegDataType;
-      regResp             : in QpixRegDataType;
+      regData        : out QpixRegDataType;
+      regResp        : in QpixRegDataType;
 
       TxReady        : out std_logic;
       -- external ASIC ports
       TxPortsArr     : out QpixTxRxPortsArrType;
 
-      RxPortsArr     : in  QpixTxRxPortsArrType;
+      RxPortsArr     : in  QpixTxRxPortsArrType
 
-      qpixConf       : out QpixConfigType;
-      qpixReq        : out QpixRequestType
-      
    );
 end entity QpixComm;
 
@@ -174,9 +171,6 @@ begin
       outBytesArr       => TxByteArr,
       outBytesValidArr  => TxByteValidArr,
       txReady           => TxReadyor,
-
-      qpixConf          => qpixConf,
-      qpixReq           => qpixReq,
 
       regData           => regData,
       regResp           => regResp

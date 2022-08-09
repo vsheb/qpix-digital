@@ -15,7 +15,8 @@ entity QpixAsicArray is
       
    );
    port (
-      clk         : in std_logic;
+      --clk         : in std_logic;
+      clkVec      : in std_logic_vector(X_NUM_G*Y_NUM_G - 1 downto 0);
       rst         : in std_logic;
 
       led         : out std_logic_vector(3 downto 0); -- temporary
@@ -77,7 +78,8 @@ begin
                Y_POS_G       => j
             )
             port map(
-               clk      => clk,
+               --clk      => clk,
+               clk      => clkVec(j*X_NUM_G + i),
                rst      => rst,
                inPorts  => inPortsArr(i,j),
 
@@ -99,27 +101,27 @@ begin
       end generate GEN_Y;
    end generate GEN_X;
 
-   process (clk)
-      variable s  : std_logic := '0';
-      variable st : std_logic := '0';
-   begin
-      if rising_edge(clk) then
-         for i in 0 to X_NUM_G-1 loop
-            for j in 0 to Y_NUM_G-1 loop
-               if StatesArr(i)(j) > 0 then
-                  st := '1';
-               else
-                  st := '0';
-               end if;
-               s := s or st;
-            end loop;
-         end loop;
-         led(0) <= s;
-      end if;
-   end process;
-   led(1) <= '0';
-   led(2) <= '0';
-   led(3) <= '1';
+   --process (clk)
+      --variable s  : std_logic := '0';
+      --variable st : std_logic := '0';
+   --begin
+      --if rising_edge(clk) then
+         --for i in 0 to X_NUM_G-1 loop
+            --for j in 0 to Y_NUM_G-1 loop
+               --if StatesArr(i)(j) > 0 then
+                  --st := '1';
+               --else
+                  --st := '0';
+               --end if;
+               --s := s or st;
+            --end loop;
+         --end loop;
+         --led(0) <= s;
+      --end if;
+   --end process;
+   --led(1) <= '0';
+   --led(2) <= '0';
+   --led(3) <= '1';
 
 
 end behav;

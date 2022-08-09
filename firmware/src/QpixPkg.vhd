@@ -91,19 +91,23 @@ package QpixPkg is
    ------------------------------------------------------------------
    -- Input port from Qpix analog
    ------------------------------------------------------------------
-   type QpixInPortsType is record 
-      Valid      : std_logic;
-      Timestamp  : std_logic_vector(G_TIMESTAMP_BITS-1 downto 0);
-      ChanMask   : std_logic_vector(G_N_ANALOG_CHAN-1  downto 0);
-   end record;
+   --type QpixInPortsType is record 
+      --Valid      : std_logic;
+      --Timestamp  : std_logic_vector(G_TIMESTAMP_BITS-1 downto 0);
+      --ChanMask   : std_logic_vector(G_N_ANALOG_CHAN-1  downto 0);
+   --end record;
+
+   --constant QpixInPortsZero_C : QpixInPortsType := (
+      --Valid      => '0',
+      --Timestamp  => (others => '0'),
+      --ChanMask   => (others => '0')
+   --);
+
+   subtype QpixInPortsType is std_logic_vector(G_N_ANALOG_CHAN-1 downto 0);
+   constant QpixInPortsZero_C : QpixInPortsType := (others => '0');
 
    type QpixInPortsArrType is array(natural range <>, natural range <>) of QpixInPortsType;
 
-   constant QpixInPortsZero_C : QpixInPortsType := (
-      Valid      => '0',
-      Timestamp  => (others => '0'),
-      ChanMask   => (others => '0')
-   );
    ------------------------------------------------------------------
 
 
@@ -195,8 +199,8 @@ package QpixPkg is
 
    constant QpixConfigDef_C : QpixConfigType := (
       something  => '0',
-      Timeout    => std_logic_vector(to_unsigned(15000,G_REG_DATA_BITS)), -- UART
-      --Timeout   => std_logic_vector(to_unsigned(100,G_REG_DATA_BITS)),   -- dummy
+      --Timeout    => std_logic_vector(to_unsigned(15000,G_REG_DATA_BITS)), -- UART
+      Timeout    => (others => '0'), 
       DirMask    => (others => '0'),
       locEnaSnd  => '1',
       locEnaRcv  => '1',

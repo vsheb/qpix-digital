@@ -30,9 +30,6 @@ entity QpixParser is
       outBytesValidArr    : out std_logic_vector(3 downto 0);
       txReady             : in  std_logic;
 
-      qpixConf            : out QpixConfigType;
-      qpixReq             : out QpixRequestType;
-
       regData             : out QpixRegDataType;
       regResp             : in QpixRegDataType
       
@@ -50,6 +47,7 @@ architecture behav of QpixParser is
 
    signal inBytesMux       : std_logic_vector(G_DATA_BITS-1 downto 0) := (others => '0');
    signal inBytesMuxValid  : std_logic                    := '0';
+   signal inBytesMuxValidR : std_logic                    := '0';
    signal inBytesValid     : std_logic_vector(3 downto 0) := (others => '0');
 
    signal regDir           : std_logic_vector(3 downto 0) := (others => '0');
@@ -57,8 +55,6 @@ architecture behav of QpixParser is
    signal fifoRen          : std_logic_vector(3 downto 0) := (others => '0');
 
    signal txReadyR         : std_logic  := '1';
-   signal fifoRenOrR       : std_logic  := '0';
-   signal fifoRenOrRR       : std_logic := '0';
 
    type MuxStatesType is (IDLE_S, READ_S, WAIT_S);
    signal muxState : MuxStatesType := IDLE_S;
@@ -88,13 +84,13 @@ begin
    begin
       if rising_edge (clk) then
 
-         inBytesMuxValid <= '0';
-         fifoRen         <= (others => '0');
-         txReadyR        <= txReady;
-         fifoRenOrR      <= OR_REDUCE(fifoRen);
-         fifoRenOrRR     <= fifoRenOrR;
+         inBytesMuxValid  <= '0';
+         inBytesMuxValidR <= inBytesMuxValid;
+         fifoRen          <= (others => '0');
+         txReadyR         <= txReady;
          for i in 0 to 3 loop
-            --fifoRen(i)   <= '0';
+            --fifoRen(i)   <= '0'; 
+            ------- Rewrite all this block!!!! FIXME
             if inFifoEmptyArr(i) = '0' and fifoRen = b"0000" and txReady = '1' then
                inBytesMux          <= inBytesArr(i);
                inBytesMuxValid     <= '1';
@@ -140,7 +136,7 @@ begin
             regDataR.OpWrite <= '0';
             regDataR.OpRead  <= '0';
             --end if;
-            if inBytesMuxValid = '1'  then
+            if inBytesMuxValidR = '1'  then
                if fQpixGetWordType(inBytesMux) = REGREQ_W then
                   regDataR.Valid    <= '1';
                   regDataR.Addr     <= inBytesMux(31 downto 16);

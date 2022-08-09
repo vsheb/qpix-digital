@@ -58,8 +58,9 @@ begin
    ---------------------------------------------------
    QpixDataProc_U : entity work.QpixDataProc
    generic map(
-      X_POS_G => X_POS_G,
-      Y_POS_G => Y_POS_G
+      X_POS_G         => X_POS_G,
+      Y_POS_G         => Y_POS_G,
+      N_ANALOG_CHAN_G => G_N_ANALOG_CHAN
    )
    port map(
       clk     => clk,
@@ -69,7 +70,8 @@ begin
 
       testEna => '0',
 
-      inPorts => inPorts,
+      qpixRstPulses => inPorts,
+      --inPorts => inPorts,
       outData => inData
 
    );
@@ -97,9 +99,6 @@ begin
       TxPortsArr     => TxPortsArr,
                                      
       RxPortsArr     => RxPortsArr,
-
-      QpixConf       => QpixConf,
-      QpixReq        => QpixReq,
 
       regData        => regData,
       regResp        => regResp

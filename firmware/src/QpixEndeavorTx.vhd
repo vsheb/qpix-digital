@@ -105,7 +105,7 @@ begin
          when GAP_S => 
             nxtReg.tx <= '0';
             if to_integer(curReg.phase) = N_GAP_CLK_G then
-               nxtReg.phase_max  <= fValueToClocks(txByte(to_integer(curReg.counter)));
+               nxtReg.phase_max  <= fValueToClocks(curReg.byte(to_integer(curReg.counter)));
                nxtReg.state      <= DATA_S;
                nxtReg.phase      <= (others => '0');
             end if;

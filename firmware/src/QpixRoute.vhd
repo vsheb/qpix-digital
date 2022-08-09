@@ -227,7 +227,8 @@ begin
          -- waiting for interrogation
          when IDLE_S       =>
             nxtReg.stateCnt <= (others => '0');
-            nxtReg.txData <= QpixDataZero_C;
+            nxtReg.txData.DataValid <= '0';
+            --nxtReg.txData <= QpixDataZero_C;
             if qpixReq.Interrogation = '1' then
                nxtReg.state  <= REP_LOCAL_S;
             end if;
@@ -323,7 +324,8 @@ begin
                end if;
             else
                nxtReg.extFifoRen <= '0';
-               nxtReg.txData <= QpixDataZero_C;
+               nxtReg.txData.DataValid <= '0';
+               --nxtReg.txData <= QpixDataZero_C;
             end if;
             
             if curReg.timeout /= timeoutZero_C then 
