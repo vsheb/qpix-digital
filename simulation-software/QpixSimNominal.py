@@ -11,7 +11,7 @@ import sys
 random.seed(2)
 
 # Debug status
-debugLevel = 1 #5 - debug
+debugLevel = 0 #5 - debug
 
 # Create an array of QPixAsics
 nRows = 16
@@ -114,41 +114,41 @@ while(timeNow < timeEnd):
     print("t = "+str(timeNow))
     for r in range(0,nRows):
       for c in range(0,nCols):
-        print(str(asicMatrix[r][c].stateNum),end='')
+        print(str(asicMatrix[r][c].state),end='')
       print("")
 
   # Make sure there's nothing to do right now
   # Now iterate through ASICs and keep doing processing on them until
   # they're caught up to the latest time.
-  for i in range(0,nRows):
-    for j in range(0,nCols):
+  for i in range(nRows):
+    for j in range(nCols):
       newProcessItems = asicMatrix[i][j].Process(timeNow - timeEpsilon)
       if len(newProcessItems) > 0:
         print("WARNING: ASIC ("+str(i)+","+str(j)+") had things left to do at next major time step")
         # Print states if they were updated
         if debugLevel >= 5:
-          print("Init: ",end='')
+          print("Init: ", end='')
           asicMatrix[i][j].PrintStatus()
 
   # Add a first timestamp at 1 second
-  timestamp = PixelHit(tickNow, [], None, None)
+  timestamp = QPByte(tickNow, [], None, None)
   procQueue.AddQueueItem(asicMatrix[0][0], 3, timestamp, timeNow)
 
   while(procQueue.Length() > 0):
     nextItem = procQueue.PopQueue()
-    nextAsic = nextItem[0]
+    nextAsic = nextItem.asic
 
     # Now iterate through ASICs and keep doing processing on them until
     # they're caught up to the latest time.
     somethingToDo = True
-    nextTime = nextItem[3]
+    nextTime = nextItem.inTime
     while somethingToDo:
       somethingToDo = False
       for i in range(0,nRows):
         for j in range(0,nCols):
           newProcessItems = asicMatrix[i][j].Process(nextTime)
           for item in newProcessItems:
-            procQueue.queue.append(item)
+            procQueue.AddQueueItem(*item)
           procQueue.SortQueue()
           if len(newProcessItems) > 0:
             somethingToDo = True
@@ -158,28 +158,27 @@ while(timeNow < timeEnd):
               print("t = "+str(procQueue.queue[0][3]))
               for r in range(0,nRows):
                 for c in range(0,nCols):
-                  print(str(asicMatrix[r][c].stateNum),end='')
+                  print(str(asicMatrix[r][c].state),end='')
                 print("")
-#              print("PrQ: ",end='')
-#              asicMatrix[i][j].PrintStatus()
-
+                # print("PrQ: ",end='')
+                # asicMatrix[i][j].PrintStatus()
 
     newQueueItems = nextAsic.ReceiveData(nextItem)
     for item in newQueueItems:
-      procQueue.queue.append(item)
-      procQueue.SortQueue()
+      procQueue.AddQueueItem(*item)
+    procQueue.SortQueue()
 
     # Now iterate through ASICs and keep doing processing on them until
     # they're caught up to the latest time.
     somethingToDo = True
-    nextTime = nextItem[3]
+    nextTime = nextItem.inTime
     while somethingToDo:
       somethingToDo = False
       for i in range(0,nRows):
         for j in range(0,nCols):
           newProcessItems = asicMatrix[i][j].Process(nextTime)
           for item in newProcessItems:
-            procQueue.queue.append(item)
+            procQueue.AddQueueItem(*item)
           procQueue.SortQueue()
           if len(newProcessItems) > 0:
             somethingToDo = True
@@ -189,7 +188,7 @@ while(timeNow < timeEnd):
               print("t = "+str(procQueue.queue[0][3]))
               for r in range(0,nRows):
                 for c in range(0,nCols):
-                  print(str(asicMatrix[r][c].stateNum),end='')
+                  print(str(asicMatrix[r][c].state),end='')
                 print("")
 
             # Print states if they were updated
@@ -199,7 +198,7 @@ while(timeNow < timeEnd):
 
     stepNum += 1
 
-  eventTimes.append(daqNode.absTimeNow-timeNow)
+  eventTimes.append(daqNode._absTimeNow-timeNow)
   hitsPerEvent.append(daqNode.daqHits)
   daqNode.daqHits = 0
   timeNow += deltaT
@@ -212,9 +211,9 @@ print("MAX QUEUE DEPTHS")
 # Check the current queue depths
 for i in range(0,nRows):
   for j in range(0,nCols):
-    print(str(i)+" "+str(j)+" "+str(asicMatrix[i][j].maxDepth)+" ",end='')
+    print(str(i)+" "+str(j)+" "+str(asicMatrix[i][j]._maxLocalDepth)+" ",end='')
     for d in range(0,4):
-      print(str(asicMatrix[i][j].maxConnDepths[d])+" ",end='')
+      print(str(asicMatrix[i][j]._remoteFifos[d]._maxSize)+" ",end='')
     print()
 
 print("PROCESSING TIMES")
