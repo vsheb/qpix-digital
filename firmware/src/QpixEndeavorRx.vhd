@@ -45,6 +45,7 @@ architecture Behavioral of QpixEndeavorRx is
    type RegType is record
       state     : StateType;
       byte      : std_logic_vector(NUM_BITS_G-1 downto 0);
+      dataOut   : std_logic_vector(NUM_BITS_G-1 downto 0);
       byteValid : std_logic;
       lowCnt    : unsigned(7 downto 0);
       highCnt   : unsigned(7 downto 0);
@@ -57,6 +58,7 @@ architecture Behavioral of QpixEndeavorRx is
    constant REG_INIT_C : RegType := (
       state     => IDLE_S,
       byte      => (others => '0'),
+      dataOut   => (others => '0'),
       byteValid => '0',
       lowCnt  => (others => '0'),
       highCnt  => (others => '0'),
@@ -79,7 +81,7 @@ architecture Behavioral of QpixEndeavorRx is
 begin
 
    -- Map to outputs
-   rxByte      <= curReg.byte;
+   rxByte      <= curReg.dataOut;
    rxByteValid <= curReg.byteValid;
    bitError    <= curReg.bitError;
    gapError    <= curReg.gapError;
@@ -102,7 +104,7 @@ begin
    rx_r <= rx_q(3);
 
    -- Asynchronous state logic
-   process(all) 
+   process(curReg, rx_r) 
    begin
       -- Set defaults
       nxtReg <= curReg;
@@ -110,8 +112,8 @@ begin
       -- Default strobe signals are '0'
       nxtReg.byteValid <= '0';
       nxtReg.bitError  <= '0';
-      nxtReg.gapError  <= '0';
-      nxtReg.lenError  <= '0';
+      --nxtReg.gapError  <= '0';
+      --nxtReg.lenError  <= '0';
 
       if rx_r = '1' then
          nxtReg.highCnt <= curReg.highCnt + 1;
@@ -165,7 +167,10 @@ begin
 
          when FINISH_S  =>
             if to_integer(curReg.byteCount) = NUM_BITS_G then
+               nxtReg.dataOut   <= curReg.byte;
                nxtReg.byteValid <= '1';
+               nxtReg.lenError  <= '0';
+               nxtReg.gapError  <= '0';
             else 
                -- temporarily send a bad byte just to see what we're reading if we've made it this far
                --nxtReg.byteValid <= '1';

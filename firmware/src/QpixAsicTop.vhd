@@ -4,11 +4,11 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 
-library work;
 use work.QpixPkg.all;
 
 entity QpixAsicTop is
    generic (
+
       X_POS_G        : natural := 0;
       Y_POS_G        : natural := 0;
       TXRX_TYPE      : string  := "ENDEAVOR" -- "DUMMY"/"UART"/"ENDEAVOR"
@@ -20,9 +20,6 @@ entity QpixAsicTop is
       -- timestamp data from QpixAnalog
       inPorts        : in   QpixInPortsType;
 
-      State          : out integer;
-      debug          : out QpixDebugType;
-
       -- TX ports to neighbour ASICs
       TxPortsArr     : out  QpixTxRxPortsArrType;
 
@@ -32,7 +29,6 @@ entity QpixAsicTop is
 end entity QpixAsicTop;
 
 architecture behav of QpixAsicTop is
-
    
    ---------------------------------------------------
    -- Signals
@@ -62,16 +58,22 @@ begin
    ---------------------------------------------------
    QpixDataProc_U : entity work.QpixDataProc
    generic map(
-      X_POS_G => X_POS_G,
-      Y_POS_G => Y_POS_G
+      X_POS_G         => X_POS_G,
+      Y_POS_G         => Y_POS_G,
+      N_ANALOG_CHAN_G => G_N_ANALOG_CHAN
    )
    port map(
       clk     => clk,
       rst     => asicRst,
+
       ena     => localDataEna,
+
       testEna => '0',
-      inPorts => inPorts,
+
+      qpixRstPulses => inPorts,
+      --inPorts => inPorts,
       outData => inData
+
    );
    ---------------------------------------------------
 
@@ -89,7 +91,7 @@ begin
       clk => clk,
       rst => asicRst,
 
-      parseDataRx      => txData,
+      outData_i      => txData,
       inData         => rxData,
       --regData        => regData,
 
@@ -98,11 +100,10 @@ begin
                                      
       RxPortsArr     => RxPortsArr,
 
-      QpixConf       => QpixConf,
-      QpixReq        => QpixReq,
-
       regData        => regData,
       regResp        => regResp
+      
+
    );
    ---------------------------------------------------
 
@@ -141,8 +142,8 @@ begin
       clk           => clk,
       rst           => AsicRst,
                     
-      QpixReq       => QpixReq,
-      QpixConf      => QpixConf,
+      qpixReq       => QpixReq,
+      qpixConf      => QpixConf,
                     
       inData        => inData,
       localDataEna  => localDataEna,
@@ -151,9 +152,7 @@ begin
       txData        => txData,
       rxData        => rxData,
 
-      debug         => open,
-
-      routeStateInt => open 
+      debug         => open
    );
    ---------------------------------------------------
 

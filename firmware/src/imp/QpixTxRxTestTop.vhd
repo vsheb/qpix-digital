@@ -18,19 +18,8 @@ entity QpixTxRxTestTop is
    port (
       sysClk    : in std_logic;
       led       : out std_logic_vector(3 downto 0);
-      sw        : in  std_logic_vector(3 downto 0);
-      je        : out std_logic_vector(1 downto 0);
-      DaqTx     : out std_logic;
-      DaqRx     : in  std_logic;
-      -- led_5
-      led5_r : out std_logic;
-      led5_b : out std_logic;
-      led5_g : out std_logic;
-
-      -- led_6
---      led6_r : out std_logic;
---      led6_b : out std_logic;
---      led6_g : out std_logic;
+      daqtx        : out std_logic;
+      daqrx        : in  std_logic;
 
       -- PS ports
       DDR_addr : inout STD_LOGIC_VECTOR ( 14 downto 0 );
@@ -99,8 +88,9 @@ architecture behav of QpixTxRxTestTop is
    signal TxPortsArr  : QpixTxRxPortsArrType;
    signal RxPortsArr  : QpixTxRxPortsArrType;
 
-   signal hitMask     : Sl2DArray := (others => (others => '0')) ;
+   signal hitMask     : Sl2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1) := (others => (others => '0')) ;
 
+   signal swRst       : std_logic := '0';
    signal trg         : std_logic := '0';
    signal asicAddr    : std_logic_vector(31 downto 0) := (others => '0');
    signal asicOpWrite : std_logic := '0';
@@ -124,7 +114,7 @@ architecture behav of QpixTxRxTestTop is
 
    signal qpixDebugArr : QpixDebug2DArrayType(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
 
-   signal extFifoMaxArr : Slv4b2DArray;
+   signal extFifoMaxArr : Slv4b2DArray(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
 
    signal status      : std_logic_vector(31 downto 0) := (others => '0');
 
@@ -137,49 +127,23 @@ architecture behav of QpixTxRxTestTop is
 
    signal daqTestWordOut : std_logic_vector(G_DATA_BITS-1 downto 0);
    signal daqTestWordIn  : std_logic_vector(G_DATA_BITS-1 downto 0);
-   
-   -- buffer daqTx / daqRx
-   signal s_daqTx : std_logic := '0';
-   signal s_daqRx : std_logic := '0';
-   signal pulse_tx : std_logic := '0';
-   signal pulse_rx : std_logic := '0';
-   constant pulse_time : integer := 12_999_999; -- fclk_freq / pulse_time = pulse's width
-   
---   signal pulse_state : std_logic := '0';
-   signal pulse_rxbv : std_logic := '0';
-   signal pulse_txbv : std_logic := '0';
 
-    signal pulse_red : std_logic := '0';
-    signal pulse_blu : std_logic := '0';
-    signal pulse_gre : std_logic := '0';
-    -- signal led_state : std_logic_vector(1 downto 0) := "00";
-    
-    signal state_o : std_logic := '0';
-    signal txByteValid_o : std_logic := '0';
-    signal rxByteValid_o : std_logic := '0';
-
-
+   signal ledCnt         : std_logic_vector(31 downto 0) := (others => '0');
 
 begin
 
-led <= sw;
-je  <= sw(1 downto 0);
-s_daqRx <= daqRx;
-daqTx <= s_daqTx;
-
--- LED-5, active high 
-led5_r <= pulse_red;
-led5_b <= pulse_blu;
-led5_g <= pulse_gre;
-
-
--- LED-6 
---led6_r <= led_state(0); -- red when Rx
---led6_b <= led_state(1); -- blu when Tx
---with state_o select led_state <=
--- "01" when '0',
--- "10" when '1';
---led6_g <= pulse_txbv or pulse_rxbv;
+   process (fclk)
+   begin
+      if rising_edge(fclk) then
+         ledCnt <= ledCnt + 1;
+         if ledCnt >= x"1DCD_6500" then
+            ledCnt <= (others => '0');
+            leds(0) <= not leds(0);
+         end if;
+      end if;
+   end process;
+   leds(2) <= '1';
+   led <= leds;
 
 
    ---------------------------------------------------
@@ -231,15 +195,14 @@ led5_g <= pulse_gre;
             M_AXI_0_rresp             => axi_rresp,  
             M_AXI_0_rvalid            => axi_rvalid, 
             M_AXI_0_rready            => axi_rready, 
-            aresetn                   => axi_resetn,
-            fclk                      => fclk, 
+            --aresetn                   => axi_resetn,
+            fclk                      => fclk
 
             -- CLK Wizard
-            reset_rtl_0               => '0',
-            sys_clock                 => sysClk,
-            clk_out1_0                => open,            
-            clk_out2_0                => clk,
-            locked_0                  => open
+            --reset_rtl_0               => '0',
+            --sys_clock                 => sysClk,
+            --clk_out1_0                => clk,
+            --locked_0                  => open
          );
 
    ---------------------------------------------------
@@ -284,8 +247,7 @@ led5_g <= pulse_gre;
    QpixProtoRegMap_U : entity work.QpixProtoRegMap
    generic map (
       X_NUM_G => X_NUM_G,
-      Y_NUM_G => Y_NUM_G,
-      Version => x"0000_0001"
+      Y_NUM_G => Y_NUM_G
    )
    port map(
       clk          => fclk,
@@ -311,6 +273,7 @@ led5_g <= pulse_gre;
       timestamp    => timestamp,
       hitMask      => hitMask,
       chanMask     => chanMask,
+      swRst        => swRst,
                   
       trg          => trg,
       asicAddr     => asicAddr,
@@ -334,10 +297,10 @@ led5_g <= pulse_gre;
    QpixDaqCtrl_U : entity work.QpixDaqCtrlDummy
    port map(
       clk         => fclk,
-      rst         => rst,
+      rst         => swRst,
                   
-      daqTx       => s_daqTx, -- output
-      daqRx       => s_daqRx, -- input
+      daqTx       => daqTx,
+      daqRx       => daqRx,
 
       sndWord     => daqTestWordOut,
       recWord     => daqTestWordIn,
@@ -348,84 +311,17 @@ led5_g <= pulse_gre;
    memAddrRst <= trg or asicReq;
    ---------------------------------------------------
 
- pulse : process (fclk, s_daqRx, s_daqTx, state_o, txByteValid_o, rxByteValid_o) is
-     variable pulse_count_red : integer range 0 to pulse_time := 0;
-     variable start_pulse_red : std_logic := '0';
-     variable pulse_count_blu : integer range 0 to pulse_time := 0;
-     variable start_pulse_blu : std_logic := '0';
-     variable pulse_count_gre : integer range 0 to pulse_time := 0;
-     variable start_pulse_gre : std_logic := '0';
+   --RxPortsArr(0) <= daqTx;
+   --daqRx <= TxPortsArr(0);
 
- begin
-     if rising_edge(fclk) then
-
-         -- pulse red
-         if sw(2) = '1' then
-             start_pulse_red := '1';
-             pulse_count_red := 0;
-         end if;
-         if start_pulse_red = '1' then
-             pulse_count_red := pulse_count_red + 1;
-             pulse_red <= '1';
-             if pulse_count_red >= pulse_time then
-                 pulse_red       <= '0';
-                 pulse_count_red := 0;
-                 start_pulse_red := '0';
-             end if;
-         end if;
-         
-         -- pulse blue 
-         if s_daqTx = '1' then
-             start_pulse_blu := '1';
-             pulse_count_blu := 0;
-         end if;
-         if start_pulse_blu = '1' then
-             pulse_count_blu := pulse_count_blu + 1;
-             pulse_blu <= '1';
-             if pulse_count_blu >= pulse_time then
-                 pulse_blu       <= '0';
-                 pulse_count_blu := 0;
-                 start_pulse_blu := '0';
-             end if;
-         end if;
-
-        -- pulse green
-        if s_daqRx = '1' then
-            start_pulse_gre := '1';
-            pulse_count_gre := 0;
-        end if;
-        if start_pulse_gre = '1' then
-            pulse_count_gre := pulse_count_gre + 1;
-            pulse_gre <= '1';
-            if pulse_count_gre >= pulse_time then
-                pulse_gre       <= '0';
-                pulse_count_gre := 0;
-                start_pulse_gre := '0';
-            end if;
-        end if;
- 
-     end if;
- end process pulse;
-
---   RxPortsArr(0) <= daqTx;
---   daqRx <= TxPortsArr(0);
-
---   QpixAsicDummyTop_u1 : entity work.QpixAsicDummyTop
---   port map (
---      clk      => fclk,
-----      rst             => '0',
---      -- TX ports to neighbour ASICs
---      Tx3      => s_daqRx,
---      -- RX ports to neighbour ASICs
---      Rx3      => s_daqTx,
---      -- outputs
---      state_o       => state_o, -- which state is the machine in
---      rxByteValid_o => rxByteValid_o,
---      txByteValid_o => txByteValid_o,
---      -- leds
---      red_led => red_led, -- lenError
---      gre_led => gre_led, -- GapError
---      blu_led => blu_led  -- bitError
---   );
+   --QpixAsicDummyTop_u1 : entity work.QpixAsicDummyTop
+   --port map (
+      --clk             => fclk,
+      --rst             => '0',
+      ---- TX ports to neighbour ASICs
+      --Tx      => TxPortsArr(0),
+      ---- RX ports to neighbour ASICs
+      --Rx      => RxPortsArr(0)
+   --);
    
 end behav;

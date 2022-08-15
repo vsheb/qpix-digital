@@ -3,9 +3,9 @@
 ----------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std_unsigned.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_misc.all;
 
-library work;
 use work.QpixPkg.all;
 
 
@@ -16,7 +16,7 @@ entity QpixComm is
       X_POS_G        : natural := 0;
       Y_POS_G        : natural := 0;
       RAM_TYPE       : string  := "Lattice"; -- lattice hardcodes BRAM for lattice, or distributed / block
-      TXRX_TYPE      : string  := "UART" -- "DUMMY"/"UART"/"ENDEAVOR"
+      TXRX_TYPE      : string  := "ENDEAVOR" -- "DUMMY"/"UART"/"ENDEAVOR"
    );
    port (
       clk            : in std_logic;
@@ -84,11 +84,39 @@ begin
    -- Transcievers
    ------------------------------------------------------------
    GEN_TXRX : for i in 0 to 3 generate
-         QpixTXRx_U : entity work.QpixEndeavorTop
-        generic map (
-         NUM_BITS_G => NUM_BITS_G
+
+      UART_GEN : if TXRX_TYPE = "UART" generate 
+         QpixTxRx_U : entity work.UartTop
+         generic map (
+            NUM_BITS_G => NUM_BITS_G
          )
-          port map (
+         port map (
+            clk         => clk,
+            sRst        => rst,
+
+            --txValid     => TxPortsArr(i).Valid,
+            txByte      => TxByteArr(i), 
+            txByteValid => TxByteValidArr(i), 
+            txByteReady => TxByteReadyArr(i),
+
+            --rxValid     => RxPortsArr(i).Valid,
+            rxByte      => RxByteArr(i),
+            rxByteValid => RxByteValidArr(i),
+            rxFrameErr  => open,
+            rxBreakErr  => open,
+
+            uartRx      => RxPortsArr(i),
+            uartTx      => TxPortsArr(i)
+            
+         );
+      end generate UART_GEN;
+
+      ENDEAROV_GEN : if TXRX_TYPE = "ENDEAVOR" generate
+            QpixTXRx_U : entity work.QpixEndeavorTop
+            generic map (
+               NUM_BITS_G => NUM_BITS_G
+            )
+            port map (
                clk         => clk,
                sRst        => rst,
                -- Input of TxByte to send to physical
@@ -107,26 +135,29 @@ begin
                Tx          => TxPortsArr(i)       -- output
          );
 
+
+      end generate ENDEAROV_GEN;
+
          -- select the correct RAM_TYPE
-         --gen_qdb_fifo: if (RAM_TYPE = "Lattice") generate
-            --FIFO_U : entity work.QDBFifo
-            --generic map(
-               --DATA_WIDTH => NUM_BITS_G,
-               --DEPTH      => G_FIFO_MUX_DEPTH,
-               --RAM_TYPE   => RAM_TYPE
-            --)
-            --port map(
-               --clk   => clk,
-               --rst   => rst,
-               --din   => RxByteArr(i),
-               --wen   => RxByteValidArr(i),
-               --ren   => RxFifoREnArr(i),
-               --dout  => RxFifoDoutArr(i),
-               --empty => RxFifoEmptyArr(i),
-               --full  => RxFifoFullArr(i)
-            --);
-         --end generate;
-         --gen_fifo_cc: if (RAM_TYPE /= "Lattice") generate
+         gen_qdb_fifo: if (RAM_TYPE = "Lattice") generate
+            FIFO_U : entity work.QDBFifo
+            generic map(
+               DATA_WIDTH => NUM_BITS_G,
+               DEPTH      => G_FIFO_MUX_DEPTH,
+               RAM_TYPE   => RAM_TYPE
+            )
+            port map(
+               clk   => clk,
+               rst   => rst,
+               din   => RxByteArr(i),
+               wen   => RxByteValidArr(i),
+               ren   => RxFifoREnArr(i),
+               dout  => RxFifoDoutArr(i),
+               empty => RxFifoEmptyArr(i),
+               full  => RxFifoFullArr(i)
+            );
+         end generate;
+         gen_fifo_cc: if (RAM_TYPE /= "Lattice") generate
             FIFO_U : entity work.fifo_cc
             generic map(
                DATA_WIDTH => NUM_BITS_G,
@@ -143,7 +174,7 @@ begin
                empty => RxFifoEmptyArr(i), -- inFifoEmptyArr
                full  => RxFifoFullArr(i)   -- debug
             );
-         --end generate;
+         end generate;
 
    end generate GEN_TXRX;
    ------------------------------------------------------------

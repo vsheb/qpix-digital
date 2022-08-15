@@ -14,10 +14,11 @@ port (
 end EdgeDetector;
 
 architecture rtl of EdgeDetector is
-   signal input_q   : std_logic_vector(N_INPUT_PIPELINE downto 0);
-   signal input_r1  : std_logic;
-   signal input_r2  : std_logic;
-   signal output_i  : std_logic;
+   signal input_q   : std_logic_vector(N_INPUT_PIPELINE downto 0) := (others => '0');
+   signal input_r1  : std_logic := '0';
+   signal input_r2  : std_logic := '0';
+   signal output_i  : std_logic := '0';
+   signal output_r  : std_logic := '0';
 begin
 
    process(clk)
@@ -31,7 +32,7 @@ begin
       end if;
    end process;
 
-   process(clk,rst)
+   process(clk)
    begin
       if rising_edge(clk) then
          if rst = '1' then
@@ -50,14 +51,16 @@ begin
       process (clk)
       begin
          if rising_edge (clk) then
-            output <= output_i;
+            output_r <= output_i;
          end if;
       end process;
    end generate GEN_OUT_REG;   
 
    GEN_OUT_DIR : if REG_OUT = FALSE generate
-      output <= output_i;
+      output_r <= output_i;
    end generate GEN_OUT_DIR;   
+
+   output <= output_r;
 
 end rtl;
 ----------------------------------------------

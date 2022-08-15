@@ -42,6 +42,14 @@ package QpixPkg is
    constant G_WORD_TYPE_EVTEND : std_logic_vector(3 downto 0) := x"5";
    ------------------------------------------------------------------
 
+   --type QpixByteArrType is array(0 to 3) of std_logic_vector(G_DATA_BITS-1 downto 0);
+   --type Sl2DArray is array(natural range <>, natural range <>) of std_logic;
+   --type SlvArray is array(natural range <>) of std_logic_vector;
+   --type Slv2DArray is array(natural range <>, natural range <>) of std_logic_vector;
+   --type Slv4b2DArray is array(natural range <>, natural range <>) of std_logic_vector(31 downto 0);
+   --type TimeArray2DType is array(natural range<>, natural range<>) of time;
+
+   ------------------------------------------------------------------
 
    ------------------------------------------------------------------
    -- TXRX
@@ -82,12 +90,6 @@ package QpixPkg is
 
   type QpixTxRxVarArrType is array(natural range <>) of QpixTxRxPortType;
   type QpixByteArrType is array(0 to 3) of std_logic_vector(G_DATA_BITS-1 downto 0);
--- comment for simulation
---   type Sl2DArray is array(natural range <>, natural range <>) of std_logic;
---   type SlvArray is array(natural range <>) of std_logic_vector;
---   type Slv2DArray is array(natural range <>, natural range <>) of std_logic_vector;
---   type Slv4b2DArray is array(natural range <>, natural range <>) of std_logic_vector(31 downto 0);
---   type TimeArray2DType is array(natural range<>, natural range<>) of time;
 -- depdenencies
   type QpixTxRxPortsArrType is array(0 to 3) of QpixTxRxPortType;
   type QpixDebug2DArrayType is array(natural range <>, natural range<>) of QpixDebugType;
@@ -99,19 +101,23 @@ type TimeArray2DType is array(0 to 3, 0 to 3) of time;
    ------------------------------------------------------------------
    -- Input port from Qpix analog
    ------------------------------------------------------------------
-   type QpixInPortsType is record 
-      Valid      : std_logic;
-      Timestamp  : std_logic_vector(G_TIMESTAMP_BITS-1 downto 0);
-      ChanMask   : std_logic_vector(G_N_ANALOG_CHAN-1  downto 0);
-   end record;
+   --type QpixInPortsType is record 
+      --Valid      : std_logic;
+      --Timestamp  : std_logic_vector(G_TIMESTAMP_BITS-1 downto 0);
+      --ChanMask   : std_logic_vector(G_N_ANALOG_CHAN-1  downto 0);
+   --end record;
+
+   --constant QpixInPortsZero_C : QpixInPortsType := (
+      --Valid      => '0',
+      --Timestamp  => (others => '0'),
+      --ChanMask   => (others => '0')
+   --);
+
+   subtype QpixInPortsType is std_logic_vector(G_N_ANALOG_CHAN-1 downto 0);
+   constant QpixInPortsZero_C : QpixInPortsType := (others => '0');
 
 type QpixInPortsArrType is array(natural range <>, natural range <>) of QpixInPortsType;
 
-   constant QpixInPortsZero_C : QpixInPortsType := (
-      Valid      => '0',
-      Timestamp  => (others => '0'),
-      ChanMask   => (others => '0')
-   );
    ------------------------------------------------------------------
 
 
@@ -315,8 +321,9 @@ package body QpixPkg is
    function fQpixGetWordType(x : std_logic_vector) 
          return QpixWordType is
       variable q : QpixWordType := UNKNOWN_W;
+      variable x0 : std_logic_vector(3 downto 0) := x(59 downto 56);
    begin
-      case x(59 downto 56) is
+      case x0 is
          when x"0"   => q := TS_CAST_W;
          when x"1"   => q := TS_REPLY_W;
          when x"2"   => q := DATA_W;

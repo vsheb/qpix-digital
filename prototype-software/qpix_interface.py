@@ -8,10 +8,11 @@ import glob
 
 import time
 
-from collections import namedtuple
+from collections import namedtuple 
+  
 
-QP_IP      = '192.169.1.27'
-QP_PORT    = 42069
+QP_IP      = '192.168.1.10'
+QP_PORT    = 7
 BUFFER_SIZE = 1024
 
 ###############################################
@@ -23,11 +24,13 @@ REG_ADDR    = {
   'ASICMASK'      : 0x2,
   'HITTS'         : 0x3,
   'TRGTIME'       : 0x5,
-  'CHANMASK'      : 0x6}
+  'CHANMASK'      : 0x6
+}
 
 ASIC_REQ_OFFSET = 0x3 << 16 # ASIC requests offset
 FIFO_CNT_OFFSET = 0x2 << 16 # FIFO counters
 EVT_MEM_OFFSET  = 0x1 << 16 # event memory
+
 
 
 ###############################################
@@ -55,6 +58,7 @@ QpixEvtEndRsp = namedtuple("QpixEvtEndRsp", "x y t0 t1")
   # data : int
 QpixRegData = namedtuple("QpixRegData", "x y addr data")
 
+QpixEvtStats = namedtuple("QpixEvtStats", "t_trg t_end n_hits fifo_cnt ok err hits")
 # class QpixEvtStats(namedtuple) :
   # t_trg    : int
   # t_end    : int
@@ -62,199 +66,57 @@ QpixRegData = namedtuple("QpixRegData", "x y addr data")
   # fifo_cnt : int
   # ok       : bool 
   # err      : bool
+
   # hits     : list
-QpixEvtStats = namedtuple("QpixEvtStats", "t_trg t_end n_hits fifo_cnt ok err hits")
 
-class QPInterface:
-  """
-  Basic class for the communication with QPix prototype
-  """
-  def __init__(self, ip = QP_IP, port = QP_PORT, buf_sz = 1024, socket = None):
-    self.ip     = ip
-    self.port   = port
-    self.buf_sz = buf_sz
-
-    if socket is None:
-      self._connect()
-    else:
-      self.socket = socket
-
-  def memRead(self, addr) :
-    v = self.regRead(EVT_MEM_OFFSET + addr)
-    return int(v)
-
-  def regRead(self, addr):
-    """
-    Register read
-    """
-    args = ['QRR',addr]
-    self.send(args)
-    rsp = self.socket.recv(4)
-    val = self._recvInt()
-    # print(hex(val))
-    return val
-
-  def asicRegRead(self, addr, val):
-    """
-    custom asic remote reg read
-    """
-    args = ['QRR', addr, val]
-    self.send(args)
-    rsp = self.socket.recv(4)
-    val = self._recvInt()
-    # print(hex(val))
-    return val
-
-  def regWrite(self, addr, val):
-    args = ['QRW', addr, val]
-    self.send(args)
-    rsp = self.socket.recv(4)
-    # print(rsp)
-
-  def send(self, args):
-    bytearr = self.pack(args)
-    self.socket.send(bytearr)
-
-  def pack(self, data):
-    prepack = data
-    if isinstance(data, str): data = data.split(' ')
-    hdr = data[0]+'\0'
-    byte_arr = str.encode(hdr)
-
-    # form byte message
-    for i, arg in enumerate(data[1:]):
-      if not isinstance(arg, int): arg = int(arg, 0)
-      byte_arr += self._intToLittleEndian(arg)
-
-    return byte_arr
-
-  def _shortToBigEndian(self, short_val):
-    """
-    Convert short to big-endian
-    """
-    return struct.pack('>H', short_val)
-
-  def _intToBigEndian(self, int_val):
-    """
-    Convert int to big-endian
-    """
-    return struct.pack('>I', int_val)
-
-  def _intToLittleEndian(self, int_val):
-    return struct.pack('<I', int_val)
-
-  def _recvInt(self):
-    """
-    Receive int from socket and convert it from big-endian
-    """
-    val = self.socket.recv(4)
-    # print(val)
-    return struct.unpack('<I', val)[0]
-
-  def _connect(self):
-    try:
-      self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      self.socket.connect((self.ip, self.port))
-      print(f"Connection to port {self.ip}:{self.port}.. Established!")
-    except Exception as exc:
-      print(exc)
-      sys.exit(0)
-
-  def verify(self):
-    """
-    send information to the blank scratch register and make sure you can read
-    and write back a random word
-    """
-    verification = 0x10101010
-    version = self.regRead(0x0);
-    print(f"Running version: 0x{version:08x}")
-    self.regWrite(0x0, verification);
-    check = self.regRead(0x0);
-    if check != verification:
-      print("WARNING verification check failed!")
-      print(f"0x{verification:08x} != 0x{check:08x}")
-    else:
-      print("verification passed. communication with registers established..")
-      self.regWrite(0x0, version);
-      input("waiting..")
-    status = self.regRead(0x1);
-    print("current status:", status)
+###############################################
 
 
-class QPController(QPInterface):
-  """
-  Controller class to manage interfacing socket, and to expose public
-  commands for communicating with Prototype's DAQ nodes, and ASICs within
-  the array.
-  """
-  def __init__(self, ip=QP_IP, port=QP_PORT, buf_sz=BUFFER_SIZE, check=True):
-    super().__init__(ip, port, buf_sz)
-    if check:
-      self.verify()
+################################################
+# QPix controller class
+###############################################
+class QPController:
+  def __init__(self, ip = QP_IP, port = QP_PORT, buf_sz = BUFFER_SIZE):
+    self.s = QPInterface(ip, port, buf_sz)
 
+  #####################################
+  # Basic operations with QPix array
+  #####################################
+
+  # Send interrogation (trigger) command
   def sendTrg(self) :
-    """
-    Send interrogation (trigger) command
-    """
-    self.regWrite(REG_ADDR['CMD'],0x1);
+    self.s.regWrite(REG_ADDR['CMD'],0x1)
 
-  def resetAsic(self, x=0, y=0) :
-    """
-    Send reset command to remove asic
-    """
-    # this sets dest flag, sets 3 bit x pos and 3 bit y pos, and last three bits
-    # are remote asic addr space, as constructed in QpixDaqCtrl.vhd
-    addr = (ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 1
-    self.regWrite(addr, 0x4)
-
-  def readAsicTimeout(self, x=0, y=0):
-    """
-    probe the timeout register on a remote asic
-    """
-    addr = (ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 2
-    timeout = self.regRead(addr)
-    return timeout
-
+  # Reset routing state of the ASIC (finish event)
   def resetRouteState(self) : 
-    """
-    Reset routing state of the ASIC (finish event)
-    """
-    self.regWrite((ASIC_REQ_OFFSET) + (0<<4) + 1,2)
+    self.s.regWrite((ASIC_REQ_OFFSET) + (0<<4) + 1,2)
 
-  def setAsicDirMask(self, x=0, y=0, mask=0) :
-    """
-    sets the asic at location x,y with a direction mask to the mask direction
-    """
-    addr = (ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 3
-    asic_mask = 0x10 + (mask&0xf)
-    print("reseting", f"0x{addr:08x}", f"0x{asic_mask:08x}")
-    self.regWrite(addr, asic_mask)
+  def setAsicDirMask(self, x = 0, y = 0, mask = 0) :
+    self.s.regWrite((ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 3,0x10 + (mask&0xf))
 
-  def clearAsicDirMask(self, x=0, y=0) :
-    """
-    turns off ManRouting for asic as specified location
-    """
-    self.regWrite((ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 3,0)
+  def clearAsicDirMask(self, x = 0, y = 0) :
+    self.s.regWrite((ASIC_REQ_OFFSET) + (1<<9) + ((x&0b111)<<6) + ((y&0b111)<<3) + 3,0)
 
-  def setAsicsTimeout(self, timeout=0) :
-    """
-    Set timeout for ASICs to be in reporting_remote state
-    If 0 the ASIC waits for resetRouteState command
-    to go back to the IDLE state
-    """
-    self.regWrite((ASIC_REQ_OFFSET)+2, timeout)
+  # Set timeout for ASICs to be in reporting_remote state
+  # If 0 the ASIC waits for resetRouteState command
+  # to go back to the IDLE state
+  def setAsicsTimeout(self, timeout = 0) :
+    self.s.regWrite((ASIC_REQ_OFFSET) + 2,timeout)
+  #####################################
 
+  #####################################
+  # Data format related methods
   def getDataY(self, lsb, msb) : 
     return msb & 0xf
 
   def getDataX(self, lsb, msb) : 
     return (msb >> 4) & 0xf
 
-  def getWordType(self, lsb, msb) : 
+  def getWordType(self, lsb,msb) : 
     return (msb >> 24) & 0xf 
 
   def getFifoCnt(self, x, y) : 
-    return self.regRead(FIFO_CNT_OFFSET + (y<<4) + x)
+    return self.s.regRead(FIFO_CNT_OFFSET + (y<<4) + x)
 
   def hitDataConv(self, lsb, msb) :
     x = (msb >> 4) & 0xf
@@ -271,45 +133,45 @@ class QPController(QPInterface):
     t1 = lsb & 0xffff
 
     return QpixEvtEndRsp(x,y,t0,t1)
+  #####################################
 
-  def injectHit(self, x, y, ts, chmask=0) : 
-    """
-    Inject a single hit into given ASIC
-    """
-    self.regWrite(REG_ADDR['HITTS'],ts)         # set timestamp
-    self.regWrite(REG_ADDR['CHANMASK'], chmask) # set channels mask
-    self.regWrite(REG_ADDR['ASICMASK'], (x << 16) + y) # inject hits by asic mask
+  #####################################
+  # Inject a single hit into given ASIC
+  def injectHit(self, x, y, ts, chmask = 0) : 
+    self.s.regWrite(REG_ADDR['HITTS'],ts)         # set timestamp
+    self.s.regWrite(REG_ADDR['CHANMASK'], chmask) # set channels mask
+    self.s.regWrite(REG_ADDR['ASICMASK'], (x << 16) + y) # inject hits by asic mask
+  #####################################
 
+  #####################################
+  # Inject a list of the hits
   def injectHits(self, hits):
-    """
-    Inject a list of the hits
-    """
     for d in hits :
       self.injectHit(d.x,d.y,d.t,d.m)
+  #####################################
   
+  #####################################
+  # Read event data from the memory
   def readEvent(self):
-    """
-    Read event data from the memory
-    """
-    recvd = [['x' for i in range(3)] for j in range(3)]
-    siz = self.regRead(REG_ADDR['EVTSIZE']) 
-    t_trg = self.regRead(REG_ADDR['TRGTIME'])
+    recvd = [['x' for i in range(3)] for _ in range(3)]
+    siz = self.s.regRead(REG_ADDR['EVTSIZE']) 
+    t_trg = self.s.regRead(REG_ADDR['TRGTIME'])
     print('TRG time : ',t_trg & 0xffff)
     hits_list = []
     even_list = []
     t_daq = 0
     print('Event size', siz)
-    for i in range(siz):
+    for i in range(siz) :
 
-      b0 = self.memRead(i*4)
-      b1 = self.memRead(i*4+1)
-      b2 = self.memRead(i*4+2)
-      b3 = self.memRead(i*4+3)
+      b0 = self.s.memRead(i*4)
+      b1 = self.s.memRead(i*4+1)
+      b2 = self.s.memRead(i*4+2)
+      b3 = self.s.memRead(i*4+3)
       x  = self.getDataX(b0,b1)
       y  = self.getDataY(b0,b1)
       w  = self.getWordType(b0,b1)
       if w == 5 :
-        if x in range(3) and y in range(3):
+        if x in range(3) and y in range(3) :
           recvd[y][x] = 'o'
         even_list.append(self.evtDataConv(b0,b1))
         print(0xffff&b2,': ',hex(b1),hex(b0), 'time0: ', (b0>>16)&0xffff,' time:',b0&0xffff,'X:',x,'Y:',y,"Word type:",w)
@@ -318,7 +180,7 @@ class QPController(QPInterface):
         
       t_daq = b2
 
-    for l in recvd:
+    for l in recvd :
       st = ''.join(str(it) for it in l)
       print(st)
 
@@ -339,12 +201,14 @@ class QPController(QPInterface):
 
     return evt_data
     # return even_list, hits_list
+  #####################################
 
+
+
+  #####################################
+  # Inject list of the hits and check if 
+  # the one being read out is same
   def testEvent(self, hits_list_i) :
-    """
-    Inject list of the hits and check if 
-    the one being read out is same
-    """
     self.resetRouteState()
     self.injectHits(hits_list_i)
     self.sendTrg()
@@ -352,13 +216,18 @@ class QPController(QPInterface):
     if ev.hits == hits_list_i :
       print("\nSuccess!")
     return True
+  #####################################
 
+
+  #####################################
   def injectUniformN(self, n):
-    for i in range(n):
+    for _ in range(n):
       for x in range(3) :
         for y in range(3) :
           self.injectHit(x,y,n,123)
-
+  #####################################
+    
+  #####################################
   def procUniform(self, oname='qqq.txt') :
     f = open(oname,"w")
     for n in range(35) : 
@@ -367,15 +236,16 @@ class QPController(QPInterface):
       self.sendTrg()
       siz = 0
       while siz != 9*(n+1) :
-        siz = self.regRead(REG_ADDR['EVTSIZE']) 
+        siz = self.s.regRead(REG_ADDR['EVTSIZE']) 
       ev = self.readEvent()
       d_t = ev.t_end - ev.t_trg if ev.t_end > ev.t_trg else 0xffffffff - ev.t_trg + ev.t_end
       f.write("%d %d %d \n" % (d_t, ev.n_hits, ev.fifo_cnt))
+  #####################################
 
-  def readMC(self, filename='') :
-    """
-    Read MC hits from the file
-    """
+
+  #####################################
+  # Read MC hits from the file
+  def readMC(self, filename = '') :
     res = [x.split(',') for x in open(filename).readlines()]
     resort = sorted(res, key = lambda x : int(x[2]))
     x_l = [int(l[0]) for l in res]
@@ -387,11 +257,11 @@ class QPController(QPInterface):
     
     return hits
     # rebased = [ QpixHitData(int(t[0])-x_avg+6, int(t[1])-y_avg+6, int(t[2])]) for t in resort ]
+  #####################################
 
-  def procFile(self, fname='') : 
-    """
-    Process MC data from the file
-    """
+  #####################################
+  # Process MC data from the file
+  def procFile(self, fname = '') : 
     print('Processing file : ', fname)
     self.resetRouteState()
     ll = self.readMC(fname)
@@ -400,14 +270,14 @@ class QPController(QPInterface):
     siz = 0
     print('Input Hits : ', len(ll))
     while siz != len(ll)+9 :
-      siz = self.regRead(REG_ADDR['EVTSIZE']) 
+      siz = self.s.regRead(REG_ADDR['EVTSIZE']) 
     ev = self.readEvent()
     return ev
+  #####################################
 
-  def procDir(self, path='.', oname='qqq.txt') : 
-    """
-    Process all MC data files in the dir
-    """
+  #####################################
+  # Process all MC data files in the dir
+  def procDir(self, path = '.', oname = 'qqq.txt') : 
     f = open(oname,"w")
     for fn in glob.glob(os.path.join(path, '*.txt')):
       fname = os.path.join(os.getcwd(), fn)
@@ -416,45 +286,89 @@ class QPController(QPInterface):
       d_t = ev.t_end - ev.t_trg if ev.t_end > ev.t_trg else 0xffffffff - ev.t_trg + ev.t_end
 
       f.write("%d %d %d \n" % (d_t, ev.n_hits, int(ev.ok)))
+  #####################################
+
+
+################################################
+# Basic class for the communication with QPix prototype
+################################################
+class QPInterface:
+  def __init__(self, ip = QP_IP, port = QP_PORT, buf_sz = 1024, socket = None):
+    self.ip     = ip
+    self.port   = port
+    self.buf_sz = buf_sz
+
+    if socket is None:
+      self._connect()
+    else:
+      self.socket = socket
+
+  def memRead(self, addr) :
+    v = self.regRead(EVT_MEM_OFFSET + addr)
+    return int(v)
+
+  # Register read
+  def regRead(self, addr):
+    args = ['QRR',addr]
+    self.send(args)
+    rsp = self.socket.recv(4)
+    val = self._recvInt()
+    # print(hex(val))
+    return val
+
+  def regWrite(self, addr, val):
+    args = ['QRW',addr,val]
+    self.send(args)
+    rsp = self.socket.recv(4)
+    # print(rsp)
+
+  def send(self, args):
+    bytearr = self.pack(args)
+    pkg_len = len(bytearr)
+    self.socket.send(bytearr)
+
+  def pack(self, data):
+    if isinstance(data, str): data = data.split(' ')
+    hdr = data[0]+'\0'
+    # print(hdr)
+    byte_arr = str.encode(hdr)
+    # form byte message 
+    for arg in data[1:]:
+      if not isinstance(arg, int): arg = int(arg, 0)
+      byte_arr += self._intToLittleEndian(arg)
+
+    return byte_arr
+
+  ################################################
+  # Private methods
+  ################################################
+
+  # Convert short to big-endian
+  def _shortToBigEndian(self, short_val):
+    return struct.pack('>H', short_val)
+  # Convert int to big-endian
+  def _intToBigEndian(self, int_val):
+    return struct.pack('>I', int_val)
+  def _intToLittleEndian(self, int_val):
+    return struct.pack('<I', int_val)
+
+  # Receive int from socket and convert it from big-endian
+  def _recvInt(self):
+    val = self.socket.recv(4)
+    # print(val)
+    return struct.unpack('<I', val)[0]
+
+  def _connect(self):
+    try:
+      self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      self.socket.connect((self.ip, self.port))
+    except Exception as exc:
+      print(exc)
+      sys.exit(0)
+
+################################################
 
 if __name__ == '__main__':
+  print(QPInterface(QP_IP, QP_PORT).performCmd('REGRE 32'))
+  # main()
 
-  qpc = QPController()
-
-  # successful ping of qpixReq.AsicReset - can also write other values there
-  # send a reset since we're just talking to it for the first time
-  qpc.resetAsic()
-
-  # other initial config to read baseline C-ASIC
-  qpc.setAsicDirMask(x=0, y=0, mask=4) # verified mask working too on conf
-
-  # make sure we can try seeing the timeout to what it thinks should be the default
-  # qpc.setAsicsTimeout(15000)
-  # print("timeout set.. waiting 1s..")
-  # time.sleep(1.0)
-
-  # verified! Turns off dir mask!
-  # qpc.clearAsicDirMask(x=0, y=0)
-
-  # get the timeout - successful regResp.valid signal
-  # timeout = qpc.readAsicTimeout()
-  # print(f"read in timeout: 0x{timeout:08x}")
-
-  while True:
-    input("send trig?")
-    qpc.sendTrg()
-    siz = qpc.regRead(0x4)
-    if siz > 0:
-      print("EVENTS!!", siz)
-
-    # check for errors
-    frame_err = qpc.regRead(0x8)
-    break_err = qpc.regRead(0x9)
-    if frame_err > 0 or break_err > 0:
-      print(f"encountered errors, frame: {frame_err} break: {break_err}")
-
-    # look for data
-    # addr = 0
-    # data = qpc.memRead(addr)
-    # if data>0:
-    #   print("found data at addr:", addr)

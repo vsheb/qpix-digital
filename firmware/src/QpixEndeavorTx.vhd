@@ -58,7 +58,6 @@ architecture Behavioral of QpixEndeavorTx is
    signal nxtReg : RegType := REG_INIT_C;
 
    function fValueToClocks(x : std_logic) return unsigned is
-
    begin 
       if x = '1' then 
          return to_unsigned(N_ONE_CLK_G-1, 6);
@@ -71,7 +70,7 @@ architecture Behavioral of QpixEndeavorTx is
 begin
 
    -- Asynchronous state logic
-   process(all) begin
+   process(curReg, txByteValid, txByte) begin
       -- Set defaults
       nxtReg        <= curReg;
       txByteReady   <= '0';
@@ -84,9 +83,10 @@ begin
             nxtReg.counter      <= (others => '0');
             nxtReg.phase        <= (others => '0');
             if txByteValid = '1' then
+               txByteReady   <= '0';
                nxtReg.byte      <= txByte;
                nxtReg.state     <= DATA_S;
-               nxtReg.phase_max <= fValueToClocks(txByte(to_integer(nxtReg.counter)));
+               nxtReg.phase_max <= fValueToClocks(txByte(to_integer(curReg.counter)));
             end if;
 
          when DATA_S  => 
@@ -105,7 +105,7 @@ begin
          when GAP_S => 
             nxtReg.tx <= '0';
             if to_integer(curReg.phase) = N_GAP_CLK_G then
-               nxtReg.phase_max  <= fValueToClocks(txByte(to_integer(nxtReg.counter)));
+               nxtReg.phase_max  <= fValueToClocks(curReg.byte(to_integer(curReg.counter)));
                nxtReg.state      <= DATA_S;
                nxtReg.phase      <= (others => '0');
             end if;

@@ -41,6 +41,7 @@ entity QpixProtoRegMap is
       hitMask     : out Sl2DArray;
       timestamp   : out std_logic_vector(31 downto 0);
       chanMask    : out std_logic_vector(G_N_ANALOG_CHAN-1 downto 0);
+      swRst       : out std_logic;
    
       -- asics interfaces
       trg         : out std_logic;
@@ -71,7 +72,6 @@ architecture behav of QpixProtoRegMap is
    signal s_chanMask   : std_logic_vector (G_N_ANALOG_CHAN-1 downto 0)  := (others => '0');
    signal s_asic_mask  : std_logic_vector (15 downto 0) := (others => '1');
    signal test_word_out : std_logic_vector(63 downto 0);
-   
    signal scratch_word : std_logic_vector(31 downto 0) := Version;
 
 begin
@@ -86,6 +86,7 @@ begin
       if rising_edge (clk) then
          -- defaults
          trg     <= '0';
+         swRst   <= '0';
          --hitXY  <= (others => '0');
          hitMask <= (others => (others => '0'));
          rdata   <= (others => '0');
@@ -110,6 +111,7 @@ begin
                when REGMAP_CMD     =>
                   if wen = '1' and req = '1' and ack = '0' then
                      trg <= wdata(0);
+                     swRst <= wdata(1);
                   end if;
                
                when REGMAP_STATUS    =>

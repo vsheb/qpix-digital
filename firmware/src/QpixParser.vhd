@@ -4,16 +4,13 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
 
-library work;
 use work.QpixPkg.all;
 
 
 entity QpixParser is
    generic (
-      NUM_BITS_G      : natural := 64;
-      GATE_DELAY_G    : time    := 1 ns;
       X_POS_G         : natural := 0;
       Y_POS_G         : natural := 0
    );
@@ -53,15 +50,16 @@ architecture behav of QpixParser is
 
    signal inBytesMux       : std_logic_vector(G_DATA_BITS-1 downto 0) := (others => '0');
    signal inBytesMuxValid  : std_logic                    := '0';
+   signal inBytesMuxValidR : std_logic                    := '0';
    signal inBytesValid     : std_logic_vector(3 downto 0) := (others => '0');
 
    signal regDir           : std_logic_vector(3 downto 0) := (others => '0');
    signal regDirResp       : std_logic_vector(3 downto 0) := (others => '0');
    signal fifoRen          : std_logic_vector(3 downto 0) := (others => '0');
 
-   signal txReadyR         : std_logic  := '0';
-   -- signal fifoRenOrR       : std_logic := '0';
-   -- signal fifoRenOrRR      : std_logic := '0';
+   signal txReadyR         : std_logic  := '1';
+   type MuxStatesType is (IDLE_S, READ_S, WAIT_S);
+   signal muxState : MuxStatesType := IDLE_S;
 
    function fGetFirstZeroPos(x : std_logic_vector) return natural is
       variable pos : natural := 0;
@@ -85,14 +83,13 @@ begin
    begin
       if rising_edge (clk) then
 
-         inBytesMuxValid <= '0';
-         fifoRen         <= (others => '0');
-         txReadyR        <= txReady;
-         -- fifoRenOrR      <= or fifoRen;
-         -- fifoRenOrRR     <= fifoRenOrR;
+         inBytesMuxValid  <= '0';
+         inBytesMuxValidR <= inBytesMuxValid;
+         fifoRen          <= (others => '0');
+         txReadyR         <= txReady;
          for i in 0 to 3 loop
-            --fifoRen(i)   <= '0';
-            -- ~think~ - should this be txReady = '1'? why? TODO
+            --fifoRen(i)   <= '0'; 
+            ------- Rewrite all this block!!!! FIXME
             if inFifoEmptyArr(i) = '0' and fifoRen = b"0000" and txReady = '1' then
                inBytesMux      <= inBytesArr(i);
                inBytesMuxValid <= '1';
@@ -121,11 +118,11 @@ begin
             regDataR <= QpixRegDataZero_C;
          else
             inDataR.DataValid <= '0';
-            regDataR.Valid    <= '0';
-            regDataR.OpWrite  <= '0';
-            regDataR.OpRead   <= '0';
-
-            if inBytesMuxValid = '1'  then
+            regDataR.Valid <= '0';
+            regDataR.OpWrite <= '0';
+            regDataR.OpRead  <= '0';
+            --end if;
+            if inBytesMuxValidR = '1'  then
                if fQpixGetWordType(inBytesMux) = REGREQ_W then
                   regDataR.Valid    <= '1';
                   regDataR.Addr     <= inBytesMux(31 downto 31 - G_REG_ADDR_BITS + 1);

@@ -9,13 +9,14 @@ use work.QpixPkg.all;
 
 entity QpixAsicArray is
    generic (
-      TXRX_TYPE      : string  := "UART"; -- "DUMMY"/"UART"/"ENDEAVOR"
+      TXRX_TYPE      : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
       X_NUM_G        : natural := 3;
       Y_NUM_G        : natural := 3
       
    );
    port (
-      clk         : in std_logic;
+      --clk         : in std_logic;
+      clkVec      : in std_logic_vector(X_NUM_G*Y_NUM_G - 1 downto 0);
       rst         : in std_logic;
 
       led         : out std_logic_vector(3 downto 0); -- temporary
@@ -35,7 +36,8 @@ architecture behav of QpixAsicArray is
    -- type defenitions
    ---------------------------------------------------
    type AsicWireArrayType is array(0 to Y_NUM_G) of QpixTxRxPortType;
-   type AsicWire2DArrayType is array(0 to X_NUM_G) of AsicWireArrayType;
+   --type AsicWire2DArrayType is array(0 to X_NUM_G) of AsicWireArrayType;
+   type AsicWire2DArrayType is array(0 to X_NUM_G, 0 to Y_NUM_G) of QpixTxRxPortType;
    type RouteStatesArrType is array(0 to Y_NUM_G) of integer;
    type RouteStates2DArrType is array(0 to X_NUM_G) of RouteStatesArrType;
    ---------------------------------------------------
@@ -62,8 +64,8 @@ architecture behav of QpixAsicArray is
 
 begin
 
-   YTxArr(0)(0) <= daqTx;
-   daqRx <= YRxArr(0)(0);
+   YTxArr(0,0) <= daqTx;
+   daqRx <= YRxArr(0,0);
 
 
 
@@ -76,49 +78,50 @@ begin
                Y_POS_G       => j
             )
             port map(
-               clk      => clk,
+               --clk      => clk,
+               clk      => clkVec(j*X_NUM_G + i),
                rst      => rst,
                inPorts  => inPortsArr(i,j),
 
                -- TX 
-               TxPortsArr(0) => YRxArr(i)(j),   -- up
-               TxPortsArr(1) => XTxArr(i+1)(j), -- right
-               TxPortsArr(2) => YTxArr(i)(j+1), -- down
-               TxPortsArr(3) => XRxArr(i)(j),   -- left
+               TxPortsArr(0) => YRxArr(i,j),   -- up
+               TxPortsArr(1) => XTxArr(i+1,j), -- right
+               TxPortsArr(2) => YTxArr(i,j+1), -- down
+               TxPortsArr(3) => XRxArr(i,j),   -- left
 
                -- RX
-               RxPortsArr(0) => YTxArr(i)(j),   -- up 
-               RxPortsArr(1) => XRxArr(i+1)(j), -- right
-               RxPortsArr(2) => YRxArr(i)(j+1), -- down
-               RxPortsArr(3) => XTxArr(i)(j),   -- left
+               RxPortsArr(0) => YTxArr(i,j),   -- up 
+               RxPortsArr(1) => XRxArr(i+1,j), -- right
+               RxPortsArr(2) => YRxArr(i,j+1), -- down
+               RxPortsArr(3) => XTxArr(i,j)   -- left
 
-               State         => StatesArr(i)(j),
-               debug         => debug(i,j)
+               --State         => StatesArr(i)(j),
+               --debug         => debug(i,j)
             );
       end generate GEN_Y;
    end generate GEN_X;
 
-   process (clk)
-      variable s  : std_logic := '0';
-      variable st : std_logic := '0';
-   begin
-      if rising_edge(clk) then
-         for i in 0 to X_NUM_G-1 loop
-            for j in 0 to Y_NUM_G-1 loop
-               if StatesArr(i)(j) > 0 then
-                  st := '1';
-               else
-                  st := '0';
-               end if;
-               s := s or st;
-            end loop;
-         end loop;
-         led(0) <= s;
-      end if;
-   end process;
-   led(1) <= '0';
-   led(2) <= '0';
-   led(3) <= '1';
+   --process (clk)
+      --variable s  : std_logic := '0';
+      --variable st : std_logic := '0';
+   --begin
+      --if rising_edge(clk) then
+         --for i in 0 to X_NUM_G-1 loop
+            --for j in 0 to Y_NUM_G-1 loop
+               --if StatesArr(i)(j) > 0 then
+                  --st := '1';
+               --else
+                  --st := '0';
+               --end if;
+               --s := s or st;
+            --end loop;
+         --end loop;
+         --led(0) <= s;
+      --end if;
+   --end process;
+   --led(1) <= '0';
+   --led(2) <= '0';
+   --led(3) <= '1';
 
 
 end behav;
