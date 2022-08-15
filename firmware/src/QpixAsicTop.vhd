@@ -9,7 +9,6 @@ use work.QpixPkg.all;
 
 entity QpixAsicTop is
    generic (
-
       X_POS_G        : natural := 0;
       Y_POS_G        : natural := 0;
       TXRX_TYPE      : string  := "ENDEAVOR" -- "DUMMY"/"UART"/"ENDEAVOR"
@@ -21,9 +20,8 @@ entity QpixAsicTop is
       -- timestamp data from QpixAnalog
       inPorts        : in   QpixInPortsType;
 
-      --State          : out integer;
-      --debug          : out QpixDebugType;
-
+      State          : out integer;
+      debug          : out QpixDebugType;
 
       -- TX ports to neighbour ASICs
       TxPortsArr     : out  QpixTxRxPortsArrType;
@@ -70,14 +68,10 @@ begin
    port map(
       clk     => clk,
       rst     => asicRst,
-
       ena     => localDataEna,
-
       testEna => '0',
-
       inPorts => inPorts,
       outData => inData
-
    );
    ---------------------------------------------------
 
@@ -95,7 +89,7 @@ begin
       clk => clk,
       rst => asicRst,
 
-      outData_i      => txData,
+      parseDataRx      => txData,
       inData         => rxData,
       --regData        => regData,
 
@@ -109,8 +103,6 @@ begin
 
       regData        => regData,
       regResp        => regResp
-      
-
    );
    ---------------------------------------------------
 
@@ -149,8 +141,8 @@ begin
       clk           => clk,
       rst           => AsicRst,
                     
-      qpixReq       => QpixReq,
-      qpixConf      => QpixConf,
+      QpixReq       => QpixReq,
+      QpixConf      => QpixConf,
                     
       inData        => inData,
       localDataEna  => localDataEna,

@@ -4,10 +4,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
-
 library work;
 use work.QpixPkg.all;
-
 
 ----------------------------------------------------------------------------------
 entity QpixDataProc is
@@ -18,18 +16,15 @@ entity QpixDataProc is
    port (
       clk      : in  std_logic;
       rst      : in  std_logic;
-
+      -- true "analog" data in
+      inPorts  : in  QpixInPortsType;     
+      -- QpixDataRoute
       ena      : in  std_logic;
-
       testEna  : in  std_logic; 
-
-      inPorts  : in  QpixInPortsType;
-      outData  : out QpixDataFormatType
-      
+      outData  : out QpixDataFormatType      
    );
 end entity QpixDataProc;
 ----------------------------------------------------------------------------------
-
 
 architecture behav of QpixDataProc is
 
@@ -43,21 +38,21 @@ architecture behav of QpixDataProc is
 
 begin
 
-   ----------------------------------------------------------------------------------
-   -- Test pattern generator
-   ----------------------------------------------------------------------------------
-   QpixTestPatGen_U : entity work.QpixTestPatGen 
-   generic map(
-      X_POS_G => X_POS_G,
-      Y_POS_G => Y_POS_G
-   )
-   port map (
-      clk => clk,
-      rst => rst,
+--   ----------------------------------------------------------------------------------
+--   -- Test pattern generator
+--   ----------------------------------------------------------------------------------
+--   QpixTestPatGen_U : entity work.QpixTestPatGen 
+--   generic map(
+--      X_POS_G => X_POS_G,
+--      Y_POS_G => Y_POS_G
+--   )
+--   port map (
+--      clk => clk,
+--      rst => rst,
 
-      outData => testData
-   );  --- NOT USED FOR NOW
-   ----------------------------------------------------------------------------------
+--      outData => testData
+--   );  --- NOT USED FOR NOW
+--   ----------------------------------------------------------------------------------
 
    ----------------------------------------------------------------------------------
    -- Format the data
@@ -85,12 +80,9 @@ begin
             outData <= inData_2r;
          else
             outData <= QpixDataZero_C;
-         end if;
-         
+         end if;        
       end if;
    end process;
    ----------------------------------------------------------------------------------
-
-
 
 end behav;

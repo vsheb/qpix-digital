@@ -33,6 +33,7 @@ entity QpixEndeavorRx is
       -- Byte data received
       rxByte      : out std_logic_vector(NUM_BITS_G-1 downto 0);
       rxByteValid : out std_logic;
+      rxState     : out std_logic_vector(2 downto 0);
       rx          : in  std_logic
    );
 end QpixEndeavorRx;
@@ -84,6 +85,14 @@ begin
    gapError    <= curReg.gapError;
    lenError    <= curReg.lenError;
 
+   with curReg.state select rxState <=
+        "000" when IDLE_S,   -- off
+        "000" when DATA_S,   -- off (was red, confirmed to be working and only visible one)
+        "010" when BIT_S,    -- blue
+        "100" when GAP_S,    -- green
+        "001" when FINISH_S, -- off
+        "000" when others;   -- off
+
    process (clk)
    begin
       if rising_edge (clk) then
@@ -131,16 +140,12 @@ begin
             elsif curReg.highCnt >= N_ONE_MIN_G and curReg.highCnt <= N_ONE_MAX_G then
                nxtReg.byte(to_integer(curReg.byteCount)) <= '1';
                nxtReg.state  <= GAP_S;
-            else 
-               -- error
+            else -- error
                nxtReg.bitError <= '1';
                nxtReg.state  <= IDLE_S;
             end if;
-
-            nxtReg.byteCount <= curReg.byteCount + 1;
-            
+            nxtReg.byteCount <= curReg.byteCount + 1;           
             nxtReg.highCnt <= (others => '0');
-
 
          when GAP_S =>
 
@@ -162,6 +167,8 @@ begin
             if to_integer(curReg.byteCount) = NUM_BITS_G then
                nxtReg.byteValid <= '1';
             else 
+               -- temporarily send a bad byte just to see what we're reading if we've made it this far
+               --nxtReg.byteValid <= '1';
                nxtReg.lenError  <= '1';
             end if;
             nxtReg.state <= IDLE_S;

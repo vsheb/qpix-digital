@@ -21,24 +21,24 @@ entity QpixParser is
       clk                 : in std_logic;
       rst                 : in std_logic;
       
-      -- input to ASIC 
-      inBytesArr          : in  QpixByteArrType;
+      -- input data from ASICs / output data to route
+      inBytesArr          : in  QpixByteArrType; -- array(3 downto 0) of slv(63 downto 0)
       inFifoEmptyArr      : in  std_logic_vector(3 downto 0); 
       inFifoREnArr        : out std_logic_vector(3 downto 0);
-      inData              : out QpixDataFormatType;
+      parseDataTx         : out QpixDataFormatType;
       
-      -- output from ASIC
-      outData             : in  QpixDataFormatType;
-      outBytesArr         : out QpixByteArrType;
+      -- input from QpixRoute, to send to ASIC
+      parseDataRx         : in  QpixDataFormatType;
+      outBytesArr         : out QpixByteArrType; -- array(3 downto 0) of slv(63 downto 0)
       outBytesValidArr    : out std_logic_vector(3 downto 0);
       txReady             : in  std_logic;
 
-      qpixConf            : out QpixConfigType;
-      qpixReq             : out QpixRequestType;
+      -- RefFile configuration
+      qpixConf            : in QpixConfigType;
 
+      -- Comm communication register data
       regData             : out QpixRegDataType;
       regResp             : in QpixRegDataType
-      
    );
 end entity QpixParser;
 
@@ -49,7 +49,7 @@ architecture behav of QpixParser is
    signal inDataR          : QpixDataFormatType := QpixDataZero_C;
 
    signal thisReqID        : std_logic_vector(regDataR.ReqID'range) := (others => '0');
-   signal thisReqDaq       : std_logic := '0';
+   -- signal thisReqDaq       : std_logic := '0';
 
    signal inBytesMux       : std_logic_vector(G_DATA_BITS-1 downto 0) := (others => '0');
    signal inBytesMuxValid  : std_logic                    := '0';
@@ -59,12 +59,9 @@ architecture behav of QpixParser is
    signal regDirResp       : std_logic_vector(3 downto 0) := (others => '0');
    signal fifoRen          : std_logic_vector(3 downto 0) := (others => '0');
 
-   signal txReadyR         : std_logic  := '1';
-   signal fifoRenOrR       : std_logic  := '0';
-   signal fifoRenOrRR       : std_logic := '0';
-
-   type MuxStatesType is (IDLE_S, READ_S, WAIT_S);
-   signal muxState : MuxStatesType := IDLE_S;
+   signal txReadyR         : std_logic  := '0';
+   -- signal fifoRenOrR       : std_logic := '0';
+   -- signal fifoRenOrRR      : std_logic := '0';
 
    function fGetFirstZeroPos(x : std_logic_vector) return natural is
       variable pos : natural := 0;
@@ -78,14 +75,11 @@ architecture behav of QpixParser is
       return pos;
    end function;
    
-
 begin
 
-
-   
-   ------------------------------------------------------------
-   -- mux for input channels
-   ------------------------------------------------------------
+   ----------------------------
+   -- mux for input channels --
+   ----------------------------
    process (clk)
       variable imux : natural := 0;
    begin
@@ -94,42 +88,30 @@ begin
          inBytesMuxValid <= '0';
          fifoRen         <= (others => '0');
          txReadyR        <= txReady;
-         fifoRenOrR      <= or fifoRen;
-         fifoRenOrRR     <= fifoRenOrR;
+         -- fifoRenOrR      <= or fifoRen;
+         -- fifoRenOrRR     <= fifoRenOrR;
          for i in 0 to 3 loop
             --fifoRen(i)   <= '0';
+            -- ~think~ - should this be txReady = '1'? why? TODO
             if inFifoEmptyArr(i) = '0' and fifoRen = b"0000" and txReady = '1' then
-               inBytesMux          <= inBytesArr(i);
-               inBytesMuxValid     <= '1';
+               inBytesMux      <= inBytesArr(i);
+               inBytesMuxValid <= '1';
                inBytesValid    <= (others => '0');
-               inBytesValid(i)     <= '1';
-               fifoRen <= (others => '0');
-               fifoRen(i)   <= '1';
+               inBytesValid(i) <= '1';
+               fifoRen         <= (others => '0');
+               fifoRen(i)      <= '1';
             end if;
          end loop;
          
       end if;
    end process;
    ------------------------------------------------------------
-
    inFifoREnArr <= fifoRen;
 
-
-   ------------------------------------------------------------
-   -- RX parsing
-   ------------------------------------------------------------
-   --process (clk)
-   --begin
-      --if rising_edge (clk) then
-         --case rxState is 
-            --when IDLE_S => 
-            --when RD_S   =>
-            --when 
-         --end case;
-      --end if;
-   --end process;
-
-   regDirResp <= fQpixGetDirectionMask(X_POS_G, Y_POS_G); -- FIXME shoud be from qpixConf
+   -----------------------------------------------------------------
+   -- RX Parsing: Get Physical data and send to reg file or route --
+   -----------------------------------------------------------------
+   regDirResp <= qpixConf.DirMask;
 
    process (clk)
    begin
@@ -139,14 +121,14 @@ begin
             regDataR <= QpixRegDataZero_C;
          else
             inDataR.DataValid <= '0';
-            regDataR.Valid <= '0';
-            regDataR.OpWrite <= '0';
-            regDataR.OpRead  <= '0';
-            --end if;
+            regDataR.Valid    <= '0';
+            regDataR.OpWrite  <= '0';
+            regDataR.OpRead   <= '0';
+
             if inBytesMuxValid = '1'  then
                if fQpixGetWordType(inBytesMux) = REGREQ_W then
                   regDataR.Valid    <= '1';
-                  regDataR.Addr     <= inBytesMux(31 downto 16);
+                  regDataR.Addr     <= inBytesMux(31 downto 31 - G_REG_ADDR_BITS + 1);
                   regDataR.Data     <= inBytesMux(15 downto  0);
                   regDataR.XDest    <= inBytesMux(39 downto 36);
                   regDataR.YDest    <= inBytesMux(35 downto 32);
@@ -154,12 +136,10 @@ begin
                   regDataR.OpRead   <= inBytesMux(54);
                   regDataR.Dest     <= inBytesMux(53);
                   regDataR.ReqID    <= inBytesMux(52 downto 49);
-                  regDataR.SrcDaq   <= inBytesMux(48);
+                  regDataR.SrcDaq   <= inBytesMux(48); -- came from DAQ node
                   --regDataR.ReqID    <= thisReqID;
-                  --thisReqDaq        <= inBytesMux(48); -- came from DAQ node
                   regDir            <= DirDown or DirRight;
                   inDataR.DataValid <= '0';
-
                else
                   regDataR.Valid    <= '0';
                   inDataR           <= fQpixByteToRecord(inBytesMux);
@@ -172,36 +152,41 @@ begin
    end process;
 
    regData <= regDataR;
-   inData  <= inDataR;
-   ------------------------------------------------------------
+   parseDataTx  <= inDataR;
 
-   ------------------------------------------------------------
-   -- TX
-   ------------------------------------------------------------
    process (clk)
    begin
       if rising_edge (clk) then
-         if regDataR.Valid = '1'  then 
+         if regDataR.Valid = '1'  then
             thisReqID           <= regDataR.ReqID;
          end if;
       end if;
    end process;
-         
+   ------------------------------------------------------------
+
+   -------------------------------------------------
+   -- TX Parsing: Send QpixRoute data to Physical --
+   -------------------------------------------------
    TX_GEN : for i in 0 to 3 generate
       process (clk)
       begin
          if rising_edge (clk) then
+
             outBytesValidArr(i)  <= '0';
-            if outData.DataValid = '1' then
-               if outData.DirMask(i) = '1' then
+
+            if parseDataRx.DataValid = '1' then
+              -- construction of DirMask happens here and why it must be four bits
+               if parseDataRx.DirMask(i) = '1' then
                   -- temporary send either d.Data of convert record FIXME
-                  if outData.WordType = G_WORD_TYPE_REGRSP then
-                     outBytesArr(i) <= outData.Data;
+                  if parseDataRx.WordType = G_WORD_TYPE_REGRSP then
+                     outBytesArr(i) <= parseDataRx.Data;
                   else
-                     outBytesArr(i) <= fQpixRecordToByte(outData);
+                     outBytesArr(i) <= fQpixRecordToByte(parseDataRx);
                   end if;
                   outBytesValidArr(i)  <= '1'; 
                end if;
+
+            -- broadcast the register request
             elsif regDataR.Valid = '1'  then 
                outBytesArr(i)      <= fQpixRegToByte(regDataR);
                --thisReqID           <= regDataR.ReqID;
@@ -231,7 +216,4 @@ begin
    end generate;
    ------------------------------------------------------------
 
-
-
 end behav;
-
