@@ -11,11 +11,12 @@ entity QpixAsicArray is
    generic (
       TXRX_TYPE      : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
       X_NUM_G        : natural := 3;
-      Y_NUM_G        : natural := 3
+      Y_NUM_G        : natural := 3;
+      INDIVIDUAL_CLK_G : boolean := False
       
    );
    port (
-      --clk         : in std_logic;
+      clk         : in std_logic;
       clkVec      : in std_logic_vector(X_NUM_G*Y_NUM_G - 1 downto 0);
       rst         : in std_logic;
 
@@ -50,6 +51,7 @@ architecture behav of QpixAsicArray is
    signal inPorts : QpixInPortsType := QpixInPortsZero_C;
 
    signal StatesArr : RouteStates2DArrType;
+   signal clkVec_s  : std_logic_vector(X_NUM_G*Y_NUM_G - 1 downto 0) := (others => '0');
    
    ---------------------------------------------------
    -- from left to right -- XTxArr  
@@ -67,6 +69,13 @@ begin
    YTxArr(0,0) <= daqTx;
    daqRx <= YRxArr(0,0);
 
+   CLK_GEN_IND : if INDIVIDUAL_CLK_G = True generate 
+      clkVec_s <= clkVec;
+   end generate;
+
+   CLK_GEN_SAME : if INDIVIDUAL_CLK_G = False generate
+      clkVec_s <= (others => clk);
+   end generate;
 
 
    GEN_X : for i in 0 to X_NUM_G-1 generate
@@ -78,8 +87,7 @@ begin
                Y_POS_G       => j
             )
             port map(
-               --clk      => clk,
-               clk      => clkVec(j*X_NUM_G + i),
+               clk      => clkVec_s(j*X_NUM_G + i),
                rst      => rst,
                inPorts  => inPortsArr(i,j),
 

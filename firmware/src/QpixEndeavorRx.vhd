@@ -120,6 +120,9 @@ begin
                nxtReg.state   <= DATA_S;
                nxtReg.lowCnt  <= (others => '0');
             end if;
+            nxtReg.lenError  <= '0';
+            nxtReg.gapError  <= '0';
+            nxtReg.bitError  <= '0';
 
          when DATA_S =>
             if rx_r = '0' then
@@ -152,7 +155,13 @@ begin
 
             if rx_r = '1' then
                if curReg.lowCnt >= N_GAP_MIN_G then
-                  nxtReg.state <= DATA_S;
+                  -- more bytes have been received than expected
+                  if curReg.byteCount = NUM_BITS_G then
+                     nxtReg.lenError <= '1';
+                     nxtReg.state    <= IDLE_S;
+                  else
+                     nxtReg.state <= DATA_S;
+                  end if;
                else
                   nxtReg.gapError <= '1';
                   nxtReg.state  <= IDLE_S;

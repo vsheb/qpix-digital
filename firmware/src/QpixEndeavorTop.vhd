@@ -9,7 +9,21 @@ entity QpixEndeavorTop is
       --CLOCK_RATE_G : integer := 80000000;
       --BAUD_RATE_G  : integer := 115200;
       NUM_BITS_G   : natural := 64;
-      GATE_DELAY_G : time    := 1 ns
+      GATE_DELAY_G : time    := 1 ns;
+
+      N_ZER_CLK_G  : natural :=  8;  --2;
+      N_ONE_CLK_G  : natural :=  24; --5;
+      N_GAP_CLK_G  : natural :=  16; --4;
+      N_FIN_CLK_G  : natural :=  40; --7;
+                                     --  
+      N_ZER_MIN_G  : natural :=  4;  --1;
+      N_ZER_MAX_G  : natural :=  12; --3;
+      N_ONE_MIN_G  : natural :=  16; --4;
+      N_ONE_MAX_G  : natural :=  32; --6;
+      N_GAP_MIN_G  : natural :=  8;  --3;
+      N_GAP_MAX_G  : natural :=  32; --5;
+      N_FIN_MIN_G  : natural :=  32  --6 
+
    );
    port (
       clk         : in  std_logic;
@@ -40,7 +54,14 @@ begin
    U_Rx : entity work.QpixEndeavorRx
       generic map (
          NUM_BITS_G   => NUM_BITS_G,
-         GATE_DELAY_G => GATE_DELAY_G
+         GATE_DELAY_G => GATE_DELAY_G,
+         N_ZER_MIN_G  => N_ZER_MIN_G,
+         N_ZER_MAX_G  => N_ZER_MAX_G,
+         N_ONE_MIN_G  => N_ONE_MIN_G,
+         N_ONE_MAX_G  => N_ONE_MAX_G,
+         N_GAP_MIN_G  => N_GAP_MIN_G,
+         N_GAP_MAX_G  => N_GAP_MAX_G,
+         N_FIN_MIN_G  => N_FIN_MIN_G
       )
       port map (
          -- Clock and reset
@@ -60,7 +81,11 @@ begin
    U_Tx : entity work.QpixEndeavorTx
       generic map (
          NUM_BITS_G   => NUM_BITS_G,
-         GATE_DELAY_G => GATE_DELAY_G
+         GATE_DELAY_G => GATE_DELAY_G,
+         N_ZER_CLK_G  => N_ZER_CLK_G,
+         N_ONE_CLK_G  => N_ONE_CLK_G,
+         N_GAP_CLK_G  => N_GAP_CLK_G,
+         N_FIN_CLK_G  => N_FIN_CLK_G
       )
       port map (
          -- Clock and reset
