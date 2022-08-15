@@ -34,7 +34,7 @@ class AsicREG(Enum):
     DIR = 3
     # special address where both data will be written over the top of addr
     CAL = 4
-    # enable addr, write only
+    # enable addr
     ENA = 5
 
 def MemAddr(evt, pos):
@@ -136,6 +136,11 @@ class AsicEnable(Enum):
     REG = 0x4 # enables analog data while broadcasting
     ALL = 0x7 # enables analog data in all situations
     OFF = 0x0 # disables analog data
+
+    # combination states
+    SND_RCV = 0x3
+    SND_REG = 0x5
+    RCV_REG = 0x6
 
 
 class REG(Enum):

@@ -48,6 +48,7 @@ class QPIX_GUI(QMainWindow):
         # passive triggering
         self._clock = QTimer()
         self._clock.timeout.connect(self.trigger)
+        self._lastTrig = -1
 
         # progress tracker
         pbar = QProgressBar(self.main_wid)
@@ -191,6 +192,7 @@ class QPIX_GUI(QMainWindow):
         """
         addr = REG.CMD
         val = AsicCMD.Interrogation
+        self.readEvents()
         wrote = self.qpi.regWrite(addr, val)
 
     def readEvents(self) -> int:
@@ -215,7 +217,11 @@ class QPIX_GUI(QMainWindow):
 
         # If we have events, we should record when a trigger went out to store them
         trigTime = self.getTrigTime()
+        if trigTime == self._lastTrig:
+            print("WARNING already recorded this event")
+            return
         self._data["trgT"][0] = trigTime
+        self._lastTrig = trigTime
 
         def getMeta(data):
             """
@@ -242,10 +248,10 @@ class QPIX_GUI(QMainWindow):
         for evt in range(evts):
             # read each word in the event
             asicTime = self.qpi.regRead(REG.MEM(evt, 0))
-            self._progBar.setValue(evt)
             d = self.qpi.regRead(REG.MEM(evt, 1))
             y, x, chanMask, wordType = getMeta(d)
             daqTime = self.qpi.regRead(REG.MEM(evt, 2))
+            self._progBar.setValue(evt+1)
 
             # store and fill each event into the tree, writing when done
             self._data["daqT"][0] = daqTime
@@ -361,9 +367,11 @@ class QPIX_GUI(QMainWindow):
         val = AsicCMD.ResetAsic
         self.qpi.regWrite(addr, val)
 
-    def enableAsic(self, xpos=0, ypos=0):
+    def enableAsic(self, state, xpos=0, ypos=0):
         """
         Use AsicReg.ENA addr to set various types of AsicEnable configurations
+
+        state - arg capture from state change of the checkbox
 
         Default is all on.
         """
@@ -373,6 +381,15 @@ class QPIX_GUI(QMainWindow):
         else:
             val = AsicEnable.OFF
         self.qpi.regWrite(addr, val)
+
+        # read back the data that we think we enabled to see if it makes sense
+        x, y, wordType, addr, enabled = self._readAsicEnable()
+
+        if x != xpos or y != ypos:
+            print(f"Enable WARNING: Read ({x}, {y}) instead of ({xpos},{ypos})")
+        elif val != enabled:
+            print(f"Enable WARNING: did not read correct enable value")
+            print(f"\t expected {val} : actual {enabled}")
 
     def setAsicDirMask(self, xpos=0, ypos=0, mask=AsicMask.DirDown):
         """
@@ -432,6 +449,32 @@ class QPIX_GUI(QMainWindow):
         print(f"Read x{wordType:01x} ASIC @ {addr:04x} timeout: 0x{timeout:04x}-{timeout}")
 
         return x, y, wordType, addr, timeout
+
+    def _readAsicEnable(self):
+        """
+        special helper function to read the register at this location, largely
+        based off of read timeout function
+        """
+        # NOTE: A request data from an asic resets MEM addr,
+        # and that the MEM addr goes back to zero..
+        word1 = self.qpi.regRead(REG.MEM(0, 0))
+        word2 = self.qpi.regRead(REG.MEM(0, 1))
+
+        # records when byte was received, and not related to ASIC reg request
+        # daqTime = self.qpi.regRead(REG.MEM(0, 2))
+
+        # first 32 bits
+        # data in enable is the bottom 3 bits of data
+        enabled = AsicEnable(word1 & 0x0007)
+        addr = (word1 >> 16) & 0xffff
+
+        # next 32 bits
+        y = word2 & 0xf
+        x = (word2 >> 4) & 0xf
+        wordType = (word2 >> 24) & 0xf
+
+        return x, y, wordType, addr, enabled
+        
 
     def getAsicTime(self, xpos=0, ypos=0):
         """
