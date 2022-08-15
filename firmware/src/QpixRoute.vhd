@@ -12,28 +12,31 @@ use work.QpixPkg.all;
 entity QpixRoute is
    generic (
       GATE_DELAY_G    : time    := 1 ns;
+      RAM_TYPE        : string  := "block"; -- lattice hardcodes BRAM for lattice, or distributed / block
       X_POS_G         : natural := 0;
       Y_POS_G         : natural := 0
    );
    port (
       clk             : in std_logic;
       rst             : in std_logic;
-                      
+      
+      -- Register information from QpixRegFile                
       qpixReq         : in  QpixRequestType;
       qpixConf        : in  QpixConfigType;
-                      
-      inData          : in  QpixDataFormatType;
-      localDataEna    : out std_logic;
-                      
+      
+      -- Tx/Rx data to QpixComm -> QPixParser
       txReady         : in  std_logic;
       txData          : out QpixDataFormatType;
-
       rxData          : in  QpixDataFormatType;
-      
-      debug           : out QpixDebugType;
 
-      routeErr        : out routeErrType
-                      
+      -- QpixDataProc data and enable
+      inData          : in  QpixDataFormatType;
+
+      -- debug information
+      debug           : out QpixDebugType;
+      state           : out std_logic_vector(3 downto 0);
+      routeErr        : out routeErrType;                     
+      routeStateInt   : out integer    
    );
 end entity QpixRoute;
 
@@ -44,8 +47,7 @@ architecture behav of QpixRoute is
    ---------------------------------------------------
    -- Types defenitions
    ---------------------------------------------------
-   
-   type RegType is record
+    type RegType is record
       state      :  RouteStatesType;
       stateCnt   :  std_logic_vector(G_REG_DATA_BITS-1 downto 0);
       clkCnt     :  std_logic_vector(31 downto 0);
@@ -91,13 +93,13 @@ architecture behav of QpixRoute is
 
 
    signal extFifoEmpty   : std_logic := '0';
-   signal extFifoRen     : std_logic := '0';
+   -- signal extFifoRen     : std_logic := '0';
    signal extFifoDout    : std_logic_vector (G_DATA_BITS-1 downto 0);
    signal extFifoFull    : std_logic := '0';
    signal extFifoFull_e  : std_logic := '0';
 
 
-   signal respDir      : std_logic_vector(3 downto 0) := (others => '0');
+   --signal respDir      : std_logic_vector(3 downto 0) := (others => '0');
 
    signal routeErr_i     : routeErrType := routeErrZero_C;
    ---------------------------------------------------
@@ -106,27 +108,53 @@ architecture behav of QpixRoute is
 
 begin
 
-   localDataEna <= '1';
+   with curReg.state select state <=
+      "0000" when IDLE_S,
+      "0001" when REP_LOCAL_S,
+      "0010" when REP_REMOTE_S,
+      "0100" when REP_FINISH_S,
+      "1000" when ROUTE_REGRSP_S,
+      "0000" when others;
 
    ---------------------------------------------------
    -- FIFO for local data
    ---------------------------------------------------
-   FIFO_LOC_U : entity work.fifo_cc
-   generic map(
-      DATA_WIDTH => G_N_ANALOG_CHAN + G_TIMESTAMP_BITS,
-      DEPTH      => G_FIFO_LOC_DEPTH,
-      RAM_TYPE   => "block"
-   )
-   port map(
-      clk   => clk,
-      rst   => rst,
-      din   => locFifoDin,
-      wen   => inData.DataValid,
-      ren   => curReg.locFifoRen,
-      dout  => locFifoDout, 
-      empty => locFifoEmpty,
-      full  => locFifoFull
-   );
+   gen_qdb_fifo_loc: if (RAM_TYPE = "Lattice") generate
+      FIFO_LOC_U : entity work.QDBFifo
+      generic map(
+         DATA_WIDTH => G_N_ANALOG_CHAN + G_TIMESTAMP_BITS, -- 16 + 32 = 48
+         DEPTH      => 9,
+         RAM_TYPE   => "Lattice_loc"
+      )
+      port map(
+         clk   => clk,
+         rst   => rst,
+         din   => locFifoDin,
+         wen   => inData.DataValid,
+         ren   => curReg.locFifoRen,
+         dout  => locFifoDout,
+         empty => locFifoEmpty,
+         full  => locFifoFull
+      );
+   end generate;
+   gen_fifo_loc: if (RAM_TYPE /= "Lattice") generate
+      FIFO_LOC_U : entity work.fifo_cc
+      generic map(
+         DATA_WIDTH => G_N_ANALOG_CHAN + G_TIMESTAMP_BITS,
+         DEPTH      => G_FIFO_LOC_DEPTH,
+         RAM_TYPE   => "block"
+      )
+      port map(
+         clk   => clk,
+         rst   => rst,
+         din   => locFifoDin,
+         wen   => inData.DataValid,
+         ren   => curReg.locFifoRen,
+         dout  => locFifoDout,
+         empty => locFifoEmpty,
+         full  => locFifoFull
+      );
+   end generate;
    locFifoDin <= inData.ChanMask & inData.Timestamp;
    ---------------------------------------------------
 
@@ -141,6 +169,25 @@ begin
    ---------------------------------------------------
    -- FIFO for external data
    ---------------------------------------------------
+   gen_qdb_fifo_ext: if (RAM_TYPE = "Lattice") generate
+      FIFO_EXT_U : entity work.QDBFifo
+      generic map(
+         DATA_WIDTH => G_DATA_BITS, -- 64
+         DEPTH      => 9,
+         RAM_TYPE   => "Lattice_ext"
+      )
+      port map(
+         clk   => clk,
+         rst   => rst,
+         din   => rxData.Data,
+         wen   => rxData.DataValid,
+         ren   => curReg.extFifoRen,
+         dout  => extFifoDout,
+         empty => extFifoEmpty,
+         full  => extFifoFull
+      );
+   end generate;
+   gen_fifo_ext: if (RAM_TYPE /= "Lattice") generate
    FIFO_EXT_U : entity work.fifo_cc
    generic map(
       DATA_WIDTH => G_DATA_BITS,
@@ -157,6 +204,7 @@ begin
       empty => extFifoEmpty,
       full  => extFifoFull
    );
+   end generate;
    ---------------------------------------------------
 
    extFifoFullEdgeDet_U : entity work.EdgeDetector 
@@ -193,16 +241,15 @@ begin
             
          end if;
       end process;
+   routeErr <= routeErr_i;
    ---------------------------------------------------
-
 
 
    ---------------------------------------------------
    -- Combinational logic
    ---------------------------------------------------
-   process (curReg, inData, rxData, qpixReq, qpixConf, extFifoEmpty, 
-            locFifoDout, txReady, extFifoDout, locFifoEmpty)
-   begin
+   process(curReg, nxtReg, inData, rxData, qpixReq, extFifoEmpty, extFifoDout,
+           txReady, locFifoEmpty, qpixConf, locFifoDout) begin
       nxtReg <= curReg;
       nxtReg.txData.DataValid <= '0';
       nxtReg.clkCnt <= curReg.clkCnt + 1;
@@ -226,23 +273,26 @@ begin
 
          -- waiting for interrogation
          when IDLE_S       =>
-            nxtReg.stateCnt <= (others => '0');
-            nxtReg.txData.DataValid <= '0';
-            --nxtReg.txData <= QpixDataZero_C;
+
+            nxtReg.stateCnt   <= (others => '0');
+            nxtReg.txData     <= QpixDataZero_C;
+            nxtReg.locFifoRen <= '0';
+            nxtReg.extFifoRen <= '0';
+            nxtReg.manRoute   <= qpixConf.ManRoute;
+            nxtReg.timeout    <= qpixConf.Timeout;
+
             if qpixReq.Interrogation = '1' then
                nxtReg.state  <= REP_LOCAL_S;
             end if;
-            nxtReg.locFifoRen <= '0';
-            nxtReg.extFifoRen <= '0';
 
-            nxtReg.manRoute <= qpixConf.ManRoute;
             if curReg.manRoute = '1' then
                nxtReg.respDir  <= qpixConf.DirMask;
             else
                nxtReg.respDir <= fQpixGetDirectionMask(X_POS_G, Y_POS_G);
             end if;
-            nxtReg.timeout    <= qpixConf.Timeout;
-            
+
+            -- NOTE / TODO -- possible place where fifo is empty but higher
+            -- level word is the register response we want
             if extFifoEmpty = '0' and fQpixGetWordType(extFifoDout) = REGRSP_W then
                nxtReg.state <= ROUTE_REGRSP_S;
             end if;
@@ -287,6 +337,7 @@ begin
                nxtReg.state            <= REP_FINISH_S;
                nxtReg.stateCnt         <= (others => '0');
             end if;
+
          when REP_FINISH_S => 
             -- all hits are done, send the packet which indicates that
             nxtReg.stateCnt <= curReg.stateCnt + 1;
@@ -310,9 +361,9 @@ begin
             nxtReg.extFifoRen <= '0';
             if extFifoEmpty = '0' and txReady = '1' then 
                if curReg.extFifoRen = '0' and curReg.stateCnt(1) = '1' then
-                  nxtReg.extFifoRen <= '1';
+                  nxtReg.extFifoRen       <= '1';
                   --nxtReg.txData.Data <= extFifoDout;
-                  nxtReg.txData <= fQpixByteToRecord(extFifoDout);
+                  nxtReg.txData           <= fQpixByteToRecord(extFifoDout);
                   nxtReg.txData.DataValid <= '1';
                   nxtReg.txData.DirMask   <= curReg.respDir;
                   -- replace some data FIXME : temporary
@@ -327,7 +378,9 @@ begin
                nxtReg.txData.DataValid <= '0';
                --nxtReg.txData <= QpixDataZero_C;
             end if;
-            
+
+            -- TODO / NOTE: where is timeout counting?
+            -- simulate this
             if curReg.timeout /= timeoutZero_C then 
                if curReg.stateCnt(curReg.timeout'range) = curReg.timeout then
                   nxtReg.state <= IDLE_S;
@@ -345,7 +398,6 @@ begin
    end process;
    ---------------------------------------------------
 
-
    ---------------------------------------------------
    -- Synchronous logic
    ---------------------------------------------------
@@ -361,7 +413,8 @@ begin
    end process;
    ---------------------------------------------------
 
-   
+
+   -- register to ports at top level
    txData     <= curReg.txData;
    debug      <= curReg.debug;
 
@@ -380,6 +433,4 @@ begin
    --end process;
 
 
-
 end behav;
-
