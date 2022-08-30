@@ -160,6 +160,8 @@ package QpixPkg is
       Valid   : std_logic;
       XDest   : std_logic_vector(G_POS_BITS-1 downto 0);
       YDest   : std_logic_vector(G_POS_BITS-1 downto 0);
+      XHops   : std_logic_vector(G_POS_BITS-1 downto 0);
+      YHops   : std_logic_vector(G_POS_BITS-1 downto 0);
       OpWrite : std_logic;
       OpRead  : std_logic;
       ReqID   : std_logic_vector(3 downto 0);
@@ -173,6 +175,8 @@ package QpixPkg is
       Valid   => '0',
       XDest   => (others => '0'),
       YDest   => (others => '0'),
+      XHops   => (others => '0'),
+      YHops   => (others => '0'),
       OpWrite => '0',
       OpRead  => '0',
       ReqID   => (others => '0'),
@@ -187,9 +191,11 @@ package QpixPkg is
    -- Configuration record
    ------------------------------------------------------------------
    type QpixConfigType is record
-      something   : std_logic;
+      XPos        : std_logic_vector(G_POS_BITS-1 downto 0);
+      YPos        : std_logic_vector(G_POS_BITS-1 downto 0);
       Timeout     : std_logic_vector(G_REG_DATA_BITS-1 downto 0);
       DirMask     : std_logic_vector(3 downto 0);
+      DirMaskMan  : std_logic_vector(3 downto 0); -- directions mask b"URDL"
       locEnaSnd   : std_logic; -- analog data enabled while sending 
       locEnaRcv   : std_logic; -- analog data enabled while receiving
       locEnaReg   : std_logic; -- analog data enabled while reg broadcasting
@@ -198,10 +204,11 @@ package QpixPkg is
    end record;
 
    constant QpixConfigDef_C : QpixConfigType := (
-      something  => '0',
-      --Timeout    => std_logic_vector(to_unsigned(15000,G_REG_DATA_BITS)), -- UART
+      XPos       => (others => '0'),
+      YPos       => (others => '0'),
       Timeout    => (others => '0'), 
       DirMask    => (others => '0'),
+      DirMaskMan => (others => '0'),
       locEnaSnd  => '1',
       locEnaRcv  => '1',
       locEnaReg  => '1', 
@@ -270,6 +277,7 @@ package QpixPkg is
    function fQpixByteToRecord(d : std_logic_vector) return QpixDataFormatType;
    function fQpixGetWordType(x : std_logic_vector) return QpixWordType;
    function fQpixRegToByte(d : QpixRegDataType) return std_logic_vector;
+   function fQpixByteToReg(d : std_logic_vector(G_DATA_BITS-1 downto 0)) return QpixRegDataType;
    function fQpixRegReqToByte(d : QpixRegReqType) return std_logic_vector;
 
    function fQpixGetDirectionMask(x : natural := 0; y : natural := 0) return std_logic_vector;
@@ -358,7 +366,8 @@ package body QpixPkg is
       x(53)           := d.Dest;
       x(52 downto 49) := d.ReqID;
       x(48)           := d.SrcDaq;
-      x(47 downto 40) := (others => '0');  
+      x(47 downto 44) := d.XHops;
+      x(43 downto 40) := d.YHops;
       x(39 downto 36) := d.XDest;           -- x
       x(35 downto 32) := d.YDest;           -- y
       x(31 downto 16) := d.Addr; 
@@ -368,6 +377,27 @@ package body QpixPkg is
 
    end function;
    ------------------------------------------------------------------
+
+   function fQpixByteToReg(d : std_logic_vector(G_DATA_BITS-1 downto 0)) 
+      return QpixRegDataType is
+         variable r : QpixRegDataType := QpixRegDataZero_C;
+   begin
+      r.OpWrite  := d(55);
+      r.OpRead   := d(54);
+      r.Dest     := d(53);
+      r.ReqID    := d(52 downto 49);
+      r.SrcDaq   := d(48);
+      r.XHops    := d(47 downto 44);
+      r.YHops    := d(43 downto 40);
+      r.XDest    := d(39 downto 36);
+      r.YDest    := d(35 downto 32);
+      r.Addr     := d(31 downto 16);
+      r.Data     := d(15 downto  0);
+
+      return r;
+   end function;
+
+
 
    ------------------------------------------------------------------
    -- convert register request to byte word to be transmitted

@@ -11,18 +11,18 @@ entity QpixEndeavorTop is
       NUM_BITS_G   : natural := 64;
       GATE_DELAY_G : time    := 1 ns;
 
-      N_ZER_CLK_G  : natural :=  8;  --2;
-      N_ONE_CLK_G  : natural :=  24; --5;
-      N_GAP_CLK_G  : natural :=  16; --4;
-      N_FIN_CLK_G  : natural :=  40; --7;
-                                     --  
-      N_ZER_MIN_G  : natural :=  4;  --1;
-      N_ZER_MAX_G  : natural :=  12; --3;
-      N_ONE_MIN_G  : natural :=  16; --4;
-      N_ONE_MAX_G  : natural :=  32; --6;
-      N_GAP_MIN_G  : natural :=  8;  --3;
-      N_GAP_MAX_G  : natural :=  32; --5;
-      N_FIN_MIN_G  : natural :=  32  --6 
+      N_ZER_CLK_G  : natural :=  8;  
+      N_ONE_CLK_G  : natural :=  24; 
+      N_GAP_CLK_G  : natural :=  16; 
+      N_FIN_CLK_G  : natural :=  40; 
+                                     
+      N_ZER_MIN_G  : natural :=  4;  
+      N_ZER_MAX_G  : natural :=  12; 
+      N_ONE_MIN_G  : natural :=  16; 
+      N_ONE_MAX_G  : natural :=  32; 
+      N_GAP_MIN_G  : natural :=  8;  
+      N_GAP_MAX_G  : natural :=  32; 
+      N_FIN_MIN_G  : natural :=  32  
 
    );
    port (

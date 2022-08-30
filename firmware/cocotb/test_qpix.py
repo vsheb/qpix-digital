@@ -224,7 +224,23 @@ async def test_qpix(dut):
 #************************************************
 # GENERICS
 #************************************************
-TopLevelGenerics = {"X_NUM_G" : "5", "Y_NUM_G" : "5", "INDIVIDUAL_CLK_G" : "False"}
+TopLevelGenerics = {
+    "X_NUM_G" : "5", 
+    "Y_NUM_G" : "5", 
+    "INDIVIDUAL_CLK_G" : "False",
+    "N_ZER_CLK_G" : "2",  #"8", 
+    "N_ONE_CLK_G" : "5", #"24",
+    "N_GAP_CLK_G" : "4", #"16",
+    "N_FIN_CLK_G" : "7", #"40",
+    "N_ZER_MIN_G" : "1",  #"4", 
+    "N_ZER_MAX_G" : "3", #"12",
+    "N_ONE_MIN_G" : "4", #"16",
+    "N_ONE_MAX_G" : "6", #"32",
+    "N_GAP_MIN_G" : "3",  #"8", 
+    "N_GAP_MAX_G" : "5", #"32",
+    "N_FIN_MIN_G" : "6"  #"32"
+  }
+
 #************************************************
 
 def run_test_fifo():

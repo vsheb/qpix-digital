@@ -9,10 +9,23 @@ use work.QpixPkg.all;
 
 entity QpixAsicArray is
    generic (
-      TXRX_TYPE      : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
-      X_NUM_G        : natural := 3;
-      Y_NUM_G        : natural := 3;
-      INDIVIDUAL_CLK_G : boolean := False
+      TXRX_TYPE        : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
+      X_NUM_G          : natural := 3;
+      Y_NUM_G          : natural := 3;
+      INDIVIDUAL_CLK_G : boolean := False;
+      -- Endeavour protocol parameters
+      N_ZER_CLK_G      : natural :=  8;  
+      N_ONE_CLK_G      : natural :=  24; 
+      N_GAP_CLK_G      : natural :=  16; 
+      N_FIN_CLK_G      : natural :=  40; 
+                                         
+      N_ZER_MIN_G      : natural :=  4;  
+      N_ZER_MAX_G      : natural :=  12; 
+      N_ONE_MIN_G      : natural :=  16; 
+      N_ONE_MAX_G      : natural :=  32; 
+      N_GAP_MIN_G      : natural :=  8;  
+      N_GAP_MAX_G      : natural :=  32; 
+      N_FIN_MIN_G      : natural :=  32  
       
    );
    port (
@@ -84,7 +97,19 @@ begin
             generic map (
                TXRX_TYPE     => TXRX_TYPE,
                X_POS_G       => i,
-               Y_POS_G       => j
+               Y_POS_G       => j,
+               N_ZER_CLK_G   => N_ZER_CLK_G,
+               N_ONE_CLK_G   => N_ONE_CLK_G,
+               N_GAP_CLK_G   => N_GAP_CLK_G,
+               N_FIN_CLK_G   => N_FIN_CLK_G,
+                                         
+               N_ZER_MIN_G   => N_ZER_MIN_G,
+               N_ZER_MAX_G   => N_ZER_MAX_G,
+               N_ONE_MIN_G   => N_ONE_MIN_G,
+               N_ONE_MAX_G   => N_ONE_MAX_G,
+               N_GAP_MIN_G   => N_GAP_MIN_G,
+               N_GAP_MAX_G   => N_GAP_MAX_G,
+               N_FIN_MIN_G   => N_FIN_MIN_G
             )
             port map(
                clk      => clkVec_s(j*X_NUM_G + i),
@@ -108,28 +133,6 @@ begin
             );
       end generate GEN_Y;
    end generate GEN_X;
-
-   --process (clk)
-      --variable s  : std_logic := '0';
-      --variable st : std_logic := '0';
-   --begin
-      --if rising_edge(clk) then
-         --for i in 0 to X_NUM_G-1 loop
-            --for j in 0 to Y_NUM_G-1 loop
-               --if StatesArr(i)(j) > 0 then
-                  --st := '1';
-               --else
-                  --st := '0';
-               --end if;
-               --s := s or st;
-            --end loop;
-         --end loop;
-         --led(0) <= s;
-      --end if;
-   --end process;
-   --led(1) <= '0';
-   --led(2) <= '0';
-   --led(3) <= '1';
 
 
 end behav;

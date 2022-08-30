@@ -13,13 +13,26 @@ entity QpixComm is
    generic (
       NUM_BITS_G     : natural := 64;
       GATE_DELAY_G   : time    := 1 ns;
-      X_POS_G        : natural := 0;
-      Y_POS_G        : natural := 0;
-      TXRX_TYPE      : string  := "ENDEAVOR" -- "DUMMY"/"UART"/"ENDEAVOR"
+      TXRX_TYPE      : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
+      N_ZER_CLK_G    : natural :=  8;  --2;
+      N_ONE_CLK_G    : natural :=  24; --5;
+      N_GAP_CLK_G    : natural :=  16; --4;
+      N_FIN_CLK_G    : natural :=  40; --7;
+                                       --  
+      N_ZER_MIN_G    : natural :=  4;  --1;
+      N_ZER_MAX_G    : natural :=  12; --3;
+      N_ONE_MIN_G    : natural :=  16; --4;
+      N_ONE_MAX_G    : natural :=  32; --6;
+      N_GAP_MIN_G    : natural :=  8;  --3;
+      N_GAP_MAX_G    : natural :=  32; --5;
+      N_FIN_MIN_G    : natural :=  32  --6 
+
    );
    port (
       clk            : in std_logic;
       rst            : in std_logic;
+
+      qpixConf       : in QpixConfigType;
 
       outData_i      : in  QpixDataFormatType;
       inData         : out QpixDataFormatType;
@@ -98,27 +111,42 @@ begin
       ENDEAROV_GEN : if TXRX_TYPE = "ENDEAVOR" generate
             QpixTXRx_U : entity work.QpixEndeavorTop
             generic map (
-               NUM_BITS_G => NUM_BITS_G
+               NUM_BITS_G    => NUM_BITS_G,
+               N_ZER_CLK_G   => N_ZER_CLK_G,
+               N_ONE_CLK_G   => N_ONE_CLK_G,
+               N_GAP_CLK_G   => N_GAP_CLK_G,
+               N_FIN_CLK_G   => N_FIN_CLK_G,
+                                         
+               N_ZER_MIN_G   => N_ZER_MIN_G,
+               N_ZER_MAX_G   => N_ZER_MAX_G,
+               N_ONE_MIN_G   => N_ONE_MIN_G,
+               N_ONE_MAX_G   => N_ONE_MAX_G,
+               N_GAP_MIN_G   => N_GAP_MIN_G,
+               N_GAP_MAX_G   => N_GAP_MAX_G,
+               N_FIN_MIN_G   => N_FIN_MIN_G
             )
             port map (
                clk         => clk,
                sRst        => rst,
 
-               --txValid     => TxPortsArr(i).Valid,
                txByte      => TxByteArr(i), 
                txByteValid => TxByteValidArr(i), 
                txByteReady => TxByteReadyArr(i),
 
-               --rxValid     => RxPortsArr(i).Valid,
                rxByte      => RxByteArr(i),
                rxByteValid => RxByteValidArr(i),
 
                Rx          => RxPortsArr(i),
                Tx          => TxPortsArr(i)
             );
-
       end generate ENDEAROV_GEN;
+   end generate GEN_TXRX;
+   ------------------------------------------------------------
 
+   ------------------------------------------------------------
+   -- FIFOs for input lines
+   ------------------------------------------------------------
+   RX_GEN_FIFO : for i in 0 to 3 generate
       FIFO_U : entity work.fifo_cc
       generic map(
          DATA_WIDTH => NUM_BITS_G,
@@ -136,31 +164,21 @@ begin
          full  => RxFifoFullArr(i)
       );
 
-   end generate GEN_TXRX;
+   end generate RX_GEN_FIFO;
    ------------------------------------------------------------
 
    TxReadyOr <= AND_REDUCE(TxByteReadyArr);
-   --TxReadyOr <= '1' when TxByteReadyArr = (TxByteReadyArr'range => '1') else '0';
    TxReady   <= TxReadyOr;
-
-   ------------------------------------------------------------
-   -- FIFOs for input lines
-   ------------------------------------------------------------
-   --RX_FIFO_GEN : for i in 0 to 3 generate
-   --end generate RX_FIFO_GEN;
-   ------------------------------------------------------------
 
    ------------------------------------------------------------
    -- Parser
    ------------------------------------------------------------
    QpixParser_U : entity work.QpixParser
-   generic map(
-      X_POS_G       => X_POS_G,
-      Y_POS_G       => Y_POS_G
-   )                
    port map(
       clk          => clk,
       rst          => rst,
+
+      qpixConf          => qpixConf,
 
       inBytesArr        => RxFifoDoutArr,
       inFifoEmptyArr    => RxFifoEmptyArr,
