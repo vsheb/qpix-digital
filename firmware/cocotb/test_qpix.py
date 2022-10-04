@@ -16,261 +16,185 @@ from collections import namedtuple
 import numpy as np
 import pprint
 
+from qpix_cocotb import *
+from mycocolib import *
+
 log = logging.getLogger("cocotb")
 
 ################################################################
-# Helper coroutines
+# Initialize clocks
 ################################################################
-# wait until condition satisfies
-@coroutine
-async def WaitClockedCond(clk, cond):
-    while True:                       
-        await RisingEdge(clk)          
-        if cond():                     
-            break                      
+def QpixStartClocks(dut):
+  nX = dut.X_NUM_G.value
+  nY = dut.Y_NUM_G.value
 
-# wait for a number of clock cycles
-@coroutine
-async def TimerClk(clk, cnt):
-  for _ in range(cnt):
-    await RisingEdge(clk)   
+  # daq clock
+  clock = Clock(dut.clk, 20, units='ns')  # 
+  cocotb.start_soon(clock.start())
 
-# DUT sync reset
-@coroutine
-async def SyncResetDUT(clk, rst):
-  await RisingEdge(clk)
-  rst.value = 1
-  await RisingEdge(clk)
-  rst.value = 0
-  await RisingEdge(clk)
+  vv = dut.daqTimestamp.value
 
-# async reset
-@coroutine
-async def AsyncResetDUT(rst, duration=100, units = 'ns'):
-  rst.value = 1
-  await Timer(duration, units=units)
-  rst.value = 0
+  # generate independent clock for every ASIC in the array
+  if dut.INDIVIDUAL_CLK_G.value : 
+    clocks = [[0]*nX]*nY
+    freq = np.random.normal(20,1,(nY,nX)).astype(int) 
+    print(freq)
+    for j in range(nY) : 
+      for i in range(nX) : 
+        clocks[j][i] = Clock(dut.clkVec[j*nX+i], freq[j][i], units='ns')
+        cocotb.start_soon(clocks[j][i].start())
+  ####
 ################################################################
 
-################################################################
-# Qpix data format description
-################################################################
-QpixHitData = namedtuple('QpixHitData', 'wordType chanMask xPos yPos timestamp')
-
-def QpixDataFormat(data = 0):
-  wordType  = (data >> 56) & 0xf
-  chanMask  = (data >> 40) & 0xff
-  xPos      = (data >> 36) & 0xf
-  yPos      = (data >> 32) & 0xf
-  timestamp = (data >>  0) & 0xffff
-
-  return QpixHitData(wordType, chanMask, xPos, yPos, timestamp)
-################################################################
-
-
-################################################################
-# Send a register request to the Qpix Array
-################################################################
-@coroutine
-async def QpixRegRequest(dut, x = 0, y = 0, dest = 0, opWrite = 0, reqID = 0, addr = 0, data = 0):
-  v =  0x3 << 56 # word type
-  v |= (opWrite & 1) << 55 
-  v |= (1 - (opWrite&1)) << 54
-  v |= dest << 53
-  v |= (0xf & reqID) << 49
-  v |= 0x1 << 48
-  v |= x << 36
-  v |= y << 32
-  v |= addr << 16
-  v |= data
-
-  await RisingEdge(dut.clk)
-  dut.daqTxByte.value = v
-  dut.daqTxByteValid.value = 1
-  await RisingEdge(dut.clk)
-  dut.daqTxByteValid.value = 0 
-  await RisingEdge(dut.clk)
-################################################################
-
-  
-
-################################################################
-# Continuously print FSM states for the array
-################################################################
-@coroutine 
-async def QpixPrintArray(dut):
-  """docstring for QpixPrintArray"""
-
-  nX, nY = int(dut.X_NUM_G.value), int(dut.Y_NUM_G.value)
-
-  state_array = [[0 for i in range(nX)] for j in range(nY)]
-  
-  while True : 
-    await RisingEdge(dut.clk)
-    trig = False
-    for y in range(nY) : 
-      for x in range(nX) : 
-        v = dut.QpixAsicArray_U.GEN_X[x].GEN_Y[y].QpixAsicTop_U.QpixRoute_U.curReg.state.value;
-        if v != state_array[y][x] : trig = True
-        state_array[y][x] = v
-
-    if trig :
-      print("******FSM*******")
-      for r in state_array:
-        print(r)
-      print("****************")
-################################################################
-  
-
-
-
-   
-
-################################################################
-# Receive data from the Qpix array
-################################################################
-@coroutine
-async def QpixReceive(dut) : 
-
-  nX, nY = int(dut.X_NUM_G.value), int(dut.Y_NUM_G.value)
-
-  evtEndCnt = 0
-  stat_matrix = [[0 for i in range(nX)] for j in range(nY)] 
-  fin_matrix = [[1 for i in range(nX)] for j in range(nY)] 
-  
-  while True:
-    await RisingEdge(dut.clk)
-    if dut.daqRxByteValid.value == 1 : 
-      hitData = QpixDataFormat(dut.daqRxByte.value)
-      print(hitData, int(dut.daqTimestamp.value))
-      if hitData.wordType == 5 : 
-        stat_matrix[hitData.yPos][hitData.xPos] = 1
-        for r in stat_matrix:
-          print(r)
-        # if hitData.xPos == nX-1 and hitData.yPos == nY-1 : 
-        if stat_matrix == fin_matrix: 
-          break
-    # if evtEndCnt == nX*nY : 
-
-################################################################
-# Send a hit to the specific ASIC
-################################################################
-@coroutine
-async def QpixInjectHits(dut, x, y, chanMask) : 
-  await TimerClk(dut.clk, 10)
-  dut.inPortsArr[y][x].value = chanMask
-  await RisingEdge(dut.clk)
-  await RisingEdge(dut.clk)
-  dut.inPortsArr[y][x].value = 0
-  await TimerClk(dut.clk, 10)
-
-  
 
 ################################################################
 # Perform tests
 ################################################################
 @cocotb.test()
-async def test_qpix(dut):
+async def test_hits_readout(dut):
   # dut._log.setLevel(logging.DEBUG)
   """ test """
 
   nX = dut.X_NUM_G.value
   nY = dut.Y_NUM_G.value
 
-  # daq clock
-  clock = Clock(dut.clk, 100, units='ns')  # 
-  cocotb.start_soon(clock.start())
+  QpixStartClocks(dut)
 
-  vv = dut.daqTimestamp.value
-
-  # independent clock for every ASIC in the array
-  clocks = [[0]*nX]*nY
-  freq = np.random.normal(100,10,(nY,nX)).astype(int) 
-  print(freq)
-  for j in range(nY) : 
-    for i in range(nX) : 
-      clocks[j][i] = Clock(dut.clkVec[j*nX+i], freq[j][i], units='ns')
-      cocotb.start_soon(clocks[j][i].start())
+  daq = QpixDaq(dut)
 
   # start monitoring 
-  qpix_receive = cocotb.start_soon(QpixReceive(dut))
+  qpix_receive = cocotb.start_soon(daq.QpixReceive())
   qpix_print   = cocotb.start_soon(QpixPrintArray(dut))
   
-  # set initial values for the input ports
-  for i in range(nX) : 
-    for j in range(nY) :
-      dut.inPortsArr[i][j].value = 0
-
   await TimerClk(dut.clk, 10)
 
   print("Inject hits");
   for i in range(10) : 
-    await QpixInjectHits(dut, x = 2, y = 2, chanMask = 1)
+    await daq.QpixInjectHits(x = 2, y = 2, chanMask = 1)
+  for i in range(10) : 
+    await daq.QpixInjectHits(x = 1, y = 0, chanMask = 15)
+  for i in range(10) : 
+    await daq.QpixInjectHits(x = 0, y = 1, chanMask = 7)
 
   print("Interrogation")
-  await QpixRegRequest(dut, x = 0, y = 0, dest = 0, opWrite = 1, reqID = 1, addr = 1, data = 1)
+  await daq.Interrogation()
 
-  # wait until all ASIC responses's been collected
-  await qpix_receive
+  daq.CheckHits()
 
-  # reset state
-  await QpixRegRequest(dut, x = 0, y = 0, dest = 0, opWrite = 1, reqID = 2, addr = 1, data = 2) 
+  await QpixWaitUntilAllIdle(dut)
 
-  await Timer(1000, 'ns')
+  print("All ASICs are idle at : ", get_sim_time('ns'))
+
+  await Timer(2000, 'ns')
+
+################################################################
+
+@cocotb.test()
+async def test_register_access(dut):
+  # dut._log.setLevel(logging.DEBUG)
+  """ test """
+
+  nX = dut.X_NUM_G.value
+  nY = dut.Y_NUM_G.value
+
+  QpixStartClocks(dut)
+
+  await TimerClk(dut.clk, 10);
+  dut.rst.value = 1;
+  await TimerClk(dut.clk, 3);
+  dut.rst.value = 0;
+  await RisingEdge(dut.clk)
+
+  daq = QpixDaq(dut)
+  await daq.Reset()
+  
+  
+  # start monitoring 
+  qpix_receive = cocotb.start_soon(daq.QpixReceive())
+  qpix_print   = cocotb.start_soon(QpixPrintArray(dut))
+
+  await RisingEdge(dut.clk)  
+
+  print('Send interrogation')
+  await daq.Interrogation()
+
+  await RisingEdge(dut.clk)
+  await QpixWaitUntilAllIdle(dut)
+
+  print("SEND REG REQUEST 1")
+  for x in range(dut.X_NUM_G.value):
+    for y in range(dut.Y_NUM_G.value):
+      await daq.RegRead(x = x, y = y, addr = 3)
+
+  print("SEND REG REQUEST 2")
+  for x in range(dut.X_NUM_G.value):
+    for y in range(dut.Y_NUM_G.value):
+      await daq.RegRead(x = x, y = y, addr = 4)
+
+  await TimerClk(dut.clk, 10)
+
 
 ################################################################
 
 
-#************************************************
-# GENERICS
-#************************************************
-TopLevelGenerics = {
-    "X_NUM_G" : "5", 
-    "Y_NUM_G" : "5", 
-    "INDIVIDUAL_CLK_G" : "False",
-    "N_ZER_CLK_G" : "2",  #"8", 
-    "N_ONE_CLK_G" : "5", #"24",
-    "N_GAP_CLK_G" : "4", #"16",
-    "N_FIN_CLK_G" : "7", #"40",
-    "N_ZER_MIN_G" : "1",  #"4", 
-    "N_ZER_MAX_G" : "3", #"12",
-    "N_ONE_MIN_G" : "4", #"16",
-    "N_ONE_MAX_G" : "6", #"32",
-    "N_GAP_MIN_G" : "3",  #"8", 
-    "N_GAP_MAX_G" : "5", #"32",
-    "N_FIN_MIN_G" : "6"  #"32"
-  }
+@cocotb.test()
+async def test_manual_routing(dut):
+  # dut._log.setLevel(logging.DEBUG)
+  """ test """
 
-#************************************************
+  nX = dut.X_NUM_G.value
+  nY = dut.Y_NUM_G.value
 
-def run_test_fifo():
+  QpixStartClocks(dut)
 
-  source_dir = "../src"
-  source_files = ["UtilityPkg.vhd", "QpixPkg.vhd", "mem.vhd", "EdgeDetector.vhd", "QpixParser.vhd", 
-  "QpixTestPatGen.vhd", "QpixDataProc.vhd", "UartRx.vhd", "UartTx.vhd", "UartTop.vhd", 
-  "QpixEndeavorRx.vhd", "QpixEndeavorTx.vhd", "QpixEndeavorTop.vhd", 
-  "QpixComm.vhd", "QpixRegFile.vhd", "QpixRoute.vhd", "QpixAsicTop.vhd", 
-  "imp/QpixAsicArray.vhd", "imp/QpixAsicArrayDaq.vhd"]
-  vhdl_sources = [os.path.join(source_dir, f) for f in source_files]
+  daq = QpixDaq(dut)
+  await daq.Reset()
+  
+  
+  # start monitoring 
+  qpix_receive = cocotb.start_soon(daq.QpixReceive())
+  qpix_print   = cocotb.start_soon(QpixPrintArray(dut))
 
-  print(vhdl_sources)
+  await RisingEdge(dut.clk)  
 
-  run(
-    vhdl_sources  = vhdl_sources,
-    toplevel      = "qpixasicarraydaq",
-    module        = "test_qpix",
-    toplevel_lang = "vhdl",
-    waves         = 1,
-    sim_args      = ["-t","ps","-voptargs=+acc"],
-    extra_args    = [],
-    compile_args  = [],
-    parameters    = TopLevelGenerics,
-    force_compile = True )
- 
-if __name__ == "__main__":
-  run_test_fifo()
+  print('Send interrogation')
+  await daq.Interrogation()
+
+  await RisingEdge(dut.clk)
+  await QpixWaitUntilAllIdle(dut)
+  
+  manUp    = 16 + 1 
+  manRight = 16 + 2
+  manDown  = 16 + 4
+  manLeft  = 16 + 8
+
+  print('Set up manual routing')
+  await daq.RegWrite(0, 0, 3, manUp)
+  await daq.RegWrite(1, 0, 3, manLeft)
+  await daq.RegWrite(2, 0, 3, manLeft)
+  await daq.RegWrite(0, 1, 3, manUp)
+  await daq.RegWrite(1, 1, 3, manUp)
+  await daq.RegWrite(2, 1, 3, manUp)
+  await daq.RegWrite(0, 2, 3, manUp)
+  await daq.RegWrite(1, 2, 3, manUp)
+  await daq.RegWrite(2, 2, 3, manUp)
+
+  await TimerClk(dut.clk, 1000)
+
+  print("Inject hits");
+  for i in range(5) : 
+    await daq.QpixInjectHits(x = 2, y = 2, chanMask = 1)
+
+  print('Interrogation')
+  await daq.Interrogation()
+
+  daq.CheckHits()
+
+  await QpixWaitUntilAllIdle(dut)
+
+  await TimerClk(dut.clk, 10)
 
 
-
+################################################################
 
 

@@ -13,18 +13,18 @@ entity QpixAsicTop is
       Y_POS_G        : natural := 0;
       TXRX_TYPE      : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
 
-      N_ZER_CLK_G  : natural :=  8;  --2;
-      N_ONE_CLK_G  : natural :=  24; --5;
-      N_GAP_CLK_G  : natural :=  16; --4;
-      N_FIN_CLK_G  : natural :=  40; --7;
-                                     --  
-      N_ZER_MIN_G  : natural :=  4;  --1;
-      N_ZER_MAX_G  : natural :=  12; --3;
-      N_ONE_MIN_G  : natural :=  16; --4;
-      N_ONE_MAX_G  : natural :=  32; --6;
-      N_GAP_MIN_G  : natural :=  8;  --3;
-      N_GAP_MAX_G  : natural :=  32; --5;
-      N_FIN_MIN_G  : natural :=  32  --6 
+      N_ZER_CLK_G   : natural :=  8;  --2;
+      N_ONE_CLK_G   : natural :=  24; --5;
+      N_GAP_CLK_G   : natural :=  16; --4;
+      N_FIN_CLK_G   : natural :=  40; --7;
+                                      --  
+      N_ZER_MIN_G   : natural :=  4;  --1;
+      N_ZER_MAX_G   : natural :=  12; --3;
+      N_ONE_MIN_G   : natural :=  16; --4;
+      N_ONE_MAX_G   : natural :=  32; --6;
+      N_GAP_MIN_G   : natural :=  8;  --3;
+      N_GAP_MAX_G   : natural :=  32; --5;
+      N_FIN_MIN_G   : natural :=  32  --6 
 
    );
    port (
@@ -62,11 +62,33 @@ architecture behav of QpixAsicTop is
    signal localDataEna : std_logic := '0';
 
    signal asicRst      : std_logic := '0';
+   signal syncRst      : std_logic := '0';
 
    ---------------------------------------------------
 
 begin
-   
+   ---------------------------------------------------
+   -- Generate synchronous reset signal
+   ---------------------------------------------------
+   SyncReset_U : entity work.EdgeDetector
+   generic map(
+      N_SYNC_G => 2
+   )
+   port map (
+      clk    => clk,
+      rst    => '0',
+      input  => rst,
+      output => syncRst
+   );
+
+   process (clk)
+   begin
+      if rising_edge(clk) then
+         asicRst <= QpixReq.AsicReset or SyncRst;
+      end if;
+   end process;
+   ---------------------------------------------------
+
    ---------------------------------------------------
    -- Process ASIC internal data with defined format
    ---------------------------------------------------
@@ -81,6 +103,7 @@ begin
       rst     => asicRst,
 
       ena     => localDataEna,
+      chanEna => qpixConf.chanEna, 
 
       testEna => '0',
 
@@ -121,7 +144,6 @@ begin
 
       outData_i      => txData,
       inData         => rxData,
-      --regData        => regData,
 
       TxReady        => TxReady,
       TxPortsArr     => TxPortsArr,
@@ -149,12 +171,12 @@ begin
 
       regData  => regData,
       regResp  => regResp,
+      txReady  => TxReady,
 
       QpixConf => QpixConf,
       QpixReq  => QpixReq
    );
 
-   asicRst <= QpixReq.AsicReset or rst;
    ---------------------------------------------------
 
 

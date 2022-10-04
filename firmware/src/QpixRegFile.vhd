@@ -23,6 +23,7 @@ entity QpixRegFile is
 
       regData  : in QpixRegDataType;
       regResp  : out QpixRegDataType;
+      txReady  : in std_logic;
       
       qpixConf : out QpixConfigType;
       qpixReq  : out QpixRequestType
@@ -38,6 +39,9 @@ architecture behav of QpixRegFile is
 
    signal clkCnt       : unsigned (31 downto 0) := (others => '0');
    signal thisAsicDest : std_logic := '0';
+
+   type RegFileState is (IDLE_S, WRITE_S, READ_S);
+   signal state : RegFileState := IDLE_S;
 
 begin
 
@@ -62,9 +66,6 @@ begin
    process (regData, qpixConf_r)
    begin
       if regData.Dest = '1' then 
-         --if (regData.XDest = std_logic_vector(to_unsigned((X_POS_G),regData.XDest'length)) 
-             --and 
-            --regData.YDest = std_logic_vector(to_unsigned((Y_POS_G),regData.YDest'length)) )
          if regData.XDest = qpixConf_r.XPos and regData.YDest = qpixConf_r.YPos
          then
             thisAsicDest <= '1';
@@ -90,8 +91,6 @@ begin
             qpixReq_r       <= QpixRequestZero_C;
             regResp_r.OpWrite <= '0';
             regResp_r.OpRead  <= '0';
-            regResp_r.Valid <= '0';
-
 
             if regData.Valid = '1' and thisAsicDest = '1' then
                case regData.Addr is
@@ -110,11 +109,7 @@ begin
                         qpixConf_r.Timeout <= regData.Data;
                      end if;
                      if regData.OpRead = '1' then
-                        regResp_r.Addr <= regData.Addr;
-                        regResp_r.Data <= qpixConf_r.Timeout;
-                        regResp_r.XDest <= qpixConf_r.XPos;
-                        regResp_r.YDest <= qpixConf_r.YPos;
-                        regResp_r.Valid <= '1';
+                        regResp_r.Data  <= qpixConf_r.Timeout;
                      end if;
 
                   -- DirMask and Manual routing
@@ -124,23 +119,58 @@ begin
                         qpixConf_r.ManRoute   <= regData.Data(4);
                      end if;
                      if regData.OpRead = '1' then
-                        regResp_r.Addr <= regData.Addr;
                         regResp_r.Data <= (others => '0');
                         regResp_r.Data(4 downto 0) <= qpixConf_r.ManRoute & qpixConf_r.DirMask;
-                        regResp_r.XDest <= qpixConf_r.XPos;
-                        regResp_r.YDest <= qpixConf_r.YPos;
-                        regResp_r.Valid <= '1';
                      end if;
-                  -- Determine position of the ASIC
-                  --when x"0004" => 
+
+                  when x"0004" =>
+                     if regData.OpWrite = '1' then
+                        qpixConf_r.chanEna <= regData.Data(G_N_ANALOG_CHAN-1 downto 0);
+                     end if;
+                     if regData.OpRead = '1' then
+                        regResp_r.Data <= (others => '0');
+                        regResp_r.Data(G_N_ANALOG_CHAN-1 downto 0) <= qpixConf_r.chanEna;
+                     end if;
                   when others =>
                      qpixConf_r <= qpixConf_r;
                end case;
 
+               regResp_r.reqID <= regData.reqID;
+
+               if regData.Addr /= x"0001" and regData.OpRead = '1' then
+                  regResp_r.Addr  <= regData.Addr;
+                  regResp_r.XDest <= qpixConf_r.XPos;
+                  regResp_r.YDest <= qpixConf_r.YPos;
+                  regResp_r.Valid <= '1';
+               end if;
+
+               if regResp_r.Valid = '1' and txReady = '1' then
+                  regResp_r.Valid <= '0';
+               end if;
 
             else
                qpixReq_r <= QpixRequestZero_C;
             end if;
+
+            case state is
+               when IDLE_S => 
+                  regResp_r.Valid <= '0';
+                  if regData.Valid = '1' and thisAsicDest = '1' then
+                     if regData.OpWrite = '1'  then
+                        state <= WRITE_S;
+                     elsif regData.OpRead = '1' then
+                        state <= READ_S;
+                     end if;
+                  end if;
+               when READ_S => 
+                  regResp_r.Valid <= '1';
+                  if txReady = '1' and regResp_r.Valid = '1'  then
+                     state <= IDLE_S;
+                  end if;
+               when WRITE_S => 
+                  regResp_r <= QpixRegDataZero_C;
+                  state <= IDLE_S;
+            end case;
 
             if MAN_POS_G = True then
                qpixConf_r.XPos <= std_logic_vector(to_unsigned(X_POS_G,G_POS_BITS));
@@ -158,7 +188,7 @@ begin
    end process;
    --------------------------------------------------
 
-   qpixReq <= qpixReq_r;
+   qpixReq  <= qpixReq_r;
    qpixConf <= qpixConf_r;
    regResp  <= regResp_r;
 

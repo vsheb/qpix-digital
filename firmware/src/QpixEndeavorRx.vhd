@@ -33,6 +33,7 @@ entity QpixEndeavorRx is
       -- Byte data received
       rxByte      : out std_logic_vector(NUM_BITS_G-1 downto 0);
       rxByteValid : out std_logic;
+      rxByteAck   : in  std_logic;
       rx          : in  std_logic
    );
 end QpixEndeavorRx;
@@ -95,16 +96,15 @@ begin
    rx_r <= rx_q(3);
 
    -- Asynchronous state logic
-   process(curReg, rx_r) 
+   process(curReg, rx_r, rxByteAck) 
    begin
       -- Set defaults
       nxtReg <= curReg;
 
-      -- Default strobe signals are '0'
-      nxtReg.byteValid <= '0';
+      if rxByteAck = '1' then
+         nxtReg.byteValid <= '0';
+      end if;
       nxtReg.bitError  <= '0';
-      --nxtReg.gapError  <= '0';
-      --nxtReg.lenError  <= '0';
 
       if rx_r = '1' then
          nxtReg.highCnt <= curReg.highCnt + 1;
@@ -123,6 +123,7 @@ begin
             nxtReg.lenError  <= '0';
             nxtReg.gapError  <= '0';
             nxtReg.bitError  <= '0';
+
 
          when DATA_S =>
             if rx_r = '0' then

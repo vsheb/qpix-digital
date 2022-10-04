@@ -64,14 +64,10 @@ architecture behav of QpixComm is
    signal txByteReadyArr   : std_logic_vector(3 downto 0);
 
    signal RxByteArr        : QpixByteArrType      := (others => (others => '0'));
-   signal RxByteValidArr   : std_logic_vector(3 downto 0);
+   signal RxBytesAck     : std_logic_vector(3 downto 0);
+   signal RxBytesValid   : std_logic_vector(3 downto 0);
 
-   signal RxFifoDoutArr    : QpixByteArrType      := (others => (others => '0'));
-   signal RxFifoREnArr     : std_logic_vector(3 downto 0);
-   signal RxFifoEmptyArr   : std_logic_vector(3 downto 0);
-   signal RxFifoFullArr    : std_logic_vector(3 downto 0);
-
-   signal TxReadyOr        : std_logic;
+   signal TxReadyMask        : std_logic;
 
    --signal InData           : QpixDataFormatType := QpixDataZero_C;
 
@@ -98,7 +94,7 @@ begin
 
             --rxValid     => RxPortsArr(i).Valid,
             rxByte      => RxByteArr(i),
-            rxByteValid => RxByteValidArr(i),
+            rxByteValid => RxBytesValid(i),
             rxFrameErr  => open,
             rxBreakErr  => open,
 
@@ -126,49 +122,33 @@ begin
                N_FIN_MIN_G   => N_FIN_MIN_G
             )
             port map (
-               clk         => clk,
-               sRst        => rst,
+               clk          => clk,
+               sRst         => rst,
+                            
+               txByte       => TxByteArr(i), 
+               txByteValid  => TxByteValidArr(i), 
+               txByteReady  => TxByteReadyArr(i),
 
-               txByte      => TxByteArr(i), 
-               txByteValid => TxByteValidArr(i), 
-               txByteReady => TxByteReadyArr(i),
+               rxByte       => RxByteArr(i),
+               rxByteValid  => RxBytesValid(i),
+               RxByteAck    => RxBytesAck(i),
 
-               rxByte      => RxByteArr(i),
-               rxByteValid => RxByteValidArr(i),
-
-               Rx          => RxPortsArr(i),
-               Tx          => TxPortsArr(i)
+               Rx           => RxPortsArr(i),
+               Tx           => TxPortsArr(i)
             );
       end generate ENDEAROV_GEN;
    end generate GEN_TXRX;
    ------------------------------------------------------------
 
-   ------------------------------------------------------------
-   -- FIFOs for input lines
-   ------------------------------------------------------------
-   RX_GEN_FIFO : for i in 0 to 3 generate
-      FIFO_U : entity work.fifo_cc
-      generic map(
-         DATA_WIDTH => NUM_BITS_G,
-         DEPTH      => G_FIFO_MUX_DEPTH,
-         RAM_TYPE   => "distributed"
-      )
-      port map(
-         clk   => clk,
-         rst   => rst,
-         din   => RxByteArr(i),
-         wen   => RxByteValidArr(i),
-         ren   => RxFifoREnArr(i),
-         dout  => RxFifoDoutArr(i), 
-         empty => RxFifoEmptyArr(i),
-         full  => RxFifoFullArr(i)
-      );
-
-   end generate RX_GEN_FIFO;
-   ------------------------------------------------------------
-
-   TxReadyOr <= AND_REDUCE(TxByteReadyArr);
-   TxReady   <= TxReadyOr;
+   process (qpixConf.DirMask, TxByteReadyArr)
+   begin
+         if (qpixConf.DirMask and TxByteReadyArr) = qpixConf.DirMask then
+            TxReadyMask <= '1';
+         else
+            TxReadyMask <= '0';
+         end if;
+   end process;
+   TxReady <= TxReadyMask;
 
    ------------------------------------------------------------
    -- Parser
@@ -180,15 +160,15 @@ begin
 
       qpixConf          => qpixConf,
 
-      inBytesArr        => RxFifoDoutArr,
-      inFifoEmptyArr    => RxFifoEmptyArr,
-      inFifoREnArr      => RxFifoREnArr,
+      inBytesArr        => RxByteArr,
+      inBytesValid      => RxBytesValid,
+      inBytesAck        => RxBytesAck,
       inData            => inData,
                         
       outData           => outData_i,
       outBytesArr       => TxByteArr,
       outBytesValidArr  => TxByteValidArr,
-      txReady           => TxReadyor,
+      txReady           => TxReadyMask,
 
       regData           => regData,
       regResp           => regResp

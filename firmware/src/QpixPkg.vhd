@@ -28,7 +28,7 @@ package QpixPkg is
 
    constant G_FIFO_LOC_DEPTH : natural := 9;
    constant G_FIFO_EXT_DEPTH : natural := 8;
-   constant G_FIFO_MUX_DEPTH : natural := 3;
+   constant G_FIFO_MUX_DEPTH : natural := 4;
 
    --constant DirUp    : std_logic_vector(3 downto 0) := b"1000";
    --constant DirRight : std_logic_vector(3 downto 0) := b"0100";
@@ -200,6 +200,7 @@ package QpixPkg is
       locEnaRcv   : std_logic; -- analog data enabled while receiving
       locEnaReg   : std_logic; -- analog data enabled while reg broadcasting
       ManRoute    : std_logic;
+      chanEna     : std_logic_vector(G_N_ANALOG_CHAN-1 downto 0);
 
    end record;
 
@@ -212,7 +213,8 @@ package QpixPkg is
       locEnaSnd  => '1',
       locEnaRcv  => '1',
       locEnaReg  => '1', 
-      ManRoute => '0'
+      ManRoute   => '0',
+      chanEna    => (others => '1')
 
    );
    ------------------------------------------------------------------
@@ -359,7 +361,7 @@ package body QpixPkg is
       if d.OpWrite = '0' and d.OpRead = '0' then
          x(59 downto 56) := x"4";
       else
-         x(59 downto 56) := x"3";             -- word type
+         x(59 downto 56) := x"3";          -- word type
       end if;
       x(55)           := d.OpWrite;
       x(54)           := d.OpRead;
@@ -368,8 +370,8 @@ package body QpixPkg is
       x(48)           := d.SrcDaq;
       x(47 downto 44) := d.XHops;
       x(43 downto 40) := d.YHops;
-      x(39 downto 36) := d.XDest;           -- x
-      x(35 downto 32) := d.YDest;           -- y
+      x(39 downto 36) := d.XDest;          -- x
+      x(35 downto 32) := d.YDest;          -- y
       x(31 downto 16) := d.Addr; 
       x(15 downto 0 ) := d.Data; 
 

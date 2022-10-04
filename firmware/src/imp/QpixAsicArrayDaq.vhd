@@ -10,18 +10,18 @@ entity QpixAsicArrayDaq is
       X_NUM_G          : natural := 3;
       Y_NUM_G          : natural := 3;
       INDIVIDUAL_CLK_G : boolean := False;
-      N_ZER_CLK_G      : natural :=  8;  --2;
-      N_ONE_CLK_G      : natural :=  24; --5;
-      N_GAP_CLK_G      : natural :=  16; --4;
-      N_FIN_CLK_G      : natural :=  40; --7;
-                                         --  
-      N_ZER_MIN_G      : natural :=  4;  --1;
-      N_ZER_MAX_G      : natural :=  12; --3;
-      N_ONE_MIN_G      : natural :=  16; --4;
-      N_ONE_MAX_G      : natural :=  32; --6;
-      N_GAP_MIN_G      : natural :=  8;  --3;
-      N_GAP_MAX_G      : natural :=  32; --5;
-      N_FIN_MIN_G      : natural :=  32  --6 
+      N_ZER_CLK_G      : natural := 8; 
+      N_ONE_CLK_G      : natural := 24;
+      N_GAP_CLK_G      : natural := 16;
+      N_FIN_CLK_G      : natural := 40;
+                                       
+      N_ZER_MIN_G      : natural := 4; 
+      N_ZER_MAX_G      : natural := 12;
+      N_ONE_MIN_G      : natural := 16;
+      N_ONE_MAX_G      : natural := 32;
+      N_GAP_MIN_G      : natural := 8; 
+      N_GAP_MAX_G      : natural := 32;
+      N_FIN_MIN_G      : natural := 32 
    );
    port (
       clk             : in std_logic;
@@ -36,8 +36,11 @@ entity QpixAsicArrayDaq is
 
       daqRxByte       : out  std_logic_vector(G_DATA_BITS-1 downto 0);
       daqRxByteValid  : out std_logic;
+      daqRxByteAck    : in  std_logic;
       daqRxFrameErr   : out std_logic;
-      daqRxBreakErr   : out std_logic
+      daqRxBreakErr   : out std_logic;
+      
+      daqTimestamp    : out unsigned(31 downto 0)
       
    );
 end entity QpixAsicArrayDaq;
@@ -52,7 +55,8 @@ architecture behav of QpixAsicArrayDaq is
    signal xpos         : std_logic_vector(3 downto 0);
    signal ypos         : std_logic_vector(3 downto 0);
 
-   signal daqTimestamp : unsigned(31 downto 0) := (others => '0');
+   signal daqCnt       : unsigned(31 downto 0) := (others => '0');
+
 
 begin
    ---------------------------------------------------
@@ -82,7 +86,7 @@ begin
       port map (
          clk        => clk,
          clkVec     => clkVec,
-         rst        => '0', --rst,
+         rst        => rst, --rst,
 
          led        => open,
 
@@ -110,6 +114,7 @@ begin
 
          rxByte      => daqRxByte_s,
          rxByteValid => daqRxByteValid,
+         rxByteAck   => daqRxByteAck,
          rxFrameErr  => daqRxFrameErr,
          rxBreakErr  => daqRxBreakErr,
 
@@ -127,9 +132,10 @@ begin
    process (clk)
    begin
       if rising_edge(clk) then
-         daqTimestamp <= daqTimestamp + 1;
+         daqCnt <= daqCnt + 1;
       end if;
    end process;
+   daqTimestamp <= daqCnt;
 
 
 end behav;

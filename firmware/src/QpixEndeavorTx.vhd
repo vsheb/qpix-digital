@@ -43,6 +43,7 @@ architecture Behavioral of QpixEndeavorTx is
       phase     : unsigned(5 downto 0);
       phase_max : unsigned(5 downto 0);
       tx        : std_logic;
+      ready     : std_logic;
    end record;
    
    constant REG_INIT_C : RegType := (
@@ -51,7 +52,8 @@ architecture Behavioral of QpixEndeavorTx is
       counter    => (others => '0'),
       phase      => (others => '0'),
       phase_max  => (others => '0'),
-      tx         => '0'
+      tx         => '0', 
+      ready      => '0'
    );
    
    signal curReg : RegType := REG_INIT_C;
@@ -73,17 +75,17 @@ begin
    process(curReg, txByteValid, txByte) begin
       -- Set defaults
       nxtReg        <= curReg;
-      txByteReady   <= '0';
+      nxtReg.ready  <= '0';
       nxtReg.phase  <= curReg.phase + 1;
       nxtReg.tx     <= '0';
       -- Actual state definitions
       case(curReg.state) is
          when IDLE_S  =>
-            txByteReady <= '1';
+            nxtReg.ready <= '1';
             nxtReg.counter      <= (others => '0');
             nxtReg.phase        <= (others => '0');
             if txByteValid = '1' then
-               txByteReady   <= '0';
+               nxtReg.ready     <= '0';
                nxtReg.byte      <= txByte;
                nxtReg.state     <= DATA_S;
                nxtReg.phase_max <= fValueToClocks(txByte(to_integer(curReg.counter)));
@@ -139,6 +141,8 @@ begin
          tx <= curReg.tx;
       end if;
    end process;
+
+   txByteReady <= curReg.ready;
 
 
 end Behavioral;

@@ -288,6 +288,7 @@ begin
             if txReady = '1' then
                if curReg.stateCnt(1) = '1' then
                   nxtReg.txData.DataValid <= '1';
+                  nxtReg.txData.ChanMask  <= (others => '0');
                   nxtReg.txData.XPos      <= qpixConf.XPos;
                   nxtReg.txData.YPos      <= qpixConf.YPos;
                   nxtReg.txData.Timestamp <= curReg.clkCnt(15 downto 0) & curReg.clkCnt(15 downto 0); -- FIXME
@@ -306,8 +307,7 @@ begin
             if extFifoEmpty = '0' and txReady = '1' then 
                if curReg.extFifoRen = '0' and curReg.stateCnt(1) = '1' then
                   nxtReg.extFifoRen <= '1';
-                  --nxtReg.txData.Data <= extFifoDout;
-                  nxtReg.txData <= fQpixByteToRecord(extFifoDout);
+                  nxtReg.txData           <= fQpixByteToRecord(extFifoDout);
                   nxtReg.txData.DataValid <= '1';
                   nxtReg.txData.DirMask   <= curReg.respDir;
                   -- replace some data FIXME : temporary

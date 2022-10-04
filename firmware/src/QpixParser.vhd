@@ -18,8 +18,8 @@ entity QpixParser is
       
       -- input to ASIC 
       inBytesArr          : in  QpixByteArrType;
-      inFifoEmptyArr      : in  std_logic_vector(3 downto 0); 
-      inFifoREnArr        : out std_logic_vector(3 downto 0);
+      inBytesValid        : in  std_logic_vector(3 downto 0); 
+      inBytesAck          : out std_logic_vector(3 downto 0);
       inData              : out QpixDataFormatType;
       
       -- output from ASIC
@@ -43,14 +43,13 @@ architecture behav of QpixParser is
    signal thisReqID        : std_logic_vector(regDataR.ReqID'range) := (others => '0');
 
    signal inBytesMux       : std_logic_vector(G_DATA_BITS+1 downto 0) := (others => '0'); -- two LSB for Rx line index
-   signal inBytesMuxValid  : std_logic                    := '0';
-   signal inBytesMuxValidR : std_logic                    := '0';
-   signal inBytesValid     : std_logic_vector(3 downto 0) := (others => '0');
+   signal inBytesMuxValidOr : std_logic                    := '0';
+   signal inBytesMuxValid  : std_logic_vector(3 downto 0) := (others => '0');
+   signal inBytesMuxValidR : std_logic_vector(3 downto 0) := (others => '0');
 
    signal regDirResp       : std_logic_vector(3 downto 0) := (others => '0');
    signal fifoRen          : std_logic_vector(3 downto 0) := (others => '0');
 
-   signal txReadyR         : std_logic  := '1';
 
 
 begin
@@ -65,17 +64,18 @@ begin
    begin
       if rising_edge (clk) then
 
-         inBytesMuxValid  <= '0';
          inBytesMuxValidR <= inBytesMuxValid;
+
+         inBytesMuxValid   <= (others => '0');
+         inBytesMuxValidOr <= '0';
          fifoRen          <= (others => '0');
-         txReadyR         <= txReady;
          for i in 0 to 3 loop
-            ------- Rewrite all this block!!!! FIXME
-            if inFifoEmptyArr(i) = '0' and fifoRen = b"0000" and txReady = '1' then
+            ------- Rewrite this entire block!!!! FIXME
+            if inBytesValid(i) = '1' and fifoRen = b"0000" then
                inBytesMux          <= std_logic_vector(to_unsigned(i,2)) & inBytesArr(i);
-               inBytesMuxValid     <= '1';
-               inBytesValid    <= (others => '0');
-               inBytesValid(i)     <= '1';
+               inBytesMuxValid     <= (others => '0');
+               inBytesMuxValid(i)  <= '1';
+               inBytesMuxValidOr   <= '1';
                fifoRen <= (others => '0');
                fifoRen(i)   <= '1';
             end if;
@@ -85,7 +85,7 @@ begin
    end process;
    ------------------------------------------------------------
 
-   inFifoREnArr <= fifoRen;
+   inBytesAck <= fifoRen;
 
    regDirResp <= qpixConf.DirMask; 
 
@@ -96,16 +96,23 @@ begin
          if rst = '1' then 
             inDataR  <= QpixDataZero_C;
             regDataR <= QpixRegDataZero_C;
+            thisReqID <= (others => '0');
          else
             inDataR.DataValid <= '0';
             regDataR.Valid <= '0';
 
-            if inBytesMuxValidR = '1'  then
+            if inBytesMuxValidOr = '1'  then
                if fQpixGetWordType(inBytesMux) = REGREQ_W then
-                  reg := fQpixByteToReg(inBytesMux(63 downto 0));
-                  regDataR <= reg;
+                  reg         := fQpixByteToReg(inBytesMux(63 downto 0));
+                  regDataR    <= reg;
+
+                  if reg.reqID > thisReqID or (reg.reqID = x"0" and reg.reqID /= thisReqID) then
+                     thisReqID       <= reg.ReqID;
+                     regDataR.Valid  <= '1';
+                  end if;
 
                   if reg.SrcDaq = '0' then
+                     -- increment X-Y position depending on where the data came from
                      case inBytesMux(65 downto 64) is
                         when b"00" => regDataR.YHops <= std_logic_vector(unsigned(reg.YHops) + 1); 
                         when b"01" => regDataR.XHops <= std_logic_vector(unsigned(reg.XHops) - 1); 
@@ -115,10 +122,8 @@ begin
                      end case;
                   end if;
                   regDataR.SrcDaq <= '0';
-                  regDataR.Valid  <= '1';
 
                else
-                  regDataR.Valid    <= '0';
                   inDataR           <= fQpixByteToRecord(inBytesMux(63 downto 0));
                   inDataR.Data      <= inBytesMux(inDataR.Data'range);
                   inDataR.DataValid <= '1';
@@ -135,14 +140,6 @@ begin
    ------------------------------------------------------------
    -- TX
    ------------------------------------------------------------
-   process (clk)
-   begin
-      if rising_edge (clk) then
-         if regDataR.Valid = '1'  then 
-            thisReqID           <= regDataR.ReqID;
-         end if;
-      end if;
-   end process;
          
    TX_GEN : for i in 0 to 3 generate
       process (clk)
@@ -161,13 +158,9 @@ begin
                end if;
             elsif regDataR.Valid = '1'  then 
                outBytesArr(i)      <= fQpixRegToByte(regDataR);
-               if regDataR.ReqID /= thisReqID then
-                  outBytesValidArr(i) <= not inBytesValid(i);
-               else 
-                  outBytesValidArr(i) <= '0';
-               end if;
+               outBytesValidArr(i) <= not inBytesMuxValidR(i);
 
-            elsif regResp.Valid = '1' then
+            elsif regResp.Valid = '1' and TxReady = '1' then
                outBytesArr(i)      <= fQpixRegToByte(regResp);
                outBytesValidArr(i) <= regDirResp(i);
             end if;

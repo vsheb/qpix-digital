@@ -23,6 +23,7 @@ entity QpixDataProc is
                       
       testEna         : in  std_logic; 
                       
+      chanEna         : in  std_logic_vector(N_ANALOG_CHAN_G-1 downto 0);
       qpixRstPulses   : in  std_logic_vector(N_ANALOG_CHAN_G-1 downto 0);
 
       outData         : out QpixDataFormatType
@@ -35,6 +36,7 @@ end entity QpixDataProc;
 architecture behav of QpixDataProc is
 
    signal qpixRstPulsesE : std_logic_vector(N_ANALOG_CHAN_G-1 downto 0) := (others => '0');
+   signal qpixRstPulsesM : std_logic_vector(N_ANALOG_CHAN_G-1 downto 0) := (others => '0');
 
    signal testData  : QPixDataFormatType := QpixDataZero_C;
    signal inData    : QPixDataFormatType := QpixDataZero_C;
@@ -72,6 +74,9 @@ begin
 
    ANALOG_IN_GEN : for i in 0 to N_ANALOG_CHAN_G-1 generate
       PulseEdge_U : entity work.EdgeDetector
+         generic map(
+            N_SYNC_G => 2
+         )
          port map(
             clk    => clk,
             rst    => rst,
@@ -80,6 +85,8 @@ begin
          );
    end generate ANALOG_IN_GEN;
 
+   qpixRstPulsesM <= qpixRstPulsesE and chanEna;
+
    ----------------------------------------------------------------------------------
    -- Format the data
    ----------------------------------------------------------------------------------
@@ -87,7 +94,7 @@ begin
    begin
       if rising_edge (clk) then
          inData.DataValid <= '0';
-         if qpixRstPulsesE /= (qpixRstPulsesE'range => '0') then
+         if qpixRstPulsesM /= (qpixRstPulsesM'range => '0') then
             inData.DataValid <= '1';
             inData.XPos      <= std_logic_vector(to_unsigned(X_POS_G, G_POS_BITS));
             inData.YPos      <= std_logic_vector(to_unsigned(Y_POS_G, G_POS_BITS));
