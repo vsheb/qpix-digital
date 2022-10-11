@@ -64,6 +64,8 @@ architecture behav of QpixAsicTop is
    signal asicRst      : std_logic := '0';
    signal syncRst      : std_logic := '0';
 
+   signal clkCnt       : std_logic_vector(31 downto 0);
+
    ---------------------------------------------------
 
 begin
@@ -104,6 +106,7 @@ begin
 
       ena     => localDataEna,
       chanEna => qpixConf.chanEna, 
+      clkCnt  => clkCnt,
 
       testEna => '0',
 
@@ -173,6 +176,7 @@ begin
       regResp  => regResp,
       txReady  => TxReady,
 
+      clkCnt   => clkCnt,
       QpixConf => QpixConf,
       QpixReq  => QpixReq
    );
@@ -188,6 +192,7 @@ begin
       clk           => clk,
       rst           => AsicRst,
                     
+      clkCnt        => clkCnt,
       qpixReq       => QpixReq,
       qpixConf      => QpixConf,
                     

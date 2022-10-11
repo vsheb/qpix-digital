@@ -22,6 +22,7 @@ entity QpixDataProc is
       ena             : in  std_logic;
                       
       testEna         : in  std_logic; 
+      clkCnt          : in  std_logic_vector(31 downto 0);
                       
       chanEna         : in  std_logic_vector(N_ANALOG_CHAN_G-1 downto 0);
       qpixRstPulses   : in  std_logic_vector(N_ANALOG_CHAN_G-1 downto 0);
@@ -41,7 +42,7 @@ architecture behav of QpixDataProc is
    signal testData  : QPixDataFormatType := QpixDataZero_C;
    signal inData    : QPixDataFormatType := QpixDataZero_C;
 
-   signal TimeStamp : unsigned(G_TIMESTAMP_BITS-1 downto 0) := (others => '0');
+   signal TimeStamp : std_logic_vector(G_TIMESTAMP_BITS-1 downto 0) := (others => '0');
 
 begin
 
@@ -60,17 +61,7 @@ begin
       --outData => testData
    --);  --- NOT USED FOR NOW
    ----------------------------------------------------------------------------------
-
-   process (clk)
-   begin
-      if rising_edge(clk) then
-         if rst = '1' then
-            Timestamp <= (others => '0');
-         else
-            TimeStamp <= Timestamp + 1; 
-         end if;
-      end if;
-   end process;  
+   TimeStamp <= clkCnt(G_TIMESTAMP_BITS-1 downto 0);
 
    ANALOG_IN_GEN : for i in 0 to N_ANALOG_CHAN_G-1 generate
       PulseEdge_U : entity work.EdgeDetector
@@ -98,7 +89,7 @@ begin
             inData.DataValid <= '1';
             inData.XPos      <= std_logic_vector(to_unsigned(X_POS_G, G_POS_BITS));
             inData.YPos      <= std_logic_vector(to_unsigned(Y_POS_G, G_POS_BITS));
-            inData.TimeStamp <= std_logic_vector(TimeStamp);
+            inData.TimeStamp <= TimeStamp;
             inData.ChanMask  <= qpixRstPulsesE;
          end if;
       end if;

@@ -72,7 +72,8 @@ def test_qpix():
     sim_args      = ["-t","ps","-voptargs=+acc"],
     extra_args    = [],
     compile_args  = [],
-    testcase      = "test_manual_routing",
+    # testcase      = "test_manual_routing",
+    testcase      = "test_single_point_failure",
     parameters    = TopLevelGenerics,
     force_compile = True )
  

@@ -60,6 +60,7 @@ def QpixReqFormat(x = 0, y = 0, dest = 0, reqID = 0, opWrite = 0, addr = 0, data
   return v
 ################################################################
   
+f = open("qpix_sim.txt","w")  
 
 ################################################################
 # Continuously print FSM states for the array
@@ -71,6 +72,8 @@ async def QpixPrintArray(dut):
   nX, nY = int(dut.X_NUM_G.value), int(dut.Y_NUM_G.value)
 
   state_array = [[0 for i in range(nX)] for j in range(nY)]
+  fifoext_array = [[0 for i in range(nX)] for j in range(nY)]
+  fifoloc_array = [[0 for i in range(nX)] for j in range(nY)]
   
   while True : 
     await RisingEdge(dut.clk)
@@ -78,14 +81,23 @@ async def QpixPrintArray(dut):
     for y in range(nY) : 
       for x in range(nX) : 
         v = dut.QpixAsicArray_U.GEN_X[x].GEN_Y[y].QpixAsicTop_U.QpixRoute_U.curReg.state.value
-        if v != state_array[y][x] : trig = True
-        state_array[y][x] = v
+        fl = int(dut.QpixAsicArray_U.GEN_X[x].GEN_Y[y].QpixAsicTop_U.QpixRoute_U.FIFO_LOC_U.i_cnt.value)
+        fe = int(dut.QpixAsicArray_U.GEN_X[x].GEN_Y[y].QpixAsicTop_U.QpixRoute_U.FIFO_EXT_U.i_cnt.value)
+        if v != state_array[y][x]    : trig = True
+        if fl != fifoloc_array[y][x] : trig = True
+        if fe != fifoext_array[y][x] : trig = True
+        state_array[y][x]   = v
+        fifoloc_array[y][x] = fl 
+        fifoext_array[y][x] = fe 
 
     if trig :
-      print("******FSM*******")
-      for r in state_array:
-        print(r)
+      print("******FSM / FIFO_LOC / FIFO_EXT *******")
+      for i in range(nY):
+        print(state_array[i], fifoloc_array[i], fifoext_array[i] )
+        f.write(f'{state_array[i]}, \t {fifoloc_array[i]}, \t {fifoext_array[i]} \n' )
       print("****************")
+      f.write('\n')
+  f.close()
 ################################################################
   
 
@@ -104,13 +116,24 @@ class QpixDaq :
     dut.rst.value = 0
 
     self.nX, self.nY = int(dut.X_NUM_G.value), int(dut.Y_NUM_G.value)
+
+    self.timeout0 = (self.dut.N_ONE_CLK_G.value + self.dut.N_GAP_CLK_G.value)
+    self.timeout0 *= 64*(self.nX + self.nY) + 500
     # set initial values for the input ports
     for i in range(self.nX) : 
       for j in range(self.nY) :
         dut.inPortsArr[i][j].value = 0
 
+    self.rsp_matrix = [[0 for i in range(self.nX)] for j in range(self.nY)] 
     self.stat_matrix = [[0 for i in range(self.nX)] for j in range(self.nY)] 
     self.fin_matrix = [[1 for i in range(self.nX)] for j in range(self.nY)] 
+    self.expected_martix = [[1 for i in range(self.nX)] for j in range(self.nY)]
+
+  def ResetEvent(self):
+    self.hits = []
+    self.markers = []
+    self.inHits  = []
+    self.regRsps = []
 
 
   @coroutine
@@ -146,6 +169,7 @@ class QpixDaq :
           regData = QpixRegFormat(dat)
           print(regData)
           self.stat_matrix[regData.y][regData.x] += 1
+          self.rsp_matrix[regData.y][regData.x]  += 1
           self.regRsps.append(regData) 
         else : 
           assert "Wrong word type received by DAQ node" 
@@ -158,8 +182,13 @@ class QpixDaq :
 
   @coroutine
   async def WaitAllHitsCollected(self) : 
+    timeout_cnt = 0
+    timeout = self.timeout0 + 64*len(self.inHits) 
     while self.stat_matrix != self.fin_matrix: 
       await RisingEdge(self.dut.clk)
+      timeout_cnt += 1
+      if timeout_cnt > timeout : break
+    if self.stat_matrix != self.expected_martix : assert "Missing responses"
 
   @coroutine
   async def WaitRegResponse(self) : 
@@ -174,6 +203,7 @@ class QpixDaq :
     self.reqID += 1
     v = QpixReqFormat(x, y, dest, self.reqID, opWrite, addr, data)
 
+    self.rsp_matrix = [[0 for i in range(self.nX)] for j in range(self.nY)] 
     self.stat_matrix = [[0 for i in range(self.nX)] for j in range(self.nY)] 
 
     # wait until TX is ready
@@ -204,8 +234,17 @@ class QpixDaq :
       xx, yy, dd, n = 0, 0, 0, self.nX*self.nY
 
     await self.QpixRegRequest(x = xx, y = yy, dest = dd, opWrite = 0, addr = addr)
-    while len(self.regRsps) != n : 
+
+    cnt = 0
+
+    while cnt < self.timeout0 :
+      if len(self.regRsps) == n : break
       await RisingEdge(self.dut.clk)
+      cnt += 1
+    print("******** REG RSP *********")
+    for r in self.rsp_matrix:
+      print(r)
+    print("**********************")
 
   async def RegWrite(self, x = -1, y = -1, addr = 0, value = 0) : 
     self.regRsps = []
@@ -220,17 +259,17 @@ class QpixDaq :
 
   # Send a hit to the specific ASIC
   @coroutine
-  async def QpixInjectHits(self, x, y, chanMask) : 
-# clkVec[j*nX+i]
+  async def QpixInjectHits(self, x, y, chanMask, n = 1) : 
     clk = self.dut.QpixAsicArray_U.clkVec_s[y*self.nX + x];
-    await RisingEdge(clk)
-    self.dut.inPortsArr[x][y].value = chanMask
-    await RisingEdge(clk)
-    await RisingEdge(clk)
-    self.dut.inPortsArr[x][y].value = 0
-    t = int(self.dut.QpixAsicArray_U.GEN_X[x].GEN_Y[y].QpixAsicTop_U.QpixDataProc_U.TimeStamp.value) + 3
-    self.inHits.append(QpixHitData(0x1, chanMask, x, y, t))
-    await RisingEdge(clk)
+    for _ in range(n) : 
+      await RisingEdge(clk)
+      self.dut.inPortsArr[x][y].value = chanMask
+      await RisingEdge(clk)
+      await RisingEdge(clk)
+      self.dut.inPortsArr[x][y].value = 0
+      t = int(self.dut.QpixAsicArray_U.GEN_X[x].GEN_Y[y].QpixAsicTop_U.QpixDataProc_U.TimeStamp.value) + 3
+      self.inHits.append(QpixHitData(0x1, chanMask, x, y, t))
+      await RisingEdge(clk)
 
   def CheckHits(self) : 
     assert len(self.hits) == len(self.inHits), "Wrong number of hits received"

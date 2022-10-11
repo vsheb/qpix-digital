@@ -21,10 +21,11 @@ entity QpixRegFile is
       clk      : in std_logic;
       rst      : in std_logic;
 
+      txReady  : in std_logic;
       regData  : in QpixRegDataType;
       regResp  : out QpixRegDataType;
-      txReady  : in std_logic;
       
+      clkCnt   : out std_logic_vector(31 downto 0);
       qpixConf : out QpixConfigType;
       qpixReq  : out QpixRequestType
       
@@ -37,11 +38,12 @@ architecture behav of QpixRegFile is
    signal qpixReq_r    : QpixRequestType := QpixRequestZero_C;
    signal regResp_r    : QpixRegDataType := QpixRegDataZero_C;
 
-   signal clkCnt       : unsigned (31 downto 0) := (others => '0');
+   signal cnt       : unsigned (31 downto 0) := (others => '0');
    signal thisAsicDest : std_logic := '0';
 
    type RegFileState is (IDLE_S, WRITE_S, READ_S);
    signal state : RegFileState := IDLE_S;
+
 
 begin
 
@@ -52,12 +54,13 @@ begin
    begin
       if rising_edge (clk) then
          if rst = '1' then
-            clkCnt <= (others => '0');
+            cnt <= (others => '0');
          else
-            clkCnt <= clkCnt + 1;
+            cnt <= cnt + 1;
          end if;
       end if;
    end process;
+   clkCnt <= std_logic_vector(cnt);
    --------------------------------------------------
 
    --------------------------------------------------
@@ -89,8 +92,12 @@ begin
             regResp_r  <= QpixRegDataZero_C;
          else
             qpixReq_r       <= QpixRequestZero_C;
+
             regResp_r.OpWrite <= '0';
             regResp_r.OpRead  <= '0';
+            regResp_r.Addr    <= regData.Addr;
+            regResp_r.XDest   <= qpixConf_r.XPos;
+            regResp_r.YDest   <= qpixConf_r.YPos;
 
             if regData.Valid = '1' and thisAsicDest = '1' then
                case regData.Addr is
@@ -123,6 +130,7 @@ begin
                         regResp_r.Data(4 downto 0) <= qpixConf_r.ManRoute & qpixConf_r.DirMask;
                      end if;
 
+                  -- analog channel masking
                   when x"0004" =>
                      if regData.OpWrite = '1' then
                         qpixConf_r.chanEna <= regData.Data(G_N_ANALOG_CHAN-1 downto 0);
@@ -131,6 +139,18 @@ begin
                         regResp_r.Data <= (others => '0');
                         regResp_r.Data(G_N_ANALOG_CHAN-1 downto 0) <= qpixConf_r.chanEna;
                      end if;
+
+                  -- set the chip coordinates
+                  when x"0005" =>
+                     qpixConf_r.XPos <= regData.XHops;
+                     qpixConf_r.YPos <= regData.YHops;
+                     regResp_r.XDest <= qpixConf_r.XPos;
+                     regResp_r.YDest <= qpixConf_r.YPos;
+                     --if regData.OpWrite = '1' then
+                     --end if;
+                     if regData.OpRead = '1' then
+                        regResp_r.Data <= (others => '0');
+                     end if;
                   when others =>
                      qpixConf_r <= qpixConf_r;
                end case;
@@ -138,9 +158,6 @@ begin
                regResp_r.reqID <= regData.reqID;
 
                if regData.Addr /= x"0001" and regData.OpRead = '1' then
-                  regResp_r.Addr  <= regData.Addr;
-                  regResp_r.XDest <= qpixConf_r.XPos;
-                  regResp_r.YDest <= qpixConf_r.YPos;
                   regResp_r.Valid <= '1';
                end if;
 

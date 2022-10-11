@@ -2,9 +2,10 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import FallingEdge
-from cocotb.triggers import RisingEdge, Timer, First, Join, Combine
+from cocotb.triggers import RisingEdge, Timer, First, Join, Combine 
 from cocotb.decorators import coroutine
 from cocotb.utils import get_sim_time
+from cocotb.handle import Force, Freeze
 
 from cocotb_test.simulator import run
 import pytest
@@ -55,9 +56,6 @@ async def test_hits_readout(dut):
   # dut._log.setLevel(logging.DEBUG)
   """ test """
 
-  nX = dut.X_NUM_G.value
-  nY = dut.Y_NUM_G.value
-
   QpixStartClocks(dut)
 
   daq = QpixDaq(dut)
@@ -69,12 +67,9 @@ async def test_hits_readout(dut):
   await TimerClk(dut.clk, 10)
 
   print("Inject hits");
-  for i in range(10) : 
-    await daq.QpixInjectHits(x = 2, y = 2, chanMask = 1)
-  for i in range(10) : 
-    await daq.QpixInjectHits(x = 1, y = 0, chanMask = 15)
-  for i in range(10) : 
-    await daq.QpixInjectHits(x = 0, y = 1, chanMask = 7)
+  await daq.QpixInjectHits(x = 2, y = 2, chanMask = 1,  n = 10)
+  await daq.QpixInjectHits(x = 1, y = 0, chanMask = 15, n = 10)
+  await daq.QpixInjectHits(x = 0, y = 1, chanMask = 7,  n = 10)
 
   print("Interrogation")
   await daq.Interrogation()
@@ -86,28 +81,20 @@ async def test_hits_readout(dut):
   print("All ASICs are idle at : ", get_sim_time('ns'))
 
   await Timer(2000, 'ns')
-
 ################################################################
 
+################################################################
+################################################################
 @cocotb.test()
 async def test_register_access(dut):
   # dut._log.setLevel(logging.DEBUG)
   """ test """
 
-  nX = dut.X_NUM_G.value
-  nY = dut.Y_NUM_G.value
-
   QpixStartClocks(dut)
 
-  await TimerClk(dut.clk, 10);
-  dut.rst.value = 1;
-  await TimerClk(dut.clk, 3);
-  dut.rst.value = 0;
-  await RisingEdge(dut.clk)
 
   daq = QpixDaq(dut)
   await daq.Reset()
-  
   
   # start monitoring 
   qpix_receive = cocotb.start_soon(daq.QpixReceive())
@@ -137,19 +124,16 @@ async def test_register_access(dut):
 ################################################################
 
 
+################################################################
+# Test manual routing map
+################################################################
 @cocotb.test()
 async def test_manual_routing(dut):
-  # dut._log.setLevel(logging.DEBUG)
-  """ test """
-
-  nX = dut.X_NUM_G.value
-  nY = dut.Y_NUM_G.value
 
   QpixStartClocks(dut)
 
   daq = QpixDaq(dut)
   await daq.Reset()
-  
   
   # start monitoring 
   qpix_receive = cocotb.start_soon(daq.QpixReceive())
@@ -160,6 +144,8 @@ async def test_manual_routing(dut):
   print('Send interrogation')
   await daq.Interrogation()
 
+  daq.ResetEvent()
+
   await RisingEdge(dut.clk)
   await QpixWaitUntilAllIdle(dut)
   
@@ -167,7 +153,7 @@ async def test_manual_routing(dut):
   manRight = 16 + 2
   manDown  = 16 + 4
   manLeft  = 16 + 8
-
+  
   print('Set up manual routing')
   await daq.RegWrite(0, 0, 3, manUp)
   await daq.RegWrite(1, 0, 3, manLeft)
@@ -182,8 +168,7 @@ async def test_manual_routing(dut):
   await TimerClk(dut.clk, 1000)
 
   print("Inject hits");
-  for i in range(5) : 
-    await daq.QpixInjectHits(x = 2, y = 2, chanMask = 1)
+  await daq.QpixInjectHits(x = 2, y = 2, chanMask = 1, n = 5)
 
   print('Interrogation')
   await daq.Interrogation()
@@ -197,4 +182,51 @@ async def test_manual_routing(dut):
 
 ################################################################
 
+################################################################
+# Test a single point failure
+################################################################
+@cocotb.test()
+async def test_single_point_failure(dut):
+
+  QpixStartClocks(dut)
+
+  daq = QpixDaq(dut)
+  await daq.Reset()
+  
+  # start monitoring 
+  qpix_receive = cocotb.start_soon(daq.QpixReceive())
+  qpix_print   = cocotb.start_soon(QpixPrintArray(dut))
+
+  await RisingEdge(dut.clk)  
+
+  for i in range(4):
+    dut.QpixAsicArray_U.GEN_X[1].GEN_Y[1].QpixAsicTop_U.QpixComm_U.TxPortsArr[i].value = Force(0)
+    dut.QpixAsicArray_U.GEN_X[1].GEN_Y[1].QpixAsicTop_U.QpixComm_U.RxPortsArr[i].value = Force(0)
+
+  await daq.RegRead(-1, -1, 5)
+  await TimerClk(dut.clk, 1000)
+
+  await daq.RegWrite(2, 1, 3, 17)
+
+  print('Send interrogation')
+  await daq.Interrogation()
+  
+
+  await RisingEdge(dut.clk)
+  await QpixWaitUntilAllIdle(dut)
+  
+  # await TimerClk(dut.clk, 1000)
+
+  # print("Inject hits");
+  # await daq.QpixInjectHits(x = 2, y = 2, chanMask = 1)
+
+  # print('Interrogation')
+  # await daq.Interrogation()
+
+  # daq.CheckHits()
+
+  # await QpixWaitUntilAllIdle(dut)
+
+  # await TimerClk(dut.clk, 10)
+################################################################
 

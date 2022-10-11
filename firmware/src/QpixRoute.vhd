@@ -17,6 +17,7 @@ entity QpixRoute is
       clk             : in std_logic;
       rst             : in std_logic;
                       
+      clkCnt          : in  std_logic_vector(31 downto 0);
       qpixReq         : in  QpixRequestType;
       qpixConf        : in  QpixConfigType;
                       
@@ -46,9 +47,7 @@ architecture behav of QpixRoute is
    type RegType is record
       state      :  RouteStatesType;
       stateCnt   :  std_logic_vector(G_REG_DATA_BITS-1 downto 0);
-      clkCnt     :  std_logic_vector(31 downto 0);
       timeout    :  std_logic_vector(qpixConf.Timeout'range);
-
       txData     :  QpixDataFormatType;
       respDir    :  std_logic_vector(3 downto 0);
       manRoute   :  std_logic;
@@ -64,7 +63,6 @@ architecture behav of QpixRoute is
    constant REG_INIT_C : RegType := (
       state      => IDLE_S,
       stateCnt   => (others => '0'),
-      clkCnt     => (others => '0'),
       timeout    => (others => '0'),
       txData     => QpixDataZero_C,
       respDir    => (others => '0'),
@@ -199,11 +197,10 @@ begin
    -- Combinational logic
    ---------------------------------------------------
    process (curReg, inData, rxData, qpixReq, qpixConf, extFifoEmpty, 
-            locFifoDout, txReady, extFifoDout, locFifoEmpty)
+            locFifoDout, txReady, extFifoDout, locFifoEmpty, clkCnt)
    begin
       nxtReg <= curReg;
       nxtReg.txData.DataValid <= '0';
-      nxtReg.clkCnt <= curReg.clkCnt + 1;
 
       -- keep track of FIFO counts for debugging----
       if inData.DataValid = '1' then
@@ -291,7 +288,7 @@ begin
                   nxtReg.txData.ChanMask  <= (others => '0');
                   nxtReg.txData.XPos      <= qpixConf.XPos;
                   nxtReg.txData.YPos      <= qpixConf.YPos;
-                  nxtReg.txData.Timestamp <= curReg.clkCnt(15 downto 0) & curReg.clkCnt(15 downto 0); -- FIXME
+                  nxtReg.txData.Timestamp <= clkCnt(15 downto 0) & clkCnt(15 downto 0); -- FIXME
                   nxtReg.txData.DirMask   <= curReg.respDir;
                   nxtReg.txData.WordType  <= G_WORD_TYPE_EVTEND;
                   nxtReg.state            <= REP_REMOTE_S;
@@ -312,7 +309,7 @@ begin
                   nxtReg.txData.DirMask   <= curReg.respDir;
                   -- replace some data FIXME : temporary
                   if extFifoDout(59 downto 56) = G_WORD_TYPE_EVTEND then
-                     nxtReg.txData.Timestamp <= curReg.clkCnt(15 downto 0) & extFifoDout(15 downto 0);
+                     nxtReg.txData.Timestamp <= clkCnt(15 downto 0) & extFifoDout(15 downto 0);
                   end if;
                else
                   nxtReg.extFifoRen <= '0';
