@@ -31,17 +31,19 @@ entity QpixAsicTop is
       clk            : in  std_logic;
       rst            : in  std_logic;
 
+      -- hard and soft external interrogations
       extInterSoft   : in  std_logic := '0';
       extInterHard   : in  std_logic := '0';
+      -- a scale factor for the Endeavor parameters
       EndeavorScale  : in  std_logic_vector(2 downto 0);
+      -- disable debugging output pins
       disableDbgOut  : in  std_logic := '0';
-      
+      -- disable transceivers
+      TxRxDisable    : in  std_logic_vector(3 downto 0);
       -- qpix reset pulses from QpixAnalog
       inPorts        : in  QpixInPortsType;
-
       -- TX ports to neighbour ASICs
       TxPortsArr     : out QpixTxRxPortsArrType;
-
       -- RX ports to neighbour ASICs
       RxPortsArr     : in  QpixTxRxPortsArrType; 
 
@@ -52,7 +54,7 @@ entity QpixAsicTop is
       dbgLocFifoFull : out std_logic;
       dbgExtFifoFull : out std_logic;
       dbgFsmState    : out std_logic_vector(2 downto 0);
-      dbgDataValid   : out std_logic
+      dbgDataValid   : out std_logic 
       
    );
 end entity QpixAsicTop;
