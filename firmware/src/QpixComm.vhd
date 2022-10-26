@@ -36,6 +36,7 @@ entity QpixComm is
       qpixConf       : in QpixConfigType;
       fifoFull       : in std_logic;
 
+      TxRxDisable    : in  std_logic_vector(3 downto 0) := (others => '0');
       outData_i      : in  QpixDataFormatType;
       inData         : out QpixDataFormatType;
 
@@ -132,6 +133,7 @@ begin
                sRst         => rst,
 
                scale        => EndeavorScale,
+               TxRxDisable  => TxRxDisable(i),
                             
                txByte       => TxByteArr(i), 
                txByteValid  => TxByteValidArr(i), 

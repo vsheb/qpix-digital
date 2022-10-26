@@ -26,6 +26,7 @@ entity QpixRegFile is
       extInterH : in std_logic;
       regData   : in QpixRegDataType;
       regResp   : out QpixRegDataType;
+      intrNum   : in std_logic_vector(15 downto 0);
       
       clkCnt    : out std_logic_vector(31 downto 0);
       qpixConf  : out QpixConfigType;
@@ -142,13 +143,11 @@ begin
                      qpixConf_r.XPos <= regData.XHops;
                      qpixConf_r.YPos <= regData.YHops;
 
-                  -- TIMEOUT reg
+                  -- Get current time
                   when x"0002" =>
-                     if regData.OpWrite = '1' then
-                        qpixConf_r.Timeout <= regData.Data;
-                     end if;
                      if regData.OpRead = '1' then
-                        regResp_r.Data  <= qpixConf_r.Timeout;
+                        regResp_r.Addr  <= std_logic_vector(cnt(31 downto 16));
+                        regResp_r.Data  <= std_logic_vector(cnt(15 downto 0));
                      end if;
 
                   -- DirMask and Manual routing
@@ -192,6 +191,23 @@ begin
                      if regData.OpRead = '1' then
                         regResp_r.Data <= (others => '0');
                         regResp_r.Data(3 downto 0) <= qpixConf_r.RxDisable;
+                     end if;
+
+                  -- Disable local data when transferring data
+                  when x"0007" =>
+                     if regData.OpWrite = '1' then
+                        qpixConf_r.disIfBusy <= regData.Data(0);
+                     end if;
+                     if regData.OpRead = '1' then
+                        regResp_r.Data <= (others => '0');
+                        regResp_r.Data(0) <= qpixConf_r.disIfBusy;
+                     end if;
+
+                  -- Read interrogation number
+                  when x"0008" =>
+                     if regData.OpRead = '1' then
+                        regResp_r.Data <= (others => '0');
+                        regResp_r.Data <= intrNum;
                      end if;
 
                   when others =>

@@ -198,9 +198,7 @@ package QpixPkg is
       RxDisable   : std_logic_vector(3 downto 0);
       DirMask     : std_logic_vector(3 downto 0);
       DirMaskMan  : std_logic_vector(3 downto 0); -- directions mask b"URDL"
-      locEnaSnd   : std_logic; -- analog data enabled while sending 
-      locEnaRcv   : std_logic; -- analog data enabled while receiving
-      locEnaReg   : std_logic; -- analog data enabled while reg broadcasting
+      disIfBusy   : std_logic; -- disable local data when transferring data
       ManRoute    : std_logic;
       chanEna     : std_logic_vector(G_N_ANALOG_CHAN-1 downto 0);
 
@@ -213,9 +211,7 @@ package QpixPkg is
       RxDisable  => (others => '0'),
       DirMask    => (others => '0'),
       DirMaskMan => (others => '0'),
-      locEnaSnd  => '1',
-      locEnaRcv  => '1',
-      locEnaReg  => '1', 
+      disIfBusy  => '0',
       ManRoute   => '0',
       chanEna    => (others => '1')
 

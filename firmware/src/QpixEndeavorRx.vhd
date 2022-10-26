@@ -25,6 +25,7 @@ entity QpixEndeavorRx is
       clk         : in  std_logic;
       sRst        : in  std_logic;
       scale       : in  std_logic_vector(2 downto 0);
+      disable     : in  std_logic;
 
       bitError    : out std_logic;
       gapError    : out std_logic;
@@ -56,6 +57,7 @@ architecture Behavioral of QpixEndeavorRx is
       bitError  : std_logic;
       gapError  : std_logic;
       lenError  : std_logic;
+      disable   : std_logic;
       
 
    end record;
@@ -71,7 +73,8 @@ architecture Behavioral of QpixEndeavorRx is
       waitCnt   => (others => '0'),
       bitError  => '0',
       gapError  => '0',
-      lenError  => '0'
+      lenError  => '0',
+      disable   => '0'
    );
 
    signal zeroMax   : unsigned(7 downto 0) := (others => '0');
@@ -140,10 +143,12 @@ begin
    rx_r <= rx_q(3);
 
    -- Asynchronous state logic
-   process(curReg, rx_r, rxByteAck, zeroMin, zeroMax, oneMin, oneMax, gapMin, gapMax, finMin) 
+   process(curReg, rx_r, rxByteAck, zeroMin, zeroMax, oneMin, oneMax, gapMin, finMin, disable) 
    begin
       -- Set defaults
       nxtReg <= curReg;
+
+      nxtReg.disable <= disable;
 
       if rxByteAck = '1' then
          nxtReg.byteValid <= '0';
@@ -160,7 +165,8 @@ begin
             nxtReg.byteCount <= (others => '0');
             nxtReg.highCnt   <= (others => '0');
             nxtReg.waitCnt   <= (others => '0');
-            if rx_r = '1' then
+
+            if rx_r = '1' and curReg.disable = '0' then
                nxtReg.state   <= DATA_S;
                nxtReg.lowCnt  <= (others => '0');
                nxtReg.lenError  <= '0';

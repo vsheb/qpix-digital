@@ -22,6 +22,7 @@ entity QpixEndeavorTx is
       clk         : in  std_logic;
       sRst        : in  std_logic;
       scale       : in  std_logic_vector(2 downto 0);
+      disable     : in  std_logic;
 
       -- Ready to send new byte (data is sent on txByteValid AND txByteReady)
       txByteReady : out std_logic;
@@ -59,6 +60,7 @@ architecture Behavioral of QpixEndeavorTx is
       phase_max : unsigned(7 downto 0);
       tx        : std_logic;
       ready     : std_logic;
+      Disable   : std_logic;
    end record;
    
    constant REG_INIT_C : RegType := (
@@ -68,7 +70,8 @@ architecture Behavioral of QpixEndeavorTx is
       phase      => (others => '0'),
       phase_max  => (others => '0'),
       tx         => '0', 
-      ready      => '0'
+      ready      => '0',
+      Disable     => '0'
    );
    
    signal curReg : RegType := REG_INIT_C;
@@ -97,19 +100,20 @@ begin
    end process;
 
    -- Asynchronous state logic
-   process(curReg, txByteValid, txByte, zeroNum, oneNum, gapNum, finNum) begin
+   process(curReg, txByteValid, txByte, zeroNum, oneNum, gapNum, finNum, disable) begin
       -- Set defaults
-      nxtReg        <= curReg;
-      nxtReg.ready  <= '0';
-      nxtReg.phase  <= curReg.phase + 1;
-      nxtReg.tx     <= '0';
+      nxtReg         <= curReg;
+      nxtReg.ready   <= '0';
+      nxtReg.phase   <= curReg.phase + 1;
+      nxtReg.tx      <= '0';
+      nxtReg.Disable <= disable;
       -- Actual state definitions
       case(curReg.state) is
          when IDLE_S  =>
             nxtReg.ready <= '1';
             nxtReg.counter      <= (others => '0');
             nxtReg.phase        <= (others => '0');
-            if txByteValid = '1' then
+            if txByteValid = '1' and curReg.Disable = '0' then
                nxtReg.ready     <= '0';
                nxtReg.byte      <= txByte;
                nxtReg.state     <= DATA_S;

@@ -29,6 +29,7 @@ entity QpixEndeavorTop is
       clk         : in  std_logic;
       sRst        : in  std_logic;
       scale       : in  std_logic_vector(2 downto 0);
+      TxRxDisable : in  std_logic := '0';
       -- RX out
       rxByte      : out std_logic_vector(NUM_BITS_G-1 downto 0);
       rxByteValid : out std_logic;
@@ -72,6 +73,7 @@ begin
          clk         => clk,
          sRst        => sRst,
          scale       => scale,
+         disable     => TxRxDisable,
          -- Byte signal out
          rxByte      => rxByte,
          rxByteValid => rxByteValid,
@@ -100,6 +102,7 @@ begin
          clk         => clk,
          sRst        => sRst,
          scale       => scale,
+         disable     => TxRxDisable, 
          -- Ready to send new byte (data is sent on txByteValid AND txByteReady)
          txByteReady => txByteReady,
          -- Byte data to send out

@@ -18,8 +18,9 @@ entity QpixDataProc is
       clk             : in  std_logic;
       rst             : in  std_logic;
                       
-      ena             : in  std_logic;
-                      
+      disIfRouteBusy  : in  std_logic;
+      routeBusy       : in  std_logic;
+
       testEna         : in  std_logic; 
       clkCnt          : in  std_logic_vector(31 downto 0);
       fifoFull        : in  std_logic;
@@ -102,10 +103,10 @@ begin
    process (clk)
    begin
       if rising_edge (clk) then
-         if ena = '1' then
-            outData <= inData;
-         else
+         if routeBusy = '1' and disIfRouteBusy = '1' then
             outData <= QpixDataZero_C;
+         else
+            outData <= inData;
          end if;
       end if;
    end process;

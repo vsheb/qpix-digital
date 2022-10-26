@@ -21,13 +21,14 @@ entity QpixRoute is
       qpixConf        : in  QpixConfigType;
                       
       inData          : in  QpixDataFormatType;
-      localDataEna    : out std_logic;
                       
       txReady         : in  std_logic;
       txData          : out QpixDataFormatType;
 
       rxData          : in  QpixDataFormatType;
 
+      busy            : out std_logic;
+      intrNum         : out std_logic_vector(15 downto 0);
       extFifoFull     : out std_logic;
       locFifoFull     : out std_logic;
       fsmState        : out std_logic_vector(2 downto 0)
@@ -104,8 +105,6 @@ architecture behav of QpixRoute is
    ---------------------------------------------------
 
 begin
-
-   localDataEna <= '1';
 
    ---------------------------------------------------
    -- FIFO for local data
@@ -337,6 +336,8 @@ begin
    "010" when REP_LOCAL_S,
    "010" when REP_FINISH_S,
    "100" when REP_REMOTE_S;
+
+   busy <= '0' when curReg.state = IDLE_S else '1';
 
    extFifoFull <= extFull;
    locFifoFull <= locFull;

@@ -39,7 +39,7 @@ entity QpixAsicTop is
       -- disable debugging output pins
       disableDbgOut  : in  std_logic := '0';
       -- disable transceivers
-      TxRxDisable    : in  std_logic_vector(3 downto 0);
+      TxRxDisable    : in  std_logic_vector(3 downto 0) := (others => '0');
       -- qpix reset pulses from QpixAnalog
       inPorts        : in  QpixInPortsType;
       -- TX ports to neighbour ASICs
@@ -54,7 +54,8 @@ entity QpixAsicTop is
       dbgLocFifoFull : out std_logic;
       dbgExtFifoFull : out std_logic;
       dbgFsmState    : out std_logic_vector(2 downto 0);
-      dbgDataValid   : out std_logic 
+      dbgDataValid   : out std_logic; 
+      dbgClkDiv      : out std_logic
       
    );
 end entity QpixAsicTop;
@@ -78,7 +79,7 @@ architecture behav of QpixAsicTop is
    signal RxBusy        : std_logic := '0';
    signal RxError       : std_logic := '0';
                         
-   signal localDataEna  : std_logic := '0';
+   signal routeBusy  : std_logic := '0';
                         
    signal asicRst       : std_logic := '0';
    signal syncRst       : std_logic := '0';
@@ -88,6 +89,8 @@ architecture behav of QpixAsicTop is
    signal extFifoFull   : std_logic := '0';
    signal locFifoFull   : std_logic := '0';
    signal routeFsmState : std_logic_vector(2 downto 0);
+
+   signal intrNum       : std_logic_vector(15 downto 0);
 
    ---------------------------------------------------
 
@@ -124,13 +127,14 @@ begin
       N_ANALOG_CHAN_G => G_N_ANALOG_CHAN
    )
    port map(
-      clk           => clk,
-      rst           => asicRst,
+      clk            => clk,
+      rst            => asicRst,
                     
-      ena           => localDataEna,
-      chanEna       => qpixConf.chanEna, 
-      clkCnt        => clkCnt,
-      fifoFull      => locFifoFull,
+      disIfRouteBusy => qpixConf.disIfBusy,
+      routeBusy      => routeBusy,
+      chanEna        => qpixConf.chanEna, 
+      clkCnt         => clkCnt,
+      fifoFull       => locFifoFull,
 
       testEna => '0',
 
@@ -168,6 +172,7 @@ begin
       rst            => asicRst,
 
       EndeavorScale  => EndeavorScale,
+      TxRxDisable    => TxRxDisable,
       qpixConf       => qpixConf,
       fifoFull       => extFifoFull,
 
@@ -205,6 +210,7 @@ begin
       regData   => regData,
       regResp   => regResp,
       txReady   => TxReady,
+      intrNum   => intrNum,
                 
       clkCnt    => clkCnt,
       QpixConf  => QpixConf,
@@ -227,12 +233,13 @@ begin
       qpixConf      => QpixConf,
                     
       inData        => inData,
-      localDataEna  => localDataEna,
                     
       txReady       => TxReady,
       txData        => txData,
       rxData        => rxData,
 
+      intrNum       => intrNum,
+      busy          => routeBusy,
       fsmState      => routeFsmState,
       extFifoFull   => extFifoFull,
       locFifoFull   => locFifoFull
@@ -253,6 +260,7 @@ begin
             dbgTxBusy      <= '0';
             dbgDataValid   <= '0';
             dbgRxError     <= '0';
+            dbgClkDiv      <= '0';
          else
             dbgLocFifoFull <= locFifoFull;
             dbgExtFifoFull <= extFifoFull;
@@ -261,6 +269,7 @@ begin
             dbgTxBusy      <= not TxReady;
             dbgDataValid   <= rxData.DataValid or regData.Valid;
             dbgRxError     <= RxError;
+            dbgClkDiv      <= clkCnt(24);
          end if;
       end if;
    end process;
