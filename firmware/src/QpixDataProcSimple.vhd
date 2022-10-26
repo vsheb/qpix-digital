@@ -10,7 +10,7 @@ use work.QpixPkg.all;
 
 
 ----------------------------------------------------------------------------------
-entity QpixDataProc is
+entity QpixDataProcSimple is
    generic (
       X_POS_G : natural := 0;
       Y_POS_G : natural := 0
@@ -27,11 +27,11 @@ entity QpixDataProc is
       outData  : out QpixDataFormatType
       
    );
-end entity QpixDataProc;
+end entity QpixDataProcSimple;
 ----------------------------------------------------------------------------------
 
 
-architecture behav of QpixDataProc is
+architecture behav of QpixDataProcSimple is
 
    signal testData  : QPixDataFormatType := QpixDataZero_C;
    signal inData_r  : QPixDataFormatType := QpixDataZero_C;

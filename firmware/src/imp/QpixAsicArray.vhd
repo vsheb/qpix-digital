@@ -33,6 +33,8 @@ entity QpixAsicArray is
       clkVec      : in std_logic_vector(X_NUM_G*Y_NUM_G - 1 downto 0);
       rst         : in std_logic;
 
+      EndeavorScale : std_logic_vector(2 downto 0);
+
       led         : out std_logic_vector(3 downto 0); -- temporary
 
       daqTx       : in  QpixTxRxPortType;
@@ -115,6 +117,8 @@ begin
                clk      => clkVec_s(j*X_NUM_G + i),
                rst      => rst,
                inPorts  => inPortsArr(i,j),
+
+               EndeavorScale => EndeavorScale,
 
                -- TX 
                TxPortsArr(0) => YRxArr(i,j),   -- up

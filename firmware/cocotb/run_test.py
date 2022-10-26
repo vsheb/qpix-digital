@@ -7,8 +7,8 @@ import os
 # GENERICS
 #************************************************
 TopLevelGenericsFull = {
-    "X_NUM_G" : "10", 
-    "Y_NUM_G" : "8", 
+    "X_NUM_G" : "14", 
+    "Y_NUM_G" : "10", 
     "INDIVIDUAL_CLK_G" : "True",
     "N_ZER_CLK_G" : "8", 
     "N_ONE_CLK_G" : "24",
@@ -26,6 +26,8 @@ TopLevelGenericsFull = {
 TopLevelGenericsFast = {
     "X_NUM_G" : "3", 
     "Y_NUM_G" : "3", 
+    # "X_NUM_G" : "14", 
+    # "Y_NUM_G" : "10", 
     "INDIVIDUAL_CLK_G" : "False",
     "N_ZER_CLK_G" : "2",  #"8", 
     "N_ONE_CLK_G" : "5", #"24",
@@ -73,7 +75,8 @@ def test_qpix():
     extra_args    = [],
     compile_args  = [],
     # testcase      = "test_manual_routing",
-    testcase      = "test_single_point_failure",
+    # testcase      = "test_single_point_failure",
+    testcase      = "test_hits_readout",
     parameters    = TopLevelGenerics,
     force_compile = True )
  

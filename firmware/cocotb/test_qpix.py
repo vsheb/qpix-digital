@@ -67,10 +67,14 @@ async def test_hits_readout(dut):
   await TimerClk(dut.clk, 10)
 
   print("Inject hits");
-  await daq.QpixInjectHits(x = 2, y = 2, chanMask = 1,  n = 10)
-  await daq.QpixInjectHits(x = 1, y = 0, chanMask = 15, n = 10)
-  await daq.QpixInjectHits(x = 0, y = 1, chanMask = 7,  n = 10)
-
+  for x in range(dut.X_NUM_G.value):
+    for y in range(dut.Y_NUM_G.value):
+      await daq.QpixInjectHits(x, y, chanMask = 1,  n = 7)
+  # await daq.QpixInjectHits(x = 2, y = 2, chanMask = 1,  n = 10)
+  # await daq.QpixInjectHits(x = 1, y = 0, chanMask = 15, n = 10)
+  # await daq.QpixInjectHits(x = 0, y = 1, chanMask = 7,  n = 10)
+  # await daq.QpixInjectHits(x = 13, y = 9, chanMask = 7,  n = 50)
+  
   print("Interrogation")
   await daq.Interrogation()
 

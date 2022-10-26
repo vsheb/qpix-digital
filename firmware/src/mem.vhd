@@ -102,7 +102,7 @@ begin
    ----
 
    ---- generate full and empty signals
-   i_full   <= '1' when i_cnt = MAX_ADDR  else '0';
+   i_full   <= '1' when i_cnt = MAX_ADDR-1  else '0';
    i_empty  <= '1' when i_cnt = ZERO_ADDR else '0';
    aempty   <= '1' when i_cnt = to_unsigned(1,DEPTH) else '0';
 

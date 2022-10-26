@@ -4,7 +4,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library work;
 use work.QpixPkg.all;
 
 
@@ -23,6 +22,7 @@ entity QpixDataProc is
                       
       testEna         : in  std_logic; 
       clkCnt          : in  std_logic_vector(31 downto 0);
+      fifoFull        : in  std_logic;
                       
       chanEna         : in  std_logic_vector(N_ANALOG_CHAN_G-1 downto 0);
       qpixRstPulses   : in  std_logic_vector(N_ANALOG_CHAN_G-1 downto 0);
@@ -85,7 +85,7 @@ begin
    begin
       if rising_edge (clk) then
          inData.DataValid <= '0';
-         if qpixRstPulsesM /= (qpixRstPulsesM'range => '0') then
+         if qpixRstPulsesM /= (qpixRstPulsesM'range => '0') and fifoFull /= '1' then
             inData.DataValid <= '1';
             inData.XPos      <= std_logic_vector(to_unsigned(X_POS_G, G_POS_BITS));
             inData.YPos      <= std_logic_vector(to_unsigned(Y_POS_G, G_POS_BITS));

@@ -14,25 +14,27 @@ entity QpixComm is
       NUM_BITS_G     : natural := 64;
       GATE_DELAY_G   : time    := 1 ns;
       TXRX_TYPE      : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
-      N_ZER_CLK_G    : natural :=  8;  --2;
-      N_ONE_CLK_G    : natural :=  24; --5;
-      N_GAP_CLK_G    : natural :=  16; --4;
-      N_FIN_CLK_G    : natural :=  40; --7;
-                                       --  
-      N_ZER_MIN_G    : natural :=  4;  --1;
-      N_ZER_MAX_G    : natural :=  12; --3;
-      N_ONE_MIN_G    : natural :=  16; --4;
-      N_ONE_MAX_G    : natural :=  32; --6;
-      N_GAP_MIN_G    : natural :=  8;  --3;
-      N_GAP_MAX_G    : natural :=  32; --5;
-      N_FIN_MIN_G    : natural :=  32  --6 
+      N_ZER_CLK_G    : natural :=  8;  
+      N_ONE_CLK_G    : natural :=  24; 
+      N_GAP_CLK_G    : natural :=  16; 
+      N_FIN_CLK_G    : natural :=  40; 
+                                       
+      N_ZER_MIN_G    : natural :=  4;  
+      N_ZER_MAX_G    : natural :=  12; 
+      N_ONE_MIN_G    : natural :=  16; 
+      N_ONE_MAX_G    : natural :=  32; 
+      N_GAP_MIN_G    : natural :=  8;  
+      N_GAP_MAX_G    : natural :=  32; 
+      N_FIN_MIN_G    : natural :=  32  
 
    );
    port (
       clk            : in std_logic;
       rst            : in std_logic;
 
+      EndeavorScale  : in std_logic_vector(2 downto 0);
       qpixConf       : in QpixConfigType;
+      fifoFull       : in std_logic;
 
       outData_i      : in  QpixDataFormatType;
       inData         : out QpixDataFormatType;
@@ -44,7 +46,9 @@ entity QpixComm is
       -- external ASIC ports
       TxPortsArr     : out QpixTxRxPortsArrType;
 
-      RxPortsArr     : in  QpixTxRxPortsArrType
+      RxPortsArr     : in  QpixTxRxPortsArrType;
+      RxBusy         : out std_logic;
+      RxError        : out std_logic
 
    );
 end entity QpixComm;
@@ -64,8 +68,10 @@ architecture behav of QpixComm is
    signal txByteReadyArr   : std_logic_vector(3 downto 0);
 
    signal RxByteArr        : QpixByteArrType      := (others => (others => '0'));
-   signal RxBytesAck     : std_logic_vector(3 downto 0);
-   signal RxBytesValid   : std_logic_vector(3 downto 0);
+   signal RxBytesAck       : std_logic_vector(3 downto 0);
+   signal RxBytesValid     : std_logic_vector(3 downto 0);
+   signal RxBusyArr        : std_logic_vector(3 downto 0);
+   signal RxErrorArr       : std_logic_vector(3 downto 0);
 
    signal TxReadyMask        : std_logic;
 
@@ -124,6 +130,8 @@ begin
             port map (
                clk          => clk,
                sRst         => rst,
+
+               scale        => EndeavorScale,
                             
                txByte       => TxByteArr(i), 
                txByteValid  => TxByteValidArr(i), 
@@ -132,6 +140,8 @@ begin
                rxByte       => RxByteArr(i),
                rxByteValid  => RxBytesValid(i),
                RxByteAck    => RxBytesAck(i),
+               rxBusy       => RxBusyArr(i),
+               rxError      => RxErrorArr(i),
 
                Rx           => RxPortsArr(i),
                Tx           => TxPortsArr(i)
@@ -139,6 +149,9 @@ begin
       end generate ENDEAROV_GEN;
    end generate GEN_TXRX;
    ------------------------------------------------------------
+
+   RxBusy  <= '0' when RxBusyArr  = b"0000" else '1';
+   RxError <= '0' when RxErrorArr = b"0000" else '1';
 
    process (qpixConf.DirMask, TxByteReadyArr)
    begin
@@ -159,6 +172,7 @@ begin
       rst          => rst,
 
       qpixConf          => qpixConf,
+      fifoFull          => fifoFull,
 
       inBytesArr        => RxByteArr,
       inBytesValid      => RxBytesValid,

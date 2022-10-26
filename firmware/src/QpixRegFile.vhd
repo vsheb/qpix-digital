@@ -18,16 +18,18 @@ entity QpixRegFile is
       MAN_POS_G       : boolean := false
    );
    port (
-      clk      : in std_logic;
-      rst      : in std_logic;
+      clk       : in std_logic;
+      rst       : in std_logic;
 
-      txReady  : in std_logic;
-      regData  : in QpixRegDataType;
-      regResp  : out QpixRegDataType;
+      txReady   : in std_logic;
+      extInterS : in std_logic;
+      extInterH : in std_logic;
+      regData   : in QpixRegDataType;
+      regResp   : out QpixRegDataType;
       
-      clkCnt   : out std_logic_vector(31 downto 0);
-      qpixConf : out QpixConfigType;
-      qpixReq  : out QpixRequestType
+      clkCnt    : out std_logic_vector(31 downto 0);
+      qpixConf  : out QpixConfigType;
+      qpixReq   : out QpixRequestType
       
    );
 end entity QpixRegFile;
@@ -37,6 +39,9 @@ architecture behav of QpixRegFile is
    signal qpixConf_r   : QpixConfigType  := QpixConfigDef_C;
    signal qpixReq_r    : QpixRequestType := QpixRequestZero_C;
    signal regResp_r    : QpixRegDataType := QpixRegDataZero_C;
+
+   signal extInterS_r   : std_logic := '0';
+   signal extInterH_r   : std_logic := '0';
 
    signal cnt       : unsigned (31 downto 0) := (others => '0');
    signal thisAsicDest : std_logic := '0';
@@ -80,6 +85,28 @@ begin
       end if;
    end process;
    --------------------------------------------------
+   
+   extInterS_U : entity work.EdgeDetector
+         generic map(
+            N_SYNC_G => 2
+         )
+         port map(
+            clk    => clk,
+            rst    => rst,
+            input  => extInterS,
+            output => extInterS_r
+         );
+
+   extInterH_U : entity work.EdgeDetector
+         generic map(
+            N_SYNC_G => 2
+         )
+         port map(
+            clk    => clk,
+            rst    => rst,
+            input  => extInterH,
+            output => extInterH_r
+         );
 
    --------------------------------------------------
    --------------------------------------------------
@@ -93,6 +120,9 @@ begin
          else
             qpixReq_r       <= QpixRequestZero_C;
 
+            qpixReq_r.InterrogationHard <= extInterS_r;
+            qpixReq_r.InterrogationSoft <= extInterH_r;
+
             regResp_r.OpWrite <= '0';
             regResp_r.OpRead  <= '0';
             regResp_r.Addr    <= regData.Addr;
@@ -103,9 +133,11 @@ begin
                case regData.Addr is
                   -- CMD reg
                   when x"0001" => 
-                     qpixReq_r.Interrogation <= regData.Data(0);
-                     qpixReq_r.ResetState    <= regData.Data(1);
-                     qpixReq_r.AsicReset     <= regData.Data(2);
+                     qpixReq_r.InterrogationHard <= regData.Data(0);
+                     qpixReq_r.InterrogationSoft <= regData.Data(1);
+                     qpixReq_r.AsicReset         <= regData.Data(2);
+                     qpixReq_r.ResetState        <= regData.Data(3);
+                     qpixReq_r.ReqID             <= regData.ReqID;
 
                      qpixConf_r.XPos <= regData.XHops;
                      qpixConf_r.YPos <= regData.YHops;
@@ -151,6 +183,17 @@ begin
                      if regData.OpRead = '1' then
                         regResp_r.Data <= (others => '0');
                      end if;
+
+                  -- Disable specific receivers
+                  when x"0006" =>
+                     if regData.OpWrite = '1' then
+                        qpixConf_r.RxDisable <= regData.Data(3 downto 0);
+                     end if;
+                     if regData.OpRead = '1' then
+                        regResp_r.Data <= (others => '0');
+                        regResp_r.Data(3 downto 0) <= qpixConf_r.RxDisable;
+                     end if;
+
                   when others =>
                      qpixConf_r <= qpixConf_r;
                end case;

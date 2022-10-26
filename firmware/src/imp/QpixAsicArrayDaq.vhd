@@ -28,6 +28,7 @@ entity QpixAsicArrayDaq is
       clkVec          : in std_logic_vector(X_NUM_G*Y_NUM_G - 1 downto 0);
       rst             : in std_logic;
 
+      EndeavorScale   : in std_logic_vector(2 downto 0) := (others => '0');
       inPortsArr      : in QpixInPortsArrType(0 to X_NUM_G-1, 0 to Y_NUM_G-1);
 
       daqTxByte       : in std_logic_vector(G_DATA_BITS-1 downto 0);
@@ -87,6 +88,7 @@ begin
          clk        => clk,
          clkVec     => clkVec,
          rst        => rst, --rst,
+         EndeavorScale => EndeavorScale,
 
          led        => open,
 
@@ -108,6 +110,8 @@ begin
          clk         => clk,
          sRst        => rst,
 
+         scale       => EndeavorScale,
+         
          txByte      => daqTxByte, 
          txByteValid => daqTxByteValid, 
          txByteReady => daqTxByteReady,

@@ -115,10 +115,12 @@ class QpixDaq :
     self.dut = dut
     dut.rst.value = 0
 
+    dut.EndeavorScale.value = 4
+
     self.nX, self.nY = int(dut.X_NUM_G.value), int(dut.Y_NUM_G.value)
 
-    self.timeout0 = (self.dut.N_ONE_CLK_G.value + self.dut.N_GAP_CLK_G.value)
-    self.timeout0 *= 64*(self.nX + self.nY) + 500
+    self.transact_time = (self.dut.N_ONE_CLK_G.value + self.dut.N_GAP_CLK_G.value) * 64 + self.dut.N_FIN_CLK_G.value 
+    self.timeout0 = self.transact_time*(self.nX + self.nY + self.nX*self.nY) + 100 
     # set initial values for the input ports
     for i in range(self.nX) : 
       for j in range(self.nY) :
@@ -183,12 +185,15 @@ class QpixDaq :
   @coroutine
   async def WaitAllHitsCollected(self) : 
     timeout_cnt = 0
-    timeout = self.timeout0 + 64*len(self.inHits) 
+    timeout = 2*(self.timeout0 + self.transact_time * len(self.inHits))
     while self.stat_matrix != self.fin_matrix: 
       await RisingEdge(self.dut.clk)
       timeout_cnt += 1
-      if timeout_cnt > timeout : break
+      if timeout_cnt > timeout : 
+        break
+        print("WaitAllHitsCollected :: timed out")
     if self.stat_matrix != self.expected_martix : assert "Missing responses"
+    print("All hits collected, CLK_CNT =",timeout_cnt)
 
   @coroutine
   async def WaitRegResponse(self) : 
@@ -224,7 +229,7 @@ class QpixDaq :
     # wait until all the hits are collected
     await self.WaitAllHitsCollected()
     # reset ASIC sates
-    await self.QpixRegRequest(opWrite = 1, addr = 1, data = 2) 
+    # await self.QpixRegRequest(opWrite = 1, addr = 1, data = 2) 
 
   async def RegRead(self, x = -1, y = -1, addr = 0) : 
     self.regRsps = []
