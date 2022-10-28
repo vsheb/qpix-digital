@@ -329,6 +329,7 @@ begin
 
    
    txData     <= curReg.txData;
+   intrNum    <= std_logic_vector(curReg.intrNum);
    
    with curReg.state select fsmState <= 
    "000" when IDLE_S,

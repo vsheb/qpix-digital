@@ -55,7 +55,9 @@ entity QpixAsicTop is
       dbgExtFifoFull : out std_logic;
       dbgFsmState    : out std_logic_vector(2 downto 0);
       dbgDataValid   : out std_logic; 
-      dbgClkDiv      : out std_logic
+      dbgRxValid     : out std_logic;
+      dbgClkDiv      : out std_logic;
+      dbgInterr      : out std_logic
       
    );
 end entity QpixAsicTop;
@@ -91,6 +93,7 @@ architecture behav of QpixAsicTop is
    signal routeFsmState : std_logic_vector(2 downto 0);
 
    signal intrNum       : std_logic_vector(15 downto 0);
+   signal rxValidDbg    : std_logic := '0';
 
    ---------------------------------------------------
 
@@ -185,6 +188,7 @@ begin
       RxPortsArr     => RxPortsArr,
       RxBusy         => RxBusy,
       RxError        => RxError,
+      RxValidDbg     => RxValidDbg,
 
       regData        => regData,
       regResp        => regResp
@@ -249,32 +253,38 @@ begin
    ---------------------------------------------------
    -- debug outputs
    ---------------------------------------------------
-   process (clk)
-   begin
-      if rising_edge(clk) then
-         if disableDbgOut = '1' then
-            dbgLocFifoFull <= '0';
-            dbgExtFifoFull <= '0';
-            dbgFsmState    <= (others => '0');
-            dbgRxBusy      <= '0';
-            dbgTxBusy      <= '0';
-            dbgDataValid   <= '0';
-            dbgRxError     <= '0';
-            dbgClkDiv      <= '0';
-         else
-            dbgLocFifoFull <= locFifoFull;
-            dbgExtFifoFull <= extFifoFull;
-            dbgFsmState    <= routeFsmState;
-            dbgRxBusy      <= RxBusy;
-            dbgTxBusy      <= not TxReady;
-            dbgDataValid   <= rxData.DataValid or regData.Valid;
-            dbgRxError     <= RxError;
-            dbgClkDiv      <= clkCnt(24);
-         end if;
-      end if;
-   end process;
-   ---------------------------------------------------
+   QpixDebug_U : entity work.QpixDebug
+      port map (
+         clk             => clk,
+         rst             => rst,
+         
+         disableDbgOut   => disableDbgOut,
+         
+         locFifoFull     => locFifoFull,
+         extFifoFull     => extFifoFull,
+         routeFsmState   => routeFsmState,
+         RxBusy          => RxBusy,
+         TxReady         => TxReady,
+         RxDataValid     => rxData.DataValid,
+         RxRegValid      => regData.Valid,
+         RxError         => RxError,
+         clkDiv          => clkCnt(24),
+         RxValidDbg      => RxValidDbg,
+         InterrHard      => QpixReq.InterrogationHard,
+         InterrSoft      => QpixReq.InterrogationSoft,
 
+         dbgLocFifoFull  => dbgLocFifoFull,
+         dbgExtFifoFull  => dbgExtFifoFull,
+         dbgFsmState     => dbgFsmState,
+         dbgRxBusy       => dbgRxBusy,
+         dbgTxBusy       => dbgTxBusy,
+         dbgDataValid    => dbgDataValid,
+         dbgRxError      => dbgRxError,
+         dbgClkDiv       => dbgClkDiv,
+         dbgRxValid      => dbgRxValid,
+         dbgInterr       => dbgInterr
+      );
+   ---------------------------------------------------
 
 
 

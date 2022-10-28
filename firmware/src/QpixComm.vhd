@@ -49,7 +49,8 @@ entity QpixComm is
 
       RxPortsArr     : in  QpixTxRxPortsArrType;
       RxBusy         : out std_logic;
-      RxError        : out std_logic
+      RxError        : out std_logic;
+      RxValidDbg     : out std_logic
 
    );
 end entity QpixComm;
@@ -151,6 +152,17 @@ begin
       end generate ENDEAROV_GEN;
    end generate GEN_TXRX;
    ------------------------------------------------------------
+
+   process (clk)
+   begin
+      if rising_edge(clk) then
+         if RxBytesValid /= b"0000" then
+            RxValidDbg <= '1';
+         else
+            RxValidDbg <= '0';
+         end if;
+      end if;
+   end process;
 
    RxBusy  <= '0' when RxBusyArr  = b"0000" else '1';
    RxError <= '0' when RxErrorArr = b"0000" else '1';

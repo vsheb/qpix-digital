@@ -58,7 +58,7 @@ def test_qpix():
   source_files = ["UtilityPkg.vhd", "QpixPkg.vhd", "mem.vhd", "EdgeDetector.vhd", "QpixParser.vhd", 
   "QpixTestPatGen.vhd", "QpixDataProc.vhd", "UartRx.vhd", "UartTx.vhd", "UartTop.vhd", 
   "QpixEndeavorRx.vhd", "QpixEndeavorTx.vhd", "QpixEndeavorTop.vhd", 
-  "QpixComm.vhd", "QpixRegFile.vhd", "QpixRoute.vhd", "QpixAsicTop.vhd", 
+  "QpixComm.vhd", "QpixRegFile.vhd", "QpixRoute.vhd", "PulseShaper.vhd", "QpixDebug.vhd",  "QpixAsicTop.vhd", 
   "imp/QpixAsicArray.vhd", "imp/QpixAsicArrayDaq.vhd"]
   vhdl_sources = [os.path.join(source_dir, f) for f in source_files]
 
@@ -74,9 +74,9 @@ def test_qpix():
     sim_args      = ["-t","ps","-voptargs=+acc"],
     extra_args    = [],
     compile_args  = [],
-    # testcase      = "test_manual_routing",
-    # testcase      = "test_single_point_failure",
     testcase      = "test_hits_readout",
+    #testcase      = "test_manual_routing",
+    # testcase      = "test_single_point_failure",
     parameters    = TopLevelGenerics,
     force_compile = True )
  

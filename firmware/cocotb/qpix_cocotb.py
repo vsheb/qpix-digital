@@ -91,11 +91,11 @@ async def QpixPrintArray(dut):
         fifoext_array[y][x] = fe 
 
     if trig :
-      print("******FSM / FIFO_LOC / FIFO_EXT *******")
+      dut._log.debug("******FSM / FIFO_LOC / FIFO_EXT *******")
       for i in range(nY):
-        print(state_array[i], fifoloc_array[i], fifoext_array[i] )
+        dut._log.debug(f'{state_array[i]}, \t {fifoloc_array[i]}, \t {fifoext_array[i]}' )
         f.write(f'{state_array[i]}, \t {fifoloc_array[i]}, \t {fifoext_array[i]} \n' )
-      print("****************")
+      dut._log.debug("****************")
       f.write('\n')
   f.close()
 ################################################################
@@ -114,6 +114,9 @@ class QpixDaq :
     self.reqID = 1
     self.dut = dut
     dut.rst.value = 0
+
+    self.log = logging.getLogger("cocotb.tb")
+    self.log.setLevel(logging.INFO)
 
     dut.EndeavorScale.value = 4
 
@@ -160,7 +163,7 @@ class QpixDaq :
         w   = QpixGetWordType(dat) 
         if w  == 5 : 
           hitData = QpixDataFormat(dat)
-          print(hitData, int(self.dut.daqTimestamp.value))
+          self.log.debug(f'{hitData} {int(self.dut.daqTimestamp.value)}')
           self.markers.append(hitData)
           self.stat_matrix[hitData.yPos][hitData.xPos] += 1
           assert self.stat_matrix[hitData.yPos][hitData.xPos] < 2, "ASIC finish word received twice"
@@ -169,17 +172,17 @@ class QpixDaq :
           self.hits.append(hitData)
         elif w == 4 : 
           regData = QpixRegFormat(dat)
-          print(regData)
+          self.log.debug(regData)
           self.stat_matrix[regData.y][regData.x] += 1
           self.rsp_matrix[regData.y][regData.x]  += 1
           self.regRsps.append(regData) 
         else : 
           assert "Wrong word type received by DAQ node" 
 
-        print("******** DAQ *********")
+        self.log.debug("******** DAQ *********")
         for r in self.stat_matrix:
-          print(r)
-        print("**********************")
+          self.log.debug(r)
+        self.log.debug("**********************")
 
 
   @coroutine
