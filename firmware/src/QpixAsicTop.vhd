@@ -38,6 +38,8 @@ entity QpixAsicTop is
       EndeavorScale  : in  std_logic_vector(2 downto 0);
       -- disable debugging output pins
       disableDbgOut  : in  std_logic := '0';
+      -- reset the local time counter
+      clkCntRst      : in  std_logic := '0';
       -- disable transceivers
       TxRxDisable    : in  std_logic_vector(3 downto 0) := (others => '0');
       -- qpix reset pulses from QpixAnalog
@@ -81,7 +83,7 @@ architecture behav of QpixAsicTop is
    signal RxBusy        : std_logic := '0';
    signal RxError       : std_logic := '0';
                         
-   signal routeBusy  : std_logic := '0';
+   signal routeBusy     : std_logic := '0';
                         
    signal asicRst       : std_logic := '0';
    signal syncRst       : std_logic := '0';
@@ -209,6 +211,7 @@ begin
       clk       => clk,
       rst       => asicRst,
                 
+      clkCntRst => clkCntRst,
       extInterS  => extInterSoft,
       extInterH  => extInterHard,
       regData   => regData,

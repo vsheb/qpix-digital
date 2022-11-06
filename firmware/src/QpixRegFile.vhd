@@ -21,6 +21,8 @@ entity QpixRegFile is
       clk       : in std_logic;
       rst       : in std_logic;
 
+      clkCntRst : in std_logic;
+
       txReady   : in std_logic;
       extInterS : in std_logic;
       extInterH : in std_logic;
@@ -43,6 +45,7 @@ architecture behav of QpixRegFile is
 
    signal extInterS_r   : std_logic := '0';
    signal extInterH_r   : std_logic := '0';
+   signal clkCntRst_r   : std_logic := '0';
 
    signal cnt       : unsigned (31 downto 0) := (others => '0');
    signal thisAsicDest : std_logic := '0';
@@ -59,7 +62,7 @@ begin
    process (clk)
    begin
       if rising_edge (clk) then
-         if rst = '1' then
+         if rst = '1' or clkCntRst_r = '1' then
             cnt <= (others => '0');
          else
             cnt <= cnt + 1;
@@ -88,26 +91,37 @@ begin
    --------------------------------------------------
    
    extInterS_U : entity work.EdgeDetector
-         generic map(
-            N_SYNC_G => 2
-         )
-         port map(
-            clk    => clk,
-            rst    => rst,
-            input  => extInterS,
-            output => extInterS_r
-         );
+      generic map(
+         N_SYNC_G => 2
+      )
+      port map(
+         clk    => clk,
+         rst    => rst,
+         input  => extInterS,
+         output => extInterS_r
+      );
 
    extInterH_U : entity work.EdgeDetector
-         generic map(
-            N_SYNC_G => 2
-         )
-         port map(
-            clk    => clk,
-            rst    => rst,
-            input  => extInterH,
-            output => extInterH_r
-         );
+      generic map(
+         N_SYNC_G => 2
+      )
+      port map(
+         clk    => clk,
+         rst    => rst,
+         input  => extInterH,
+         output => extInterH_r
+      );
+
+   clkCntRst_U : entity work.EdgeDetector
+      generic map(
+         N_SYNC_G => 2
+      )
+      port map( 
+         clk    => clk, 
+         rst    => '0', 
+         input  => clkCntRst,
+         output => clkCntRst_r
+      );
 
    --------------------------------------------------
    --------------------------------------------------
