@@ -1,20 +1,23 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
---use IEEE.NUMERIC_STD.ALL;
---library UNISIM;
---use UNISIM.VComponents.all;
+
+
+--!{ signal : [                                                                                                  
+--!  { name: "clk",      wave: "p.............|.............." },
+--!  { name: "tx",       wave: "05...0..9.......0.|5...0.....", data : ["zero","one","zero"] },
+--!  { name: "tx state", wave: "z5...7..9.......7.|5...3.....",  data: ["zero", "gap", "one","gap","zero","word end"] }
+--!]}
+
 
 entity QpixEndeavorTop is
    generic (
-      --CLOCK_RATE_G : integer := 80000000;
-      --BAUD_RATE_G  : integer := 115200;
-      NUM_BITS_G   : natural := 64;
-      GATE_DELAY_G : time    := 1 ns;
+      NUM_BITS_G   : natural := 64;   --! Number of bits in a packet
+      GATE_DELAY_G : time    := 1 ns; 
 
-      N_ZER_CLK_G  : natural :=  8;  
-      N_ONE_CLK_G  : natural :=  24; 
-      N_GAP_CLK_G  : natural :=  16; 
-      N_FIN_CLK_G  : natural :=  40; 
+      N_ZER_CLK_G  : natural :=  8;  --! Number of clocks to encode 0
+      N_ONE_CLK_G  : natural :=  24; --! Number of clocks to encode 1
+      N_GAP_CLK_G  : natural :=  16; --! Number of clocks to encode a gap between bits
+      N_FIN_CLK_G  : natural :=  40; --! Number of clocks to encode end of the packet
                                      
       N_ZER_MIN_G  : natural :=  4;  
       N_ZER_MAX_G  : natural :=  12; 
