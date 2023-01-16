@@ -46,7 +46,8 @@ TopLevelGenericsFast = {
 #************************************************
 
 def test_qpix():
-
+  os.environ["SIM"] = "questa"
+  
   if os.environ.get('FASTSIM') == '1' :
     TopLevelGenerics = TopLevelGenericsFast;
     print('FAST!!')
