@@ -143,10 +143,10 @@ class QpixDaq :
 
   @coroutine
   async def Reset(self) : 
-    await RisingEdge(self.dut.clk);
-    self.dut.rst.value = 1;
-    await TimerClk(self.dut.clk, 3);
-    self.dut.rst.value = 0;
+    await RisingEdge(self.dut.clk)
+    self.dut.rst.value = 1
+    await TimerClk(self.dut.clk, 3)
+    self.dut.rst.value = 0
     await RisingEdge(self.dut.clk)
 
 
@@ -193,8 +193,8 @@ class QpixDaq :
       await RisingEdge(self.dut.clk)
       timeout_cnt += 1
       if timeout_cnt > timeout : 
-        break
         print("WaitAllHitsCollected :: timed out")
+        break
     if self.stat_matrix != self.expected_martix : assert "Missing responses"
     print("All hits collected, CLK_CNT =",timeout_cnt)
 
@@ -268,7 +268,7 @@ class QpixDaq :
   # Send a hit to the specific ASIC
   @coroutine
   async def QpixInjectHits(self, x, y, chanMask, n = 1) : 
-    clk = self.dut.QpixAsicArray_U.clkVec_s[y*self.nX + x];
+    clk = self.dut.QpixAsicArray_U.clkVec_s[y*self.nX + x]
     for _ in range(n) : 
       await RisingEdge(clk)
       self.dut.inPortsArr[x][y].value = chanMask
@@ -310,5 +310,9 @@ async def QpixWaitUntilAllIdle(dut) :
     await RisingEdge(dut.clk)
     for x in range(nX) : 
       for y in range(nY) : 
-        state_array[y][x] = dut.QpixAsicArray_U.GEN_X[x].GEN_Y[y].QpixAsicTop_U.QpixRoute_U.curReg.state.value;
+        state_array[y][x] = dut.QpixAsicArray_U.GEN_X[x].GEN_Y[y].QpixAsicTop_U.QpixRoute_U.curReg.state.value
     if state_array == state_idle : break 
+
+
+  
+
