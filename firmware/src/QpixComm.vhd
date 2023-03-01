@@ -12,7 +12,6 @@ use work.QpixPkg.all;
 entity QpixComm is
    generic (
       NUM_BITS_G     : natural := 64;
-      GATE_DELAY_G   : time    := 1 ns;
       TXRX_TYPE      : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
       N_ZER_CLK_G    : natural :=  8;  
       N_ONE_CLK_G    : natural :=  24; 

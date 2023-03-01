@@ -49,10 +49,10 @@ def test_qpix():
   os.environ["SIM"] = "questa"
   
   if os.environ.get('FASTSIM') == '1' :
-    TopLevelGenerics = TopLevelGenericsFast;
+    TopLevelGenerics = TopLevelGenericsFast
     print('FAST!!')
   else :
-    TopLevelGenerics = TopLevelGenericsFull;
+    TopLevelGenerics = TopLevelGenericsFull
     print('FULL!!')
 
   source_dir = "../src"

@@ -5,7 +5,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library work;
 use work.QpixPkg.all;
 
 
@@ -18,37 +17,37 @@ entity QpixRegFile is
       MAN_POS_G       : boolean := false
    );
    port (
-      clk       : in std_logic;
-      rst       : in std_logic;
+      clk             : in std_logic;
+      rst             : in std_logic;
 
-      clkCntRst : in std_logic;
+      clkCntRst       : in std_logic;
 
-      txReady   : in std_logic;
-      extInterS : in std_logic;
-      extInterH : in std_logic;
-      regData   : in QpixRegDataType;
-      regResp   : out QpixRegDataType;
-      intrNum   : in std_logic_vector(15 downto 0);
+      txReady         : in std_logic;
+      extInterS       : in std_logic;
+      extInterH       : in std_logic;
+      regData         : in QpixRegDataType;
+      regResp         : out QpixRegDataType;
+      intrNum         : in std_logic_vector(15 downto 0);
       
-      clkCnt    : out std_logic_vector(31 downto 0);
-      qpixConf  : out QpixConfigType;
-      qpixReq   : out QpixRequestType
+      clkCnt          : out std_logic_vector(31 downto 0);
+      qpixConf        : out QpixConfigType;
+      qpixReq         : out QpixRequestType
       
    );
 end entity QpixRegFile;
 
 architecture behav of QpixRegFile is
 
-   signal qpixConf_r   : QpixConfigType  := QpixConfigDef_C;
-   signal qpixReq_r    : QpixRequestType := QpixRequestZero_C;
-   signal regResp_r    : QpixRegDataType := QpixRegDataZero_C;
+   signal qpixConf_r    : QpixConfigType  := QpixConfigDef_C;
+   signal qpixReq_r     : QpixRequestType := QpixRequestZero_C;
+   signal regResp_r     : QpixRegDataType := QpixRegDataZero_C;
 
    signal extInterS_r   : std_logic := '0';
    signal extInterH_r   : std_logic := '0';
    signal clkCntRst_r   : std_logic := '0';
 
-   signal cnt       : unsigned (31 downto 0) := (others => '0');
-   signal thisAsicDest : std_logic := '0';
+   signal cnt           : unsigned (31 downto 0) := (others => '0');
+   signal thisAsicDest  : std_logic := '0';
 
    type RegFileState is (IDLE_S, WRITE_S, READ_S);
    signal state : RegFileState := IDLE_S;

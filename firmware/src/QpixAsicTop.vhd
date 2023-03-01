@@ -156,21 +156,21 @@ begin
    ---------------------------------------------------
    QpixComm_U : entity work.QpixComm
    generic map(
-      TXRX_TYPE     => TXRX_TYPE,
+      TXRX_TYPE      => TXRX_TYPE,
 
       -- Endeavor protocol parameters
-      N_ZER_CLK_G   => N_ZER_CLK_G,
-      N_ONE_CLK_G   => N_ONE_CLK_G,
-      N_GAP_CLK_G   => N_GAP_CLK_G,
-      N_FIN_CLK_G   => N_FIN_CLK_G,
-                                
-      N_ZER_MIN_G   => N_ZER_MIN_G,
-      N_ZER_MAX_G   => N_ZER_MAX_G,
-      N_ONE_MIN_G   => N_ONE_MIN_G,
-      N_ONE_MAX_G   => N_ONE_MAX_G,
-      N_GAP_MIN_G   => N_GAP_MIN_G,
-      N_GAP_MAX_G   => N_GAP_MAX_G,
-      N_FIN_MIN_G   => N_FIN_MIN_G
+      N_ZER_CLK_G    => N_ZER_CLK_G,
+      N_ONE_CLK_G    => N_ONE_CLK_G,
+      N_GAP_CLK_G    => N_GAP_CLK_G,
+      N_FIN_CLK_G    => N_FIN_CLK_G,
+                                 
+      N_ZER_MIN_G    => N_ZER_MIN_G,
+      N_ZER_MAX_G    => N_ZER_MAX_G,
+      N_ONE_MIN_G    => N_ONE_MIN_G,
+      N_ONE_MAX_G    => N_ONE_MAX_G,
+      N_GAP_MIN_G    => N_GAP_MIN_G,
+      N_GAP_MAX_G    => N_GAP_MAX_G,
+      N_FIN_MIN_G    => N_FIN_MIN_G
    )                
    port map(
       clk            => clk,
@@ -208,20 +208,20 @@ begin
       Y_POS_G       => Y_POS_G
    )                
    port map(
-      clk       => clk,
-      rst       => asicRst,
-                
-      clkCntRst => clkCntRst,
-      extInterS  => extInterSoft,
-      extInterH  => extInterHard,
-      regData   => regData,
-      regResp   => regResp,
-      txReady   => TxReady,
-      intrNum   => intrNum,
-                
-      clkCnt    => clkCnt,
-      QpixConf  => QpixConf,
-      QpixReq   => QpixReq
+      clk           => clk,
+      rst           => asicRst,
+                    
+      clkCntRst     => clkCntRst,
+      extInterS     => extInterSoft,
+      extInterH     => extInterHard,
+      regData       => regData,
+      regResp       => regResp,
+      txReady       => TxReady,
+      intrNum       => intrNum,
+                    
+      clkCnt        => clkCnt,
+      QpixConf      => QpixConf,
+      QpixReq       => QpixReq
    );
 
    ---------------------------------------------------
@@ -231,26 +231,26 @@ begin
    -- Data routing between ASICs
    ---------------------------------------------------
    QpixRoute_U : entity work.QpixRoute
-   port map(        
-      clk           => clk,
-      rst           => AsicRst,
-                    
-      clkCnt        => clkCnt,
-      qpixReq       => QpixReq,
-      qpixConf      => QpixConf,
-                    
-      inData        => inData,
-                    
-      txReady       => TxReady,
-      txData        => txData,
-      rxData        => rxData,
+      port map(        
+         clk           => clk,
+         rst           => AsicRst,
+                       
+         clkCnt        => clkCnt,
+         qpixReq       => QpixReq,
+         qpixConf      => QpixConf,
+                       
+         inData        => inData,
+                       
+         txReady       => TxReady,
+         txData        => txData,
+         rxData        => rxData,
 
-      intrNum       => intrNum,
-      busy          => routeBusy,
-      fsmState      => routeFsmState,
-      extFifoFull   => extFifoFull,
-      locFifoFull   => locFifoFull
-   );
+         intrNum       => intrNum,
+         busy          => routeBusy,
+         fsmState      => routeFsmState,
+         extFifoFull   => extFifoFull,
+         locFifoFull   => locFifoFull
+      );
    ---------------------------------------------------
 
    ---------------------------------------------------
