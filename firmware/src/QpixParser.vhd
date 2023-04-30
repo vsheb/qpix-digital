@@ -110,7 +110,7 @@ begin
             rx_ind := inBytesMux(65 downto 64);
 
             if inBytesMuxValidOr = '1'  then
-               if fQpixGetWordType(inBytesMux) = REGREQ_W then
+               if fQpixGetWordType(inBytesMux) = G_WORD_TYPE_REGREQ then -- 3
                   reg         := fQpixByteToReg(inBytesMux(63 downto 0));
                   regDataR    <= reg;
 
@@ -123,9 +123,11 @@ begin
                      -- increment X-Y position depending on where the data came from
                      case rx_ind is
                         when b"00" => regDataR.YHops <= std_logic_vector(unsigned(reg.YHops) + 1); 
-                        when b"01" => regDataR.XHops <= std_logic_vector(unsigned(reg.XHops) - 1); 
                         when b"10" => regDataR.YHops <= std_logic_vector(unsigned(reg.YHops) - 1); 
-                        when b"11" => regDataR.XHops <= std_logic_vector(unsigned(reg.XHops) + 1); 
+
+                        when b"01" => regDataR.XHops <= std_logic_vector(unsigned(reg.XHops) + 1); 
+                        when b"11" => regDataR.XHops <= std_logic_vector(unsigned(reg.XHops) - 1); 
+
                         when others =>
                      end case;
                   end if;

@@ -117,7 +117,7 @@ begin
                nxtReg.ready     <= '0';
                nxtReg.byte      <= txByte;
                nxtReg.state     <= DATA_S;
-               if txByte(to_integer(curReg.counter)) = '1' then 
+               if txByte(0) = '1' then
                   nxtReg.phase_max <= oneNum;
                else
                   nxtReg.phase_max <= zeroNum;
@@ -140,7 +140,7 @@ begin
          when GAP_S => 
             nxtReg.tx <= '0';
             if to_integer(curReg.phase) = gapNum then
-               if txByte(to_integer(curReg.counter)) = '1' then 
+               if curReg.byte(to_integer(curReg.counter)) = '1' then 
                   nxtReg.phase_max <= oneNum;
                else
                   nxtReg.phase_max <= zeroNum;

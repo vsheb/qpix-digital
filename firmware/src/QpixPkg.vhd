@@ -257,7 +257,7 @@ package QpixPkg is
    );
    ------------------------------------------------------------------
 
-   type QpixWordType is (DATA_W, TS_CAST_W, TS_REPLY_W, REGREQ_W, REGRSP_W, UNKNOWN_W);
+   subtype QpixWordType is std_logic_vector(3 downto 0);
 
 
    ------------------------------------------------------------------
@@ -323,18 +323,20 @@ package body QpixPkg is
    ------------------------------------------------------------------
    function fQpixGetWordType(x : std_logic_vector) 
          return QpixWordType is
-      variable q : QpixWordType := UNKNOWN_W;
+      --variable q : QpixWordType := UNKNOWN_W;
       variable x0 : std_logic_vector(3 downto 0) := x(59 downto 56);
    begin
-      case x0 is
-         when x"0"   => q := TS_CAST_W;
-         when x"1"   => q := TS_REPLY_W;
-         when x"2"   => q := DATA_W;
-         when x"3"   => q := REGREQ_W;
-         when x"4"   => q := REGRSP_W;
-         when others => q := UNKNOWN_W;
-      end case;
-      return q;
+      return x0;
+      --case x0 is
+         --when x"0"   => q := TS_CAST_W;
+         --when x"1"   => q := TS_REPLY_W;
+         --when x"2"   => q := DATA_W;
+         --when x"3"   => q := REGREQ_W;
+         --when x"4"   => q := REGRSP_W;
+         --when others => q := UNKNOWN_W;
+      --end case;
+      --return q;
+
    end function;
    ------------------------------------------------------------------
 

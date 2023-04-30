@@ -237,3 +237,53 @@ async def test_single_point_failure(dut):
   # await TimerClk(dut.clk, 10)
 ################################################################
 
+################################################################
+################################################################
+@cocotb.test()
+async def test_broadcast_regs(dut):
+  """ test """
+
+  QpixStartClocks(dut)
+
+
+  daq = QpixDaq(dut)
+  await daq.Reset()
+  
+  # start monitoring 
+  qpix_receive = cocotb.start_soon(daq.QpixReceive())
+  qpix_print   = cocotb.start_soon(QpixPrintArray(dut))
+
+  await RisingEdge(dut.clk)  
+
+  print('Send interrogation')
+  await daq.Interrogation()
+
+  await QpixWaitUntilAllIdle(dut)
+
+  manUp    = 16 + 1 
+  manRight = 16 + 2
+  manDown  = 16 + 4
+  manLeft  = 16 + 8
+  
+  print('Set up manual routing')
+  await daq.RegWrite(0, 0, 3, manRight)
+  await daq.RegWrite(1, 0, 3, manRight)
+  await daq.RegWrite(2, 0, 3, manRight)
+  await daq.RegWrite(0, 1, 3, manUp)
+  await daq.RegWrite(1, 1, 3, manUp)
+  await daq.RegWrite(2, 1, 3, manUp)
+  await daq.RegWrite(0, 2, 3, manUp)
+  await daq.RegWrite(1, 2, 3, manUp)
+  await daq.RegWrite(2, 2, 3, manUp)
+
+  await TimerClk(dut.clk, 1000)
+
+  print("SEND REG BCAST REQUEST")
+  await daq.RegRead(x = -1, y = -1, addr = 3)
+
+
+  await TimerClk(dut.clk, 10)
+
+
+################################################################
+

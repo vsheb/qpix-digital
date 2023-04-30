@@ -9,6 +9,11 @@ entity QpixAsicArrayDaq is
       TXRX_TYPE        : string  := "ENDEAVOR";
       X_NUM_G          : natural := 3;
       Y_NUM_G          : natural := 3;
+
+      X_DAQ_G          : natural := 0;
+      Y_DAQ_G          : natural := 0;
+      M_DAQ_G          : natural := 0;
+
       INDIVIDUAL_CLK_G : boolean := False;
       N_ZER_CLK_G      : natural := 8; 
       N_ONE_CLK_G      : natural := 24;
@@ -68,6 +73,11 @@ begin
          TXRX_TYPE        => TXRX_TYPE,
          X_NUM_G          => X_NUM_G,
          Y_NUM_G          => Y_NUM_G,
+
+         X_DAQ_G       => X_DAQ_G,
+         Y_DAQ_G       => Y_DAQ_G,
+         M_DAQ_G       => M_DAQ_G,
+
          INDIVIDUAL_CLK_G => INDIVIDUAL_CLK_G,
 
          -- Endeavor protocol parameters

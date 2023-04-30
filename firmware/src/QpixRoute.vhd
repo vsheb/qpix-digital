@@ -197,7 +197,7 @@ begin
             nxtReg.extFifoRen <= '0';
 
             if extFifoEmpty = '0' then
-               if fQpixGetWordType(extFifoDout) = REGRSP_W then
+               if fQpixGetWordType(extFifoDout) = G_WORD_TYPE_REGRSP then
                   nxtReg.state <= ROUTE_REGRSP_S;
                else 
                   nxtReg.state <= REP_REMOTE_S;

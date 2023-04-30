@@ -123,7 +123,7 @@ class QpixDaq :
     self.nX, self.nY = int(dut.X_NUM_G.value), int(dut.Y_NUM_G.value)
 
     self.transact_time = (self.dut.N_ONE_CLK_G.value + self.dut.N_GAP_CLK_G.value) * 64 + self.dut.N_FIN_CLK_G.value 
-    self.timeout0 = self.transact_time*(self.nX + self.nY + self.nX*self.nY) + 100 
+    self.timeout0 = self.transact_time*(2*self.nX + 2*self.nY + self.nX*self.nY ) + 2000
     # set initial values for the input ports
     for i in range(self.nX) : 
       for j in range(self.nY) :
@@ -245,14 +245,17 @@ class QpixDaq :
 
     cnt = 0
 
-    while cnt < self.timeout0 :
-      if len(self.regRsps) == n : break
+    timeout = 20 * self.timeout0
+    while len(self.regRsps) < n : 
       await RisingEdge(self.dut.clk)
       cnt += 1
-    print("******** REG RSP *********")
-    for r in self.rsp_matrix:
-      print(r)
-    print("**********************")
+      if len(self.regRsps) == n or cnt >= timeout :
+        print("******** REG RSP *********")
+        for r in self.rsp_matrix:
+          print(r)
+        print("**********************")
+        print('CLK_CNT =',cnt,'timeout = ', timeout)
+      assert cnt < timeout, "RegRead : timed out "
 
   async def RegWrite(self, x = -1, y = -1, addr = 0, value = 0) : 
     self.regRsps = []

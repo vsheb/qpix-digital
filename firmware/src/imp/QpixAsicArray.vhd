@@ -12,6 +12,11 @@ entity QpixAsicArray is
       TXRX_TYPE        : string  := "ENDEAVOR"; -- "DUMMY"/"UART"/"ENDEAVOR"
       X_NUM_G          : natural := 3;
       Y_NUM_G          : natural := 3;
+
+      X_DAQ_G          : natural := 0;
+      Y_DAQ_G          : natural := 0;
+      M_DAQ_G          : natural := 0;
+
       INDIVIDUAL_CLK_G : boolean := False;
       -- Endeavour protocol parameters
       N_ZER_CLK_G      : natural :=  8;  
@@ -81,8 +86,29 @@ architecture behav of QpixAsicArray is
 
 begin
 
-   YTxArr(0,0) <= daqTx;
-   daqRx <= YRxArr(0,0);
+   DAQ_NORTH : if M_DAQ_G = 0 generate
+      daqRx <= YRxArr(X_DAQ_G, Y_DAQ_G);   -- up
+      YTxArr(X_DAQ_G,Y_DAQ_G)   <= daqTx;   -- up 
+   end generate;
+
+   DAQ_EAST : if M_DAQ_G = 1 generate
+      daqRx <= XTxArr(X_DAQ_G+1, Y_DAQ_G); -- right
+      XRxArr(X_DAQ_G+1,Y_DAQ_G) <= daqTx; -- right
+   end generate;
+
+   DAQ_SOUTH : if M_DAQ_G = 2 generate
+      daqRx <= YTxArr(X_DAQ_G, Y_DAQ_G+1); -- down
+      YRxArr(X_DAQ_G,Y_DAQ_G+1) <= daqTx; -- down
+   end generate;
+
+   DAQ_WEST : if M_DAQ_G = 3 generate
+      daqRx <= XRxArr(X_DAQ_G, Y_DAQ_G);   -- left
+      XTxArr(X_DAQ_G,Y_DAQ_G)   <= daqTx;-- left
+   end generate;
+
+      --YTxArr(0,0) <= daqTx;
+      --daqRx <= YRxArr(0,0);
+
 
    CLK_GEN_IND : if INDIVIDUAL_CLK_G = True generate 
       clkVec_s <= clkVec;
