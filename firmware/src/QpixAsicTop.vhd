@@ -72,10 +72,10 @@ architecture behav of QpixAsicTop is
    signal inData        : QpixDataFormatType := QpixDataZero_C;
    signal txData        : QpixDataFormatType := QpixDataZero_C;
    signal rxData        : QpixDataFormatType := QpixDataZero_C;
-                       
+
    signal regData       : QpixRegDataType    := QpixRegDataZero_C;
-   signal regResp       : QpixRegDataType  := QpixRegDataZero_C;
-                       
+   signal regResp       : QpixRegDataType    := QpixRegDataZero_C;
+
    signal qpixConf      : QpixConfigType     := QpixConfigDef_C;
    signal qpixReq       : QpixRequestType    := QpixRequestZero_C;
                        
